@@ -1,0 +1,189 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            zig: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            zig: true
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            zig: false
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            zig: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            zig: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install Zig
+        if: matrix.zig
+        uses: goto-bus-stop/setup-zig@v2
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Stage binary
+        shell: bash
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/stage"
+          cd "$GITHUB_WORKSPACE/target/${{ matrix.target }}/release"
+          if [ -f fpm-monitor.exe ]; then
+            cp fpm-monitor.exe "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}.exe"
+          else
+            cp fpm-monitor "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}"
+          fi
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fpm-monitor-${{ matrix.target }}
+          path: stage
+          if-no-files-found: error
+
+  package:
+    name: Package (deb/rpm, ${{ matrix.arch }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            arch: amd64
+          - target: aarch64-unknown-linux-musl
+            arch: arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: fpm-monitor-${{ matrix.target }}
+          path: build
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+      - name: Generate nfpm config
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -e "s/__ARCH__/${{ matrix.arch }}/" \
+              -e "s/__VERSION__/$VERSION/" \
+              -e "s|__SRC__|$GITHUB_WORKSPACE/build/fpm-monitor-${{ matrix.target }}|" \
+              nfpm.yaml > /tmp/nfpm.yaml
+      - name: Build packages
+        run: |
+          mkdir -p dist
+          nfpm package --packager deb --config /tmp/nfpm.yaml --target dist/
+          nfpm package --packager rpm --config /tmp/nfpm.yaml --target dist/
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: dist
+          if-no-files-found: error
+
+  formula:
+    name: Homebrew formula
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Generate formula
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA_ARM=$(shasum -a 256 artifacts/fpm-monitor-aarch64-apple-darwin | cut -d' ' -f1)
+          SHA_INTEL=$(shasum -a 256 artifacts/fpm-monitor-x86_64-apple-darwin | cut -d' ' -f1)
+          sed -e "s/__VERSION__/$VERSION/" \
+              -e "s|__URL_ARM__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
+              -e "s/__SHA_ARM__/$SHA_ARM/" \
+              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
+              -e "s/__SHA_INTEL__/$SHA_INTEL/" \
+              Formula/fpm-monitor.rb > fpm-monitor.rb
+          echo "--- generated formula ---"
+          cat fpm-monitor.rb
+      - name: Upload formula
+        uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-formula
+          path: fpm-monitor.rb
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: [build, package, formula]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Inspect artifacts
+        run: ls -la artifacts/
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: fpm-monitor ${{ github.ref_name }}
+          body: |
+            ## fpm-monitor ${{ github.ref_name }}
+
+            ### Binaries
+            - `x86_64-unknown-linux-musl` — Linux x86_64 (static)
+            - `aarch64-unknown-linux-musl` — Linux ARM64 (static, e.g. `php:8.x-fpm-alpine` on ARM)
+            - `aarch64-apple-darwin` — macOS Apple Silicon
+            - `x86_64-apple-darwin` — macOS Intel
+            - `x86_64-pc-windows-msvc.exe` — Windows x86_64
+
+            ### Linux packages
+            - `fpm-monitor_<version>_amd64.deb` / `.rpm` — Red Hat, Fedora, Debian, Ubuntu (x86_64)
+            - `fpm-monitor_<version>_arm64.deb` / `.rpm` — Red Hat, Fedora, Debian, Ubuntu (ARM64)
+
+            ### Homebrew
+            ```sh
+            brew install https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${{ github.ref_name }}/fpm-monitor.rb
+            ```
+
+            ### Checksums
+            See the attached binaries; verify with `shasum -a 256`.
+          files: |
+            artifacts/*
+            LICENSE
+            README.md
+          generate_release_notes: true

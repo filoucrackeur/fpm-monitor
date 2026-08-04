@@ -1,0 +1,16 @@
+# --- Rust / Cargo ---
+/target/
+**/*.rs.bk
+
+# --- Binaires et artefacts locaux ---
+/fpm-monitor
+/a.o
+
+# --- macOS ---
+.DS_Store
+
+# --- Éditeurs / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
