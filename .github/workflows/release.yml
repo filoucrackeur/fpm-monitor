@@ -94,7 +94,9 @@ jobs:
           name: fpm-monitor-${{ matrix.target }}
           path: build
       - name: Install nfpm
-        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
       - name: Generate nfpm config
         shell: bash
         run: |
@@ -120,6 +122,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
       - name: Download binaries
         uses: actions/download-artifact@v8
         with:
