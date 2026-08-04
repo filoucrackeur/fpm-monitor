@@ -37,7 +37,7 @@ jobs:
             zig: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -62,7 +62,7 @@ jobs:
             cp fpm-monitor "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}"
           fi
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fpm-monitor-${{ matrix.target }}
           path: stage
@@ -82,9 +82,9 @@ jobs:
             arch: arm64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Download binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: fpm-monitor-${{ matrix.target }}
           path: build
@@ -104,7 +104,7 @@ jobs:
           nfpm package --packager deb --config /tmp/nfpm.yaml --target dist/
           nfpm package --packager rpm --config /tmp/nfpm.yaml --target dist/
       - name: Upload packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.arch }}
           path: dist
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
@@ -135,7 +135,7 @@ jobs:
           echo "--- generated formula ---"
           cat fpm-monitor.rb
       - name: Upload formula
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: homebrew-formula
           path: fpm-monitor.rb
@@ -149,16 +149,16 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
       - name: Inspect artifacts
         run: ls -la artifacts/
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: fpm-monitor ${{ github.ref_name }}
           body: |
