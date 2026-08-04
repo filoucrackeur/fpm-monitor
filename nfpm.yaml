@@ -1,0 +1,23 @@
+# nfpm configuration for Debian (.deb) and Red Hat (.rpm) packages.
+#
+# Placeholders are substituted by the release workflow (`.github/workflows/release.yml`):
+#   __VERSION__  -> tag version without the leading "v"
+#   __ARCH__     -> "amd64" or "arm64"
+#   __SRC__      -> absolute path to the static musl binary
+# The Homebrew formula template lives in `Formula/fpm-monitor.rb`.
+
+name: fpm-monitor
+arch: __ARCH__
+platform: linux
+version: __VERSION__
+section: admin
+priority: optional
+maintainer: fpm-monitor maintainers <fpm-monitor@users.noreply.github.com>
+description: PHP-FPM pools monitor (Rust port of fpm-monitor.c)
+homepage: https://github.com/filoucrackeur/php-fpm-monitor
+license: MIT
+contents:
+  - src: __SRC__
+    dst: /usr/local/bin/fpm-monitor
+    file_info:
+      mode: 0755

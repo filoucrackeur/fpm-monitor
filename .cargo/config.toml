@@ -1,0 +1,15 @@
+[target.aarch64-unknown-linux-musl]
+linker = "zig-cc"
+rustflags = [
+  "-C", "link-arg=-target",
+  "-C", "link-arg=aarch64-linux-musl",
+  "-C", "link-self-contained=no",
+]
+
+[target.x86_64-unknown-linux-musl]
+linker = "zig-cc"
+rustflags = [
+  "-C", "link-arg=-target",
+  "-C", "link-arg=x86_64-linux-musl",
+  "-C", "link-self-contained=no",
+]
