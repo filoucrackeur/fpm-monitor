@@ -61,19 +61,25 @@ pub fn discover(cli_path: Option<&Path>) -> Vec<PathBuf> {
             collect_pool_files(p, &mut files, &mut visited);
         }
     }
-    if let Ok(entries) = fs::read_dir("/usr/local/etc/php") {
-        for e in entries.flatten() {
-            let p = e.path();
-            if !p.is_dir() {
-                continue;
-            }
-            let conf = p.join("php-fpm.conf");
-            if conf.is_file() {
-                parse_includes(&conf, &mut files, &mut visited);
-            }
-            let pool_d = p.join("pool.d");
-            if pool_d.is_dir() {
-                collect_pool_files(&pool_d, &mut files, &mut visited);
+    for base in ["/usr/local/etc/php", "/opt/homebrew/etc/php"] {
+        if let Ok(entries) = fs::read_dir(base) {
+            for e in entries.flatten() {
+                let p = e.path();
+                if !p.is_dir() {
+                    continue;
+                }
+                let conf = p.join("php-fpm.conf");
+                if conf.is_file() {
+                    parse_includes(&conf, &mut files, &mut visited);
+                }
+                let pool_d = p.join("pool.d");
+                if pool_d.is_dir() {
+                    collect_pool_files(&pool_d, &mut files, &mut visited);
+                }
+                let fpm_d = p.join("php-fpm.d");
+                if fpm_d.is_dir() {
+                    collect_pool_files(&fpm_d, &mut files, &mut visited);
+                }
             }
         }
     }
