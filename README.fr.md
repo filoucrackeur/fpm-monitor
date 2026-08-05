@@ -90,6 +90,21 @@ brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor
 ```
 
+### Docker
+
+Une image multi-arch (`linux/amd64`, `linux/arm64`) est publiée sur le
+GitHub Container Registry :
+
+```sh
+docker pull ghcr.io/filoucrackeur/fpm-monitor:latest
+docker run --rm --pid=host -v /etc/php-fpm.d:/etc/php-fpm.d:ro \
+  -it ghcr.io/filoucrackeur/fpm-monitor:latest -t
+```
+
+`--pid=host` permet au moniteur de lire les processus PHP-FPM depuis le
+`/proc` hôte ; montez votre configuration de pools avec `-v` pour que les
+pools soient découverts (les chemins `/etc` habituels sont aussi analysés).
+
 ## Utilisation
 
 ```

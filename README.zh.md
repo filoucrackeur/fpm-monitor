@@ -84,6 +84,19 @@ brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor
 ```
 
+### Docker
+
+多架构镜像（`linux/amd64`、`linux/arm64`）已发布到 GitHub Container Registry：
+
+```sh
+docker pull ghcr.io/filoucrackeur/fpm-monitor:latest
+docker run --rm --pid=host -v /etc/php-fpm.d:/etc/php-fpm.d:ro \
+  -it ghcr.io/filoucrackeur/fpm-monitor:latest -t
+```
+
+`--pid=host` 让监控器读取宿主机 `/proc` 中的 PHP-FPM 进程；用 `-v` 挂载
+你的 PHP-FPM 进程池配置，以便发现进程池（常规的 `/etc` 路径也会被扫描）。
+
 ## 用法
 
 ```
