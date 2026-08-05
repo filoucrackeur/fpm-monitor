@@ -229,6 +229,7 @@ jobs:
           images: ghcr.io/filoucrackeur/fpm-monitor
           tags: |
             type=semver,pattern={{version}}
+            type=semver,pattern=v{{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
       - name: Build and push
