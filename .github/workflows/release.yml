@@ -136,9 +136,9 @@ jobs:
           SHA_ARM=$(shasum -a 256 artifacts/fpm-monitor-aarch64-apple-darwin | cut -d' ' -f1)
           SHA_INTEL=$(shasum -a 256 artifacts/fpm-monitor-x86_64-apple-darwin | cut -d' ' -f1)
           sed -e "s/__VERSION__/$VERSION/" \
-              -e "s|__URL_ARM__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
+              -e "s|__URL_ARM__|https://github.com/filoucrackeur/fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
               -e "s/__SHA_ARM__/$SHA_ARM/" \
-              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
+              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
               -e "s/__SHA_INTEL__/$SHA_INTEL/" \
               Formula/fpm-monitor.rb > fpm-monitor.rb
           echo "--- generated formula ---"
@@ -177,9 +177,9 @@ jobs:
           SHA_ARM=$(shasum -a 256 artifacts/fpm-monitor-aarch64-apple-darwin | cut -d' ' -f1)
           SHA_INTEL=$(shasum -a 256 artifacts/fpm-monitor-x86_64-apple-darwin | cut -d' ' -f1)
           sed -e "s/__VERSION__/$VERSION/" \
-              -e "s|__URL_ARM__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
+              -e "s|__URL_ARM__|https://github.com/filoucrackeur/fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
               -e "s/__SHA_ARM__/$SHA_ARM/" \
-              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
+              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
               -e "s/__SHA_INTEL__/$SHA_INTEL/" \
               src/Formula/fpm-monitor.rb > Formula/fpm-monitor.rb
           echo "--- generated tap formula ---"
@@ -233,7 +233,7 @@ jobs:
 
             ### Homebrew
             ```sh
-            brew install https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${{ github.ref_name }}/fpm-monitor.rb
+            brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/${{ github.ref_name }}/fpm-monitor.rb
             ```
 
             ### Checksums

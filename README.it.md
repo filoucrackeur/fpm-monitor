@@ -6,7 +6,7 @@
 
 [English](README.md) | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | **Italiano** | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-[![CI](https://github.com/filoucrackeur/php-fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/php-fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/php-fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/php-fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/php-fpm-monitor?sort=semver)](https://github.com/filoucrackeur/php-fpm-monitor/releases) [![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/php-fpm-monitor)](https://codecov.io/github/filoucrackeur/php-fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/php-fpm-monitor)](https://codeclimate.com/github/filoucrackeur/php-fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/php-fpm-monitor)](LICENSE) ![Static](https://img.shields.io/badge/static-musl-blue) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/php-fpm-monitor)](https://github.com/filoucrackeur/php-fpm-monitor/commits/main)
+[![CI](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/fpm-monitor?sort=semver)](https://github.com/filoucrackeur/fpm-monitor/releases) [![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/fpm-monitor)](https://codecov.io/github/filoucrackeur/fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/fpm-monitor)](https://codeclimate.com/github/filoucrackeur/fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/fpm-monitor)](LICENSE) ![Static](https://img.shields.io/badge/static-musl-blue) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
 
 Monitor dei pool PHP-FPM in Rust (un port di `fpm-monitor.c`), con un dashboard
 interattivo nel terminale ispirato a [Ember](https://github.com/alexandre-daubois/ember).
@@ -58,7 +58,7 @@ docker cp target/aarch64-unknown-linux-musl/release/fpm-monitor php-fpm:/usr/loc
 
 ### Pacchetti Linux (Red Hat / Debian)
 
-Ogni [release](https://github.com/filoucrackeur/php-fpm-monitor/releases) include pacchetti `.deb` e
+Ogni [release](https://github.com/filoucrackeur/fpm-monitor/releases) include pacchetti `.deb` e
 `.rpm` statici (musl). Senza dipendenze esterne, funzionano su qualsiasi versione
 recente di RHEL, Fedora, CentOS, Debian o Ubuntu (x86_64 e ARM64).
 
@@ -77,7 +77,7 @@ recente di RHEL, Fedora, CentOS, Debian o Ubuntu (x86_64 e ARM64).
 Ogni release genera e allega una formula pronta all'uso:
 
 ```sh
-brew install https://github.com/filoucrackeur/php-fpm-monitor/releases/download/v<version>/fpm-monitor.rb
+brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
 ```
 
 Per ospitarla come tap, sposta il file in

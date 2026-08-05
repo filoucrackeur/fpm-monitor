@@ -14,7 +14,7 @@ section: admin
 priority: optional
 maintainer: fpm-monitor maintainers <fpm-monitor@users.noreply.github.com>
 description: PHP-FPM pools monitor (Rust port of fpm-monitor.c)
-homepage: https://github.com/filoucrackeur/php-fpm-monitor
+homepage: https://github.com/filoucrackeur/fpm-monitor
 license: MIT
 contents:
   - src: __SRC__
