@@ -26,7 +26,11 @@ class FpmMonitor < Formula
   end
 
   def install
-    bin.install "fpm-monitor"
+    if Hardware::CPU.arm?
+      bin.install "fpm-monitor-aarch64-apple-darwin" => "fpm-monitor"
+    else
+      bin.install "fpm-monitor-x86_64-apple-darwin" => "fpm-monitor"
+    end
   end
 
   test do
