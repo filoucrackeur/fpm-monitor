@@ -150,6 +150,53 @@ jobs:
           path: fpm-monitor.rb
           if-no-files-found: error
 
+  update-tap:
+    name: Update Homebrew tap
+    needs: publish
+    runs-on: ubuntu-latest
+    if: ${{ secrets.TAP_TOKEN != '' }}
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v7
+        with:
+          repository: filoucrackeur/homebrew-fpm-monitor
+          token: ${{ secrets.TAP_TOKEN }}
+      - name: Checkout source (template)
+        uses: actions/checkout@v7
+        with:
+          path: src
+      - name: Download binaries
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Generate formula
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA_ARM=$(shasum -a 256 artifacts/fpm-monitor-aarch64-apple-darwin | cut -d' ' -f1)
+          SHA_INTEL=$(shasum -a 256 artifacts/fpm-monitor-x86_64-apple-darwin | cut -d' ' -f1)
+          sed -e "s/__VERSION__/$VERSION/" \
+              -e "s|__URL_ARM__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-aarch64-apple-darwin|" \
+              -e "s/__SHA_ARM__/$SHA_ARM/" \
+              -e "s|__URL_INTEL__|https://github.com/filoucrackeur/php-fpm-monitor/releases/download/${GITHUB_REF_NAME}/fpm-monitor-x86_64-apple-darwin|" \
+              -e "s/__SHA_INTEL__/$SHA_INTEL/" \
+              src/Formula/fpm-monitor.rb > Formula/fpm-monitor.rb
+          echo "--- generated tap formula ---"
+          cat Formula/fpm-monitor.rb
+      - name: Commit and push
+        shell: bash
+        run: |
+          git add Formula/fpm-monitor.rb
+          if git diff --cached --quiet; then
+            echo "Formula unchanged, skipping commit."
+          else
+            git -c user.name="github-actions[bot]" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                commit -m "Update formula for ${GITHUB_REF_NAME}"
+            git push origin "$(git branch --show-current)"
+          fi
+
   publish:
     name: Publish GitHub Release
     needs: [build, package, formula]
