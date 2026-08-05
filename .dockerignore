@@ -1,0 +1,10 @@
+.git
+.github
+target
+docs
+Formula
+nfpm.yaml
+fpm-monitor
+a.o
+.DS_Store
+README*.md
