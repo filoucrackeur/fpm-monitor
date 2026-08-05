@@ -154,23 +154,28 @@ jobs:
     name: Update Homebrew tap
     needs: publish
     runs-on: ubuntu-latest
-    if: ${{ secrets.TAP_TOKEN != '' }}
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
     steps:
       - name: Checkout tap repository
+        if: ${{ env.TAP_TOKEN != '' }}
         uses: actions/checkout@v7
         with:
           repository: filoucrackeur/homebrew-fpm-monitor
           token: ${{ secrets.TAP_TOKEN }}
       - name: Checkout source (template)
+        if: ${{ env.TAP_TOKEN != '' }}
         uses: actions/checkout@v7
         with:
           path: src
       - name: Download binaries
+        if: ${{ env.TAP_TOKEN != '' }}
         uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
       - name: Generate formula
+        if: ${{ env.TAP_TOKEN != '' }}
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -185,6 +190,7 @@ jobs:
           echo "--- generated tap formula ---"
           cat Formula/fpm-monitor.rb
       - name: Commit and push
+        if: ${{ env.TAP_TOKEN != '' }}
         shell: bash
         run: |
           git add Formula/fpm-monitor.rb
