@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="fpm-monitor" width="160">
+</p>
+
 # fpm-monitor
 
 [English](README.md) | [Français](README.fr.md) | **简体中文** | [العربية](README.ar.md) | [Español](README.es.md) | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
@@ -7,6 +11,10 @@
 用 Rust 编写的 PHP-FPM 进程池监视器（`fpm-monitor.c` 的移植版），带有灵感来自
 [Ember](https://github.com/alexandre-daubois/ember) 的交互式终端仪表盘。界面支持 8 种语言
 （默认：英语），通过 `--lang` 切换。
+
+<p align="center">
+  <img src="docs/screenshot.zh.animated.svg" alt="fpm-monitor TUI 交互式仪表盘（简体中文）" width="700">
+</p>
 
 ## 功能
 

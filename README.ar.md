@@ -1,3 +1,7 @@
+<p align="center" dir="rtl">
+  <img src="docs/logo.png" alt="fpm-monitor" width="160">
+</p>
+
 # fpm-monitor
 
 [English](README.md) | [Français](README.fr.md) | [简体中文](README.zh.md) | **العربية** | [Español](README.es.md) | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
@@ -7,6 +11,10 @@
 مراقب تجمعات PHP-FPM بلغة Rust (منفذ من `fpm-monitor.c`)، مع لوحة تحكم تفاعلية
 في الطرفية مستوحاة من [Ember](https://github.com/alexandre-daubois/ember). الواجهة متوفرة
 بـ 8 لغات (الافتراضي: الإنجليزية) عبر `--lang`.
+
+<p align="center">
+  <img src="docs/screenshot.ar.animated.svg" alt="لوحة تحكم تفاعلية fpm-monitor (العربية)" width="700">
+</p>
 
 ## الميزات
 

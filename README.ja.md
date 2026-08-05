@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="fpm-monitor" width="160">
+</p>
+
 # fpm-monitor
 
 [English](README.md) | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | [Italiano](README.it.md) | **日本語** | [Deutsch](README.de.md)
@@ -7,6 +11,10 @@
 Rust 製の PHP-FPM プールモニター（`fpm-monitor.c` の移植版）。[Ember](https://github.com/alexandre-daubois/ember)
 に着想を得た対話型ターミナルダッシュボードを備えています。インターフェースは `--lang` で
 8 言語（デフォルト: 英語）から選択できます。
+
+<p align="center">
+  <img src="docs/screenshot.ja.animated.svg" alt="fpm-monitor TUI インタラクティブダッシュボード（日本語）" width="700">
+</p>
 
 ## 機能
 

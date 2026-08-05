@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="fpm-monitor" width="160">
+</p>
+
 # fpm-monitor
 
 [English](README.md) | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | **Español** | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
@@ -7,6 +11,10 @@
 Monitor de pools PHP-FPM en Rust (un port de `fpm-monitor.c`), con un panel
 interactivo en terminal inspirado en [Ember](https://github.com/alexandre-daubois/ember).
 La interfaz está disponible en 8 idiomas (por defecto: inglés) mediante `--lang`.
+
+<p align="center">
+  <img src="docs/screenshot.es.animated.svg" alt="Panel interactivo fpm-monitor TUI (español)" width="700">
+</p>
 
 ## Funcionalidades
 
