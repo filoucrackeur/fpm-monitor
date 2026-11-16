@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ["**", "!badges"]
   pull_request:
   workflow_dispatch:
 
@@ -94,8 +94,10 @@ jobs:
         run: cargo test --locked --all-targets
 
   coverage:
-    name: Coverage (llvm-cov + Codecov)
+    name: Coverage (llvm-cov)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -115,12 +117,34 @@ jobs:
           name: coverage-lcov
           path: lcov.info
           if-no-files-found: error
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: lcov.info
-          fail_ci_if_error: false
-          verbose: true
+      # Publish the line-coverage percentage to a `badges` branch, read by the
+      # shields.io endpoint badge in the READMEs. No third-party account or
+      # secret is required.
+      - name: Publish coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          pct=$(python3 - <<'PY'
+          import sys
+          found = hit = 0
+          for line in open("lcov.info", encoding="utf-8"):
+              if line.startswith("LF:"):
+                  found += int(line[3:])
+              elif line.startswith("LH:"):
+                  hit += int(line[3:])
+          print(f"{100 * hit / found:.1f}" if found else "0.0")
+          PY
+          )
+          color=$(python3 -c "p=float('$pct'); print('brightgreen' if p>=90 else 'green' if p>=80 else 'yellowgreen' if p>=70 else 'yellow' if p>=60 else 'orange' if p>=50 else 'red')")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan badge-tmp
+          git rm -rf . > /dev/null
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$pct" "$color" > coverage.json
+          git add coverage.json
+          git commit -m "Update coverage badge: ${pct}%"
+          git push --force origin HEAD:badges
+          echo "Coverage: ${pct}% (${color})"
 
   build:
     name: Build (${{ matrix.target }})
