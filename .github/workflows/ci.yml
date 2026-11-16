@@ -41,7 +41,7 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux-x86_64
-          - os: macos-latest
+          - os: macos-15
             name: macos-arm64
           - os: windows-latest
             name: windows-x86_64
@@ -79,7 +79,7 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux-x86_64
-          - os: macos-latest
+          - os: macos-15
             name: macos-arm64
           - os: windows-latest
             name: windows-x86_64
@@ -171,7 +171,7 @@ jobs:
             target: sparc64-unknown-linux-gnu
             zig: true
           # macOS.
-          - os: macos-latest
+          - os: macos-15
             target: aarch64-apple-darwin
             zig: false
           - os: macos-15-intel

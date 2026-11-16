@@ -62,7 +62,7 @@ jobs:
             target: sparc64-unknown-linux-gnu
             zig: true
           # macOS.
-          - os: macos-latest
+          - os: macos-15
             target: aarch64-apple-darwin
             zig: false
           - os: macos-15-intel
