@@ -1297,3 +1297,90 @@ fn push_history(state: &mut TuiState, rows: &[Row]) {
         state.history.remove(0);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ansi_aware_length_and_fit() {
+        let red = format!("{RED}hello{RESET}");
+        assert_eq!(plain_len(&red), 5);
+        assert_eq!(plain_len("hello"), 5);
+        assert_eq!(fit(&red, 10), red);
+        assert_eq!(fit(&red, 3), format!("{RED}hel{RESET}"));
+        assert_eq!(fit("hello", 2), "he");
+    }
+
+    #[test]
+    fn memory_and_time_formatting() {
+        assert_eq!(fmt_mem(-1), "-");
+        assert_eq!(fmt_mem(512), "512K");
+        assert_eq!(fmt_mem(2048), "2.0M");
+        assert_eq!(fmt_mem(2_097_152), "2.0G");
+
+        assert_eq!(fmt_time(0), "00:00:00");
+        assert_eq!(fmt_time(59), "00:00:59");
+        assert_eq!(fmt_time(3661), "01:01:01");
+        assert_eq!(fmt_time(86_400 + 13), "00:00:13");
+    }
+
+    #[test]
+    fn load_bar_percentage_and_width() {
+        let half = load_bar(5, Some(10));
+        assert!(half.contains("50%"));
+        assert!(plain_len(&half) >= 10);
+
+        let none = load_bar(5, None);
+        assert!(none.contains("0%"));
+
+        let over = load_bar(30, Some(10));
+        assert!(over.contains("300%"));
+    }
+
+    #[test]
+    fn series_range_handles_empty_and_flat_data() {
+        assert_eq!(series_range(&[], 10), (0, 1));
+        assert_eq!(series_range(&[(&[], "x")], 10), (0, 1));
+        assert_eq!(series_range(&[(&[3, 3, 3], "x")], 10), (2, 4));
+        assert_eq!(
+            series_range(&[(&[1, 2, 3, 4, 5], "x"), (&[9], "y")], 10),
+            (1, 9)
+        );
+    }
+
+    #[test]
+    fn series_aligns_points_by_pool_name() {
+        let history = vec![
+            Sample {
+                t: 10,
+                points: vec![("www".to_string(), 1, 1, 0, 0)],
+            },
+            Sample {
+                t: 11,
+                points: vec![("api".to_string(), 2, 1, 1, 3)],
+            },
+            Sample {
+                t: 12,
+                points: vec![
+                    ("www".to_string(), 3, 2, 1, 1),
+                    ("api".to_string(), 2, 2, 0, 0),
+                ],
+            },
+        ];
+        let (w, r, i, b) = series(&history, "www");
+        assert_eq!(w, vec![1, 3]);
+        assert_eq!(r, vec![1, 2]);
+        assert_eq!(i, vec![0, 1]);
+        assert_eq!(b, vec![0, 1]);
+        assert_eq!(times_for(&history, "www"), vec![10, 12]);
+        assert!(series(&history, "missing").0.is_empty());
+    }
+
+    #[test]
+    fn join_left_right_pads_and_truncates() {
+        assert_eq!(join_left_right("a", "b", 3), "a b");
+        assert_eq!(join_left_right("abcdef", "xy", 4), "abxy");
+        assert_eq!(join_left_right("a", "b", 1), "ab");
+    }
+}

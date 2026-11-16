@@ -209,4 +209,62 @@ mod tests {
 
         fs::remove_dir_all(&dir).ok();
     }
+
+    #[test]
+    fn tail_of_limits_and_handles_utf8() {
+        assert_eq!(tail_of(b"a\nb\nc\n", 2), vec!["b", "c"]);
+        assert_eq!(tail_of(b"a\nb\nc", 0), Vec::<String>::new());
+        assert_eq!(tail_of(b"", 5), Vec::<String>::new());
+        assert_eq!(tail_of("caf\u{e9}\n".as_bytes(), 1), vec!["caf\u{e9}"]);
+        // Invalid UTF-8 is replaced, not dropped.
+        assert_eq!(tail_of(b"\xff\n", 1), vec!["\u{fffd}"]);
+    }
+
+    #[test]
+    fn tail_zero_lines() {
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("fpm-logs-test-zero-{}", std::process::id()));
+        fs::write(&path, "a\nb\n").unwrap();
+        assert!(read_tail(path.to_str().unwrap(), 0).is_empty());
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn tail_file_without_trailing_newline() {
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("fpm-logs-test-nonl-{}", std::process::id()));
+        fs::write(&path, "first\nsecond").unwrap();
+        assert_eq!(
+            read_tail(path.to_str().unwrap(), 2),
+            vec!["first", "second"]
+        );
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn collect_returns_one_entry_per_requested_pool() {
+        let mut cfg = Config::default();
+        cfg.globals
+            .push(("error_log".to_string(), "/tmp/fpm-monitor.log".to_string()));
+        let names = vec!["www".to_string(), "api".to_string()];
+        let logs = collect(&cfg, &names, 5);
+        assert_eq!(logs.len(), 2);
+        assert_eq!(logs[0].name, "www");
+        assert_eq!(logs[0].php_log.as_deref(), Some("/tmp/fpm-monitor.log"));
+        assert!(logs[0].slow_log.is_none());
+        assert!(logs[0].access_log.is_none());
+        assert!(logs[1].php.is_empty());
+    }
+
+    #[test]
+    fn mock_logs_have_content() {
+        let names = vec!["www".to_string(), "api".to_string()];
+        let logs = mock(&names);
+        assert_eq!(logs.len(), 2);
+        assert_eq!(logs[0].name, "www");
+        assert_eq!(logs[0].php.len(), 5);
+        assert_eq!(logs[0].slow.len(), 4);
+        assert_eq!(logs[0].access.len(), 4);
+        assert!(logs[1].php[4].contains("api"));
+    }
 }

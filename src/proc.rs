@@ -1,6 +1,6 @@
 use std::io;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 use std::fs;
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ pub struct ScanResult {
 
 /// Scanne /proc à la recherche des processus PHP-FPM.
 /// Le master est écarté du comptage des workers mais enregistré.
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 pub fn scan() -> io::Result<ScanResult> {
     let mut pools: Vec<PoolScan> = Vec::new();
     let mut masters: Vec<i32> = Vec::new();
@@ -70,7 +70,7 @@ pub fn scan() -> io::Result<ScanResult> {
 /// lue directement dans /proc/net/tcp et /proc/net/tcp6 : pour un socket en
 /// état LISTEN, rx_queue contient le nombre de connexions en attente.
 /// Retourne None pour un socket unix (non lisible) ou un port introuvable.
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 pub fn accept_backlog(listen: &str) -> Option<u32> {
     if listen.starts_with('/') {
         return None;
@@ -128,7 +128,7 @@ fn split_listen(listen: &str) -> (String, u16) {
 
 /// Adresse IPv4 vers la notation hexadécimale petit-boutiste de /proc/net/tcp.
 /// "127.0.0.1" → "0100007F".
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 fn ip_to_hex_le(host: &str) -> String {
     let mut out = String::new();
     for octet in host.split('.') {
@@ -140,7 +140,7 @@ fn ip_to_hex_le(host: &str) -> String {
 
 /// Lit le premier argument de /proc/[pid]/cmdline.
 /// PHP-FPM met tout dans argv[0] : "php-fpm: pool www".
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 fn read_first_arg(pid: i32) -> Option<String> {
     let bytes = fs::read(format!("/proc/{}/cmdline", pid)).ok()?;
     let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
@@ -166,43 +166,63 @@ pub fn pool_name(cmd: &str) -> Option<String> {
 }
 
 /// État du process depuis /proc/[pid]/stat (3e champ après le nom).
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 fn get_state(pid: i32) -> char {
     let Ok(s) = fs::read_to_string(format!("/proc/{}/stat", pid)) else {
         return '?';
     };
-    let Some(idx) = s.rfind(')') else {
+    parse_state(&s)
+}
+
+/// Extrait l'état d'une ligne `/proc/[pid]/stat`.
+///
+/// Le nom du process peut contenir des espaces et des parenthèses : on repère
+/// donc la dernière `)` (fin du champ `comm`) avant de lire le champ `state`.
+#[cfg(any(target_os = "linux", test))]
+fn parse_state(stat: &str) -> char {
+    let Some(idx) = stat.rfind(')') else {
         return '?';
     };
-    let after: Vec<char> = s[idx..].chars().collect();
-    // ')', ' ', state
-    if after.len() >= 3 {
-        after[2]
-    } else {
-        '?'
-    }
+    stat.get(idx + 1..)
+        .and_then(|rest| rest.trim_start().chars().next())
+        .unwrap_or('?')
 }
 
 /// VmRSS depuis /proc/[pid]/status, en Ko. -1 si indisponible.
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
 fn get_rss_kb(pid: i32) -> i64 {
     let Ok(s) = fs::read_to_string(format!("/proc/{}/status", pid)) else {
         return -1;
     };
-    for line in s.lines() {
-        if line.starts_with("VmRSS:") {
-            let rest = line.trim_start_matches("VmRSS:").trim();
-            let num: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    parse_rss_kb(&s)
+}
+
+/// Extrait `VmRSS` d'un fichier `/proc/[pid]/status`, en Ko.
+#[cfg(any(target_os = "linux", test))]
+fn parse_rss_kb(status: &str) -> i64 {
+    for line in status.lines() {
+        if let Some(rest) = line.strip_prefix("VmRSS:") {
+            let num: String = rest
+                .trim()
+                .chars()
+                .take_while(|c| c.is_ascii_digit())
+                .collect();
             return num.parse().unwrap_or(-1);
         }
     }
     -1
 }
 
-/// Backend macOS : pas de /proc, les données viennent de `ps` et `netstat`.
+/// Backend BSD/macOS : pas de /proc, les données viennent de `ps` et `netstat`.
 /// PHP-FPM y renseigne aussi son titre de process, exploité tel quel.
-#[cfg(target_os = "macos")]
-mod macos {
+#[cfg(any(
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
+mod bsd {
     use super::*;
     use std::process::Command;
 
@@ -384,8 +404,43 @@ mod macos {
     }
 }
 
-#[cfg(target_os = "macos")]
-pub use macos::{accept_backlog, scan};
+#[cfg(any(
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
+pub use bsd::{accept_backlog, scan};
+
+/// Backend de secours pour les plateformes sans `/proc` ni `ps` compatible
+/// (notamment Windows, où PHP-FPM n'est de toute façon pas supporté).
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+)))]
+pub fn scan() -> io::Result<ScanResult> {
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "PHP-FPM process scanning is only supported on Linux, macOS and BSD",
+    ))
+}
+
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+)))]
+pub fn accept_backlog(_listen: &str) -> Option<u32> {
+    None
+}
 
 #[cfg(test)]
 mod tests {
@@ -413,10 +468,51 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(target_os = "macos"))]
+    fn split_listen_edge_cases() {
+        assert_eq!(
+            split_listen(" 127.0.0.1:9001 "),
+            ("127.0.0.1".to_string(), 9001)
+        );
+        assert_eq!(split_listen("9001"), ("".to_string(), 9001));
+        assert_eq!(split_listen(":9001"), ("".to_string(), 9001));
+        assert_eq!(split_listen("[::1]:9001"), ("[::1]".to_string(), 9001));
+        assert_eq!(split_listen("not-a-port"), ("".to_string(), 9000));
+    }
+
+    #[test]
+    fn pool_name_accepts_spaces() {
+        assert_eq!(
+            pool_name("php-fpm: pool my pool").as_deref(),
+            Some("my pool")
+        );
+        assert_eq!(pool_name("php-fpm: pool   "), None);
+        assert_eq!(pool_name("php-fpm: pool"), None);
+    }
+
+    #[test]
+    fn state_from_proc_stat() {
+        assert_eq!(parse_state("1234 (php-fpm) S 1 2 3"), 'S');
+        assert_eq!(parse_state("1234 (php-fpm) R 1 2 3"), 'R');
+        assert_eq!(parse_state("1234 (a b) c) Z 1 2 3"), 'Z');
+        assert_eq!(parse_state("garbage"), '?');
+        assert_eq!(parse_state(""), '?');
+    }
+
+    #[test]
+    fn rss_from_proc_status() {
+        let status = "Name:\tphp-fpm\nVmPeak:\t 1234 kB\nVmRSS:\t 8192 kB\n";
+        assert_eq!(parse_rss_kb(status), 8192);
+        assert_eq!(parse_rss_kb("VmRSS:\t 12 kB\n"), 12);
+        assert_eq!(parse_rss_kb("Name:\tphp-fpm\n"), -1);
+        assert_eq!(parse_rss_kb("VmRSS:\t abc kB\n"), -1);
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
     fn ipv4_to_le_hex() {
         assert_eq!(ip_to_hex_le("127.0.0.1"), "0100007F");
         assert_eq!(ip_to_hex_le("0.0.0.0"), "00000000");
+        assert_eq!(ip_to_hex_le("192.168.1.10"), "0A01A8C0");
     }
 
     #[test]

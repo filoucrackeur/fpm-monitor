@@ -199,3 +199,109 @@ pub fn mock_rows(cfg: &Config) -> Vec<Row> {
         },
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pool(listen: &str, backlog: u32) -> PoolConfig {
+        PoolConfig {
+            listen: Some(listen.to_string()),
+            listen_backlog: Some(backlog),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn build_rows_merges_config_and_scan() {
+        let mut cfg = Config::default();
+        cfg.pools
+            .insert("www".to_string(), pool("/run/php-fpm/www.sock", 128));
+        cfg.pools
+            .insert("api".to_string(), pool("/run/php-fpm/api.sock", 64));
+
+        let scan = ScanResult {
+            pools: vec![
+                PoolScan {
+                    name: "api".to_string(),
+                    workers: vec![
+                        Worker {
+                            pid: 2,
+                            state: 'R',
+                            rss_kb: 10,
+                        },
+                        Worker {
+                            pid: 3,
+                            state: 'S',
+                            rss_kb: 20,
+                        },
+                    ],
+                },
+                PoolScan {
+                    name: "orphan".to_string(),
+                    workers: vec![Worker {
+                        pid: 4,
+                        state: 'S',
+                        rss_kb: 30,
+                    }],
+                },
+            ],
+            masters: vec![1],
+        };
+
+        let rows = build_rows(scan, &cfg);
+        let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(names, vec!["api", "orphan", "www"]);
+
+        let api = rows.iter().find(|r| r.name == "api").unwrap();
+        assert_eq!(api.workers, 2);
+        assert_eq!(api.running, 1);
+        assert_eq!(api.idle, 1);
+        assert_eq!(api.backlog, None); // unix socket: only the configured max
+        assert_eq!(api.backlog_max, Some(64));
+
+        let orphan = rows.iter().find(|r| r.name == "orphan").unwrap();
+        assert!(orphan.cfg.is_none());
+        assert_eq!(orphan.workers, 1);
+
+        let www = rows.iter().find(|r| r.name == "www").unwrap();
+        assert_eq!(www.workers, 0); // configured but not running
+        assert_eq!(www.backlog_max, Some(128));
+    }
+
+    #[test]
+    fn build_rows_without_config_or_scan() {
+        let rows = build_rows(
+            ScanResult {
+                pools: Vec::new(),
+                masters: Vec::new(),
+            },
+            &Config::default(),
+        );
+        assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn mock_rows_are_stable() {
+        let cfg = mock_config();
+        let rows = mock_rows(&cfg);
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[0].name, "www");
+        assert_eq!(rows[1].running, 9);
+        assert!(rows[3].cfg.is_none());
+        assert_eq!(mock_scan().masters, vec![4242]);
+    }
+
+    #[test]
+    fn mock_config_has_pools() {
+        let cfg = mock_config();
+        let mut names: Vec<&String> = cfg.pools.keys().collect();
+        names.sort();
+        assert_eq!(names, vec!["api", "app", "www"]);
+
+        let map = &cfg.pools;
+        assert_eq!(map["www"].max_children, Some(8));
+        assert_eq!(map["api"].min_spare_servers, Some(2));
+        assert_eq!(map["app"].pm.as_deref(), Some("ondemand"));
+    }
+}

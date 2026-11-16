@@ -98,6 +98,9 @@ fn parse_includes(conf: &Path, files: &mut Vec<PathBuf>, visited: &mut HashSet<P
     if !visited.insert(conf.to_path_buf()) {
         return;
     }
+    // The top-level file is part of the configuration too: it usually holds
+    // the `[global]` directives (error_log, pid, ...).
+    files.push(conf.to_path_buf());
     let Ok(content) = fs::read_to_string(conf) else {
         return;
     };
@@ -312,10 +315,8 @@ fn glob_match(pattern: &str, name: &str) -> bool {
                         dp[i][j + 1] = true;
                     }
                 }
-                '?' => {
-                    if j < n.len() {
-                        dp[i + 1][j + 1] = true;
-                    }
+                '?' if j < n.len() => {
+                    dp[i + 1][j + 1] = true;
                 }
                 c if j < n.len() && c == n[j] => dp[i + 1][j + 1] = true,
                 _ => {}
@@ -395,5 +396,102 @@ mod tests {
         assert_eq!(config.pools["www"].pm.as_deref(), Some("static"));
 
         fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn strip_comments_and_values() {
+        assert_eq!(strip_comment("pm = dynamic ; comment"), "pm = dynamic ");
+        assert_eq!(strip_comment("pm = dynamic # comment"), "pm = dynamic ");
+        assert_eq!(strip_comment("pm = dynamic"), "pm = dynamic");
+        assert_eq!(strip_comment("; full line"), "");
+
+        assert_eq!(split_kv(" pm = dynamic "), Some(("pm", "dynamic")));
+        assert_eq!(split_kv("no separator"), None);
+        assert_eq!(split_kv("a = b = c"), Some(("a", "b = c")));
+
+        assert_eq!(unquote(" \"quoted\" "), "quoted");
+        assert_eq!(unquote("'single'"), "single");
+        assert_eq!(unquote("plain"), "plain");
+        assert_eq!(unquote("\""), "\"");
+    }
+
+    #[test]
+    fn quoted_values_and_duplicate_sections() {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("fpm-monitor-test-quoted-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("www.conf");
+        fs::write(
+            &file,
+            "[www]\nlisten = \"127.0.0.1:9000\"\n[www]\nslowlog = '/tmp/www-slow.log'\n",
+        )
+        .unwrap();
+
+        let config = load(&[file]);
+        let p = config.pools.get("www").unwrap();
+        assert_eq!(p.listen.as_deref(), Some("127.0.0.1:9000"));
+        assert_eq!(p.slowlog.as_deref(), Some("/tmp/www-slow.log"));
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn include_glob_and_missing_files() {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("fpm-monitor-test-include-{}", std::process::id()));
+        let pools = dir.join("pool.d");
+        fs::create_dir_all(&pools).unwrap();
+        fs::write(
+            dir.join("php-fpm.conf"),
+            format!(
+                "[global]\ninclude = {}/pool.d/*.conf\ninclude = /nonexistent/fpm/*.conf\n",
+                dir.display()
+            ),
+        )
+        .unwrap();
+        fs::write(
+            pools.join("www.conf"),
+            "[www]\npm = dynamic\npm.max_children = 5\n",
+        )
+        .unwrap();
+        fs::write(pools.join("ignored.txt"), "[ignored]\npm = static\n").unwrap();
+
+        let files = discover(Some(&dir.join("php-fpm.conf")));
+        assert_eq!(files.len(), 2);
+        assert!(files.iter().any(|p| p.ends_with("php-fpm.conf")));
+        assert!(files.iter().any(|p| p.ends_with("www.conf")));
+
+        let config = load(&files);
+        assert_eq!(config.pools["www"].max_children, Some(5));
+        assert!(!config.pools.contains_key("ignored"));
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn discover_from_pool_directory() {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("fpm-monitor-test-dir-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("a.conf"), "[a]\npm = static\n").unwrap();
+        fs::write(dir.join("b.conf"), "[b]\npm = ondemand\n").unwrap();
+
+        let files = discover(Some(&dir));
+        assert_eq!(files.len(), 2);
+        let config = load(&files);
+        assert_eq!(config.pools.len(), 2);
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn glob_edge_cases() {
+        assert!(glob_match("*", ""));
+        assert!(glob_match("*", "anything"));
+        assert!(glob_match("a*b*c", "aXXbYYc"));
+        assert!(!glob_match("a*b*c", "aXXbYY"));
+        assert!(glob_match("???", "abc"));
+        assert!(!glob_match("???", "ab"));
+        assert!(!glob_match("abc", "abd"));
     }
 }

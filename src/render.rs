@@ -203,7 +203,10 @@ fn max_requests_color(mr: Option<u32>) -> Color {
     }
 }
 
-fn print_workers(row: &Row, _verbose: bool, style: &Style) {
+fn print_workers(row: &Row, verbose: bool, style: &Style) {
+    if !verbose {
+        return;
+    }
     if let Some(scan) = &row.scan {
         for (i, w) in scan.workers.iter().enumerate() {
             let state_color = match w.state {
@@ -291,4 +294,46 @@ fn print_legend(style: &Style) {
         ]
         .join(" · ")
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn memory_formatting() {
+        assert_eq!(fmt_mem(-1), "-");
+        assert_eq!(fmt_mem(0), "0K");
+        assert_eq!(fmt_mem(1023), "1023K");
+        assert_eq!(fmt_mem(1024), "1.0M");
+        assert_eq!(fmt_mem(1536), "1.5M");
+        assert_eq!(fmt_mem(1_048_576), "1.0G");
+    }
+
+    #[test]
+    fn load_colors_are_threshold_based() {
+        assert_eq!(load_color(0, Some(10)), Color::Green);
+        assert_eq!(load_color(4, Some(10)), Color::Green);
+        assert_eq!(load_color(5, Some(10)), Color::White);
+        assert_eq!(load_color(8, Some(10)), Color::Red);
+        assert_eq!(load_color(10, None), Color::White);
+        assert_eq!(load_color(10, Some(0)), Color::White);
+    }
+
+    #[test]
+    fn type_colors() {
+        assert_eq!(type_color(Some("static")), Color::Blue);
+        assert_eq!(type_color(Some("dynamic")), Color::Green);
+        assert_eq!(type_color(Some("ondemand")), Color::White);
+        assert_eq!(type_color(Some("unknown")), Color::White);
+        assert_eq!(type_color(None), Color::White);
+    }
+
+    #[test]
+    fn max_requests_colors() {
+        assert_eq!(max_requests_color(None), Color::White);
+        assert_eq!(max_requests_color(Some(0)), Color::White);
+        assert_eq!(max_requests_color(Some(500)), Color::Green);
+        assert_eq!(max_requests_color(Some(10)), Color::Red);
+    }
 }

@@ -2,7 +2,15 @@
 name = "fpm-monitor"
 version = "1.0.0"
 edition = "2021"
-description = "Moniteur de pools PHP-FPM (port Rust de fpm-monitor.c)"
+rust-version = "1.78"
+description = "PHP-FPM pool monitor with a CLI table and an interactive terminal dashboard"
+authors = ["fpm-monitor contributors"]
+license = "MIT"
+repository = "https://github.com/filoucrackeur/fpm-monitor"
+homepage = "https://github.com/filoucrackeur/fpm-monitor"
+readme = "README.md"
+keywords = ["php-fpm", "monitoring", "tui", "process", "observability"]
+categories = ["command-line-utilities", "development-tools::profiling", "system"]
 
 [[bin]]
 name = "fpm-monitor"
@@ -12,3 +20,4 @@ path = "src/main.rs"
 opt-level = 3
 lto = true
 strip = true
+codegen-units = 1

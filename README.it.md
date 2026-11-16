@@ -6,7 +6,10 @@
 
 [English](README.md) | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | **Italiano** | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-[![CI](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/fpm-monitor?sort=semver)](https://github.com/filoucrackeur/fpm-monitor/releases) [![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/fpm-monitor)](https://codecov.io/github/filoucrackeur/fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/fpm-monitor)](https://codeclimate.com/github/filoucrackeur/fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/fpm-monitor)](LICENSE) ![Static](https://img.shields.io/badge/static-musl-blue) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
+[![CI](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/fpm-monitor?sort=semver)](https://github.com/filoucrackeur/fpm-monitor/releases)
+[![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/fpm-monitor)](https://codecov.io/github/filoucrackeur/fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/fpm-monitor)](https://codeclimate.com/github/filoucrackeur/fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/fpm-monitor)](LICENSE) [![MSRV](https://img.shields.io/badge/MSRV-1.78-blue)](Cargo.toml)
+![Rust](https://img.shields.io/badge/rust-2021-orange?logo=rust) ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-blue) ![Architectures](https://img.shields.io/badge/architectures-18%20targets-blueviolet) ![Static musl](https://img.shields.io/badge/static-musl-blue)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/filoucrackeur/fpm-monitor/pkgs/container/fpm-monitor) [![Downloads](https://img.shields.io/github/downloads/filoucrackeur/fpm-monitor/total)](https://github.com/filoucrackeur/fpm-monitor/releases) [![Issues](https://img.shields.io/github/issues/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/issues) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/filoucrackeur/fpm-monitor/pulls) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
 
 Monitor dei pool PHP-FPM in Rust (un port di `fpm-monitor.c`), con un dashboard
 interattivo nel terminale ispirato a [Ember](https://github.com/alexandre-daubois/ember).
@@ -36,7 +39,8 @@ L'interfaccia è disponibile in 8 lingue (predefinita: inglese) tramite `--lang`
 
 ## Requisiti
 
-- Rust (stable) per compilare.
+- Rust 1.78+ per compilare (MSRV testata in CI).
+- Inoltre: macOS/FreeBSD/BSD (`ps`/`netstat`) e build per Windows; ogni release include binari per 18 architetture.
 - **Linux con `/proc`** per i dati reali. Non è necessaria alcuna configurazione di
   stato FPM (`pm.status_path`): i dati provengono da `/proc` e dalla configurazione.
   Per i socket TCP, il backlog viene letto da `/proc/net/tcp` (coda di

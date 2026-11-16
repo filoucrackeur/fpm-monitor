@@ -1,3 +1,14 @@
+# Cross-compilation helpers.
+#
+# `cargo zigbuild` (cargo-zigbuild) is the recommended way to build any target:
+#
+#   rustup target add <target>
+#   cargo zigbuild --release --target <target>
+#
+# The two entries below also allow a plain `cargo build --target ...` for the
+# most common static musl targets once Zig is installed and `zig-cc` is on PATH.
+# See README.md ("Cross-compilation") for the full architecture matrix.
+
 [target.aarch64-unknown-linux-musl]
 linker = "zig-cc"
 rustflags = [

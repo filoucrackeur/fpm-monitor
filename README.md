@@ -4,13 +4,18 @@
 
 # fpm-monitor
 
-[![CI](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/fpm-monitor?sort=semver)](https://github.com/filoucrackeur/fpm-monitor/releases) [![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/fpm-monitor)](https://codecov.io/github/filoucrackeur/fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/fpm-monitor)](https://codeclimate.com/github/filoucrackeur/fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/fpm-monitor)](LICENSE) ![Static](https://img.shields.io/badge/static-musl-blue) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
+[![CI](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/ci.yml) [![Release](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml/badge.svg)](https://github.com/filoucrackeur/fpm-monitor/actions/workflows/release.yml) [![Version](https://img.shields.io/github/v/release/filoucrackeur/fpm-monitor?sort=semver)](https://github.com/filoucrackeur/fpm-monitor/releases)
+[![codecov](https://img.shields.io/codecov/c/github/filoucrackeur/fpm-monitor)](https://codecov.io/github/filoucrackeur/fpm-monitor) [![Maintainability](https://img.shields.io/codeclimate/maintainability/filoucrackeur/fpm-monitor)](https://codeclimate.com/github/filoucrackeur/fpm-monitor) [![License](https://img.shields.io/github/license/filoucrackeur/fpm-monitor)](LICENSE) [![MSRV](https://img.shields.io/badge/MSRV-1.78-blue)](Cargo.toml)
+![Rust](https://img.shields.io/badge/rust-2021-orange?logo=rust) ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-blue) ![Architectures](https://img.shields.io/badge/architectures-18%20targets-blueviolet) ![Static musl](https://img.shields.io/badge/static-musl-blue)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/filoucrackeur/fpm-monitor/pkgs/container/fpm-monitor) [![Downloads](https://img.shields.io/github/downloads/filoucrackeur/fpm-monitor/total)](https://github.com/filoucrackeur/fpm-monitor/releases) [![Issues](https://img.shields.io/github/issues/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/issues) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/filoucrackeur/fpm-monitor/pulls) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
 
 **English** | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-PHP-FPM pool monitor in Rust (a port of `fpm-monitor.c`), with an interactive
-terminal dashboard inspired by [Ember](https://github.com/alexandre-daubois/ember).
-The interface is available in 8 languages (default: English) via `--lang`.
+PHP-FPM pool monitor written in Rust (a port of `fpm-monitor.c`), with an
+interactive terminal dashboard inspired by [Ember](https://github.com/alexandre-daubois/ember).
+It ships as a single, dependency-free binary and runs on **Linux, macOS and
+Windows**, across **18 target architectures**. The interface is available in 8
+languages (default: English) via `--lang`.
 
 <p align="center">
   <img src="docs/screenshot.en.animated.svg" alt="fpm-monitor TUI — interactive dashboard (English)" width="700">
@@ -32,46 +37,91 @@ The interface is available in 8 languages (default: English) via `--lang`.
   - **Configurations**: directives read from the files (`global` + pools) in sub-tabs.
 - Automatic configuration discovery (usual locations + `include` directive).
 - No network calls: everything is read directly from `/proc` (processes, RSS,
-  state, TCP socket accept queue).
+  state, TCP socket accept queue). On macOS and BSD, the same data is read from
+  `ps` and `netstat`; no FPM status configuration (`pm.status_path`) is needed.
+- **Portable by design**: static musl binaries for 10 Linux architectures,
+  glibc builds for the remaining ones, plus macOS and Windows. No runtime
+  dependency, no libc version to match (except the documented glibc builds).
 
 ## Requirements
 
-- Rust (stable) to compile.
-- **Linux with `/proc`** for real data. No FPM status configuration
-  (`pm.status_path`) is required: data comes from `/proc` and the configuration.
-  For TCP sockets, the backlog is read from `/proc/net/tcp` (accept queue); for
-  unix sockets, only `listen.backlog` is shown as the maximum.
+- **Rust 1.78+** to compile from source (MSRV tested in CI).
+- **Linux**: `/proc` is used for real data. For TCP sockets the accept queue is
+  read from `/proc/net/tcp`; for unix sockets only `listen.backlog` is shown as
+  the maximum.
+- **macOS / FreeBSD / OpenBSD / NetBSD / DragonFly**: no `/proc`; processes and
+  sockets are read with `ps` and `netstat`.
+- **Windows**: the CLI builds and runs (`--help`, `--mock`), but PHP-FPM is not
+  available on Windows, so live process discovery returns an explicit error.
 
 ## Installation
+
+### Prebuilt binaries
+
+Every [release](https://github.com/filoucrackeur/fpm-monitor/releases) contains
+raw binaries for all supported targets, `.deb`/`.rpm` packages and a Homebrew
+formula. Download the file matching your architecture, make it executable and
+run it:
+
+```sh
+chmod +x fpm-monitor-x86_64-unknown-linux-musl
+./fpm-monitor-x86_64-unknown-linux-musl --help
+```
+
+### Supported platforms and architectures
+
+| Platform | Architectures | Rust targets | Distribution |
+| -------- | ------------- | ------------ | ------------ |
+| Linux (static musl) | amd64, arm64, armv7, armv6, armv5, 386, i586, riscv64, ppc64le, ppc64 | `x86_64-…-musl`, `aarch64-…-musl`, `armv7-…-musleabihf`, `arm-…-musleabihf`, `armv5te-…-musleabi`, `i686-…-musl`, `i586-…-musl`, `riscv64gc-…-musl`, `powerpc64le-…-musl`, `powerpc64-…-musl` | binary, deb/rpm |
+| Linux (glibc ≥ 2.17) | s390x, loong64, sparc64 | `s390x-unknown-linux-gnu`, `loongarch64-unknown-linux-gnu`, `sparc64-unknown-linux-gnu` | binary, deb/rpm |
+| macOS 11+ | Apple Silicon, Intel | `aarch64-apple-darwin`, `x86_64-apple-darwin` | binary, Homebrew |
+| Windows 10+ | x86_64, x86, arm64 | `x86_64-pc-windows-msvc`, `i686-pc-windows-msvc`, `aarch64-pc-windows-msvc` | `.exe` |
+| Docker | amd64, arm64, ppc64le, riscv64 | `ghcr.io/filoucrackeur/fpm-monitor` | OCI image |
+
+### From source
 
 ```sh
 cargo build --release
 # the binary is at target/release/fpm-monitor
 ```
 
-To deploy inside a `php:*-fpm-alpine` container (musl, aarch64):
+### Cross-compilation
+
+[cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) is used by CI to
+produce all the Linux binaries from a single x86_64 runner:
 
 ```sh
-RUSTC=$HOME/.cargo/bin/rustc ~/.cargo/bin/cargo build --release --target aarch64-unknown-linux-musl
+cargo install cargo-zigbuild
+rustup target add aarch64-unknown-linux-musl
+cargo zigbuild --release --target aarch64-unknown-linux-musl
+# the binary is at target/aarch64-unknown-linux-musl/release/fpm-monitor
+```
+
+Replace the target with any triple from the table above. To deploy inside a
+`php:*-fpm-alpine` container:
+
+```sh
 docker cp target/aarch64-unknown-linux-musl/release/fpm-monitor php-fpm:/usr/local/bin/fpm-monitor
 ```
 
 ### Linux packages (Red Hat / Debian)
 
-Static (musl) `.deb` and `.rpm` packages are attached to each
-[release](https://github.com/filoucrackeur/fpm-monitor/releases). They have no external
-dependency and work on any recent RHEL, Fedora, CentOS, Debian or Ubuntu
-version (x86_64 and ARM64).
+`.deb` and `.rpm` packages are attached to each release for amd64, arm64,
+armhf, i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64. The musl ones
+have no external dependency and work on any recent RHEL, Fedora, CentOS, Debian
+or Ubuntu version.
 
 - **Red Hat, Fedora, CentOS**:
   ```sh
-  sudo dnf install fpm-monitor_<version>_amd64.rpm
+  sudo dnf install fpm-monitor-<version>-1.x86_64.rpm
   ```
 - **Debian, Ubuntu**:
   ```sh
   sudo apt install ./fpm-monitor_<version>_amd64.deb
   ```
-- On ARM64, use the `arm64` packages instead.
+- On other architectures, replace `amd64`/`x86_64` with the matching package
+  name (`arm64`, `armhf`, `i386`, `riscv64`, `ppc64el`, `ppc64`, `s390x`,
+  `loong64`, `sparc64`).
 
 ### macOS (Homebrew)
 
@@ -91,8 +141,8 @@ brew install fpm-monitor
 
 ### Docker
 
-A multi-arch image (`linux/amd64`, `linux/arm64`) is published on GitHub
-Container Registry:
+A multi-arch image is published on GitHub Container Registry for
+`linux/amd64`, `linux/arm64`, `linux/ppc64le` and `linux/riscv64`:
 
 ```sh
 docker pull ghcr.io/filoucrackeur/fpm-monitor:latest
@@ -154,15 +204,21 @@ even if a `/proc` read is slow, rendering keeps going.
 | `src/tui.rs`      | Interactive dashboard (4 tabs, graphs)              |
 | `src/i18n.rs`     | Localization (8 languages, `--lang`)                |
 | `src/term.rs`     | Color detection / styles                            |
+| `tests/cli.rs`    | End-to-end CLI tests (`--help`, `--mock`, i18n)      |
+| `.github/workflows` | CI (tests, coverage, 18 builds, QEMU smoke tests) |
 
 ## Development
 
 ```sh
 cargo build          # build (debug)
-cargo test           # run the unit tests
-cargo clippy         # lint
+cargo test           # unit + integration tests
+cargo clippy --all-targets -- -D warnings
 cargo fmt --check    # formatting
 ```
+
+CI runs the test suite on Linux, macOS and Windows, on the MSRV (Rust 1.78),
+uploads coverage to Codecov, cross-compiles the 18 release targets and executes
+the foreign-architecture binaries under QEMU.
 
 ## License
 

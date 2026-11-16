@@ -20,20 +20,63 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux — static musl where Rust ships a prebuilt std.
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             zig: true
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             zig: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            zig: true
+          - os: ubuntu-latest
+            target: arm-unknown-linux-musleabihf
+            zig: true
+          - os: ubuntu-latest
+            target: armv5te-unknown-linux-musleabi
+            zig: true
+          - os: ubuntu-latest
+            target: i686-unknown-linux-musl
+            zig: true
+          - os: ubuntu-latest
+            target: i586-unknown-linux-musl
+            zig: true
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-musl
+            zig: true
+          - os: ubuntu-latest
+            target: powerpc64le-unknown-linux-musl
+            zig: true
+          - os: ubuntu-latest
+            target: powerpc64-unknown-linux-musl
+            zig: true
+          # Linux — glibc targets without a musl prebuilt std.
+          - os: ubuntu-latest
+            target: s390x-unknown-linux-gnu
+            zig: true
+          - os: ubuntu-latest
+            target: loongarch64-unknown-linux-gnu
+            zig: true
+          - os: ubuntu-latest
+            target: sparc64-unknown-linux-gnu
+            zig: true
+          # macOS.
           - os: macos-latest
             target: aarch64-apple-darwin
             zig: false
           - os: macos-15-intel
             target: x86_64-apple-darwin
             zig: false
+          # Windows.
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            zig: false
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            zig: false
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
             zig: false
     steps:
       - name: Checkout
@@ -45,27 +88,39 @@ jobs:
       - name: Install Zig
         if: matrix.zig
         uses: goto-bus-stop/setup-zig@v2
-      - name: Set up zig-cc linker
+      - name: Install cargo-zigbuild
         if: matrix.zig
-        run: |
-          printf '#!/bin/sh\nexec zig cc "$@"\n' | sudo tee /usr/local/bin/zig-cc > /dev/null
-          sudo chmod +x /usr/local/bin/zig-cc
+        run: cargo install cargo-zigbuild --locked
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: . -> target
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build (cross)
+        if: matrix.zig
+        run: cargo zigbuild --release --locked --target ${{ matrix.target }}
+      - name: Build (native)
+        if: ${{ !matrix.zig }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Smoke test (native)
+        if: ${{ !matrix.zig }}
+        shell: bash
+        run: |
+          bin="target/${{ matrix.target }}/release/fpm-monitor"
+          [ -f "$bin.exe" ] && bin="$bin.exe"
+          "$bin" --help > /dev/null
+          "$bin" --lang fr --help > /dev/null
+          "$bin" --mock --no-color | grep -q www
       - name: Stage binary
         shell: bash
         run: |
           mkdir -p "$GITHUB_WORKSPACE/stage"
-          cd "$GITHUB_WORKSPACE/target/${{ matrix.target }}/release"
-          if [ -f fpm-monitor.exe ]; then
-            cp fpm-monitor.exe "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}.exe"
+          src="target/${{ matrix.target }}/release/fpm-monitor"
+          if [ -f "$src.exe" ]; then
+            cp "$src.exe" "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}.exe"
           else
-            cp fpm-monitor "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}"
+            cp "$src" "$GITHUB_WORKSPACE/stage/fpm-monitor-${{ matrix.target }}"
           fi
+          file "$GITHUB_WORKSPACE/stage/"* || true
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -74,7 +129,7 @@ jobs:
           if-no-files-found: error
 
   package:
-    name: Package (deb/rpm, ${{ matrix.arch }})
+    name: Package (deb/rpm, ${{ matrix.deb }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -83,8 +138,44 @@ jobs:
         include:
           - target: x86_64-unknown-linux-musl
             arch: amd64
+            deb: amd64
+            rpm: x86_64
           - target: aarch64-unknown-linux-musl
             arch: arm64
+            deb: arm64
+            rpm: aarch64
+          - target: armv7-unknown-linux-musleabihf
+            arch: armv7
+            deb: armhf
+            rpm: armv7hl
+          - target: i686-unknown-linux-musl
+            arch: 386
+            deb: i386
+            rpm: i386
+          - target: riscv64gc-unknown-linux-musl
+            arch: riscv64
+            deb: riscv64
+            rpm: riscv64
+          - target: powerpc64le-unknown-linux-musl
+            arch: ppc64le
+            deb: ppc64el
+            rpm: ppc64le
+          - target: powerpc64-unknown-linux-musl
+            arch: ppc64
+            deb: ppc64
+            rpm: ppc64
+          - target: s390x-unknown-linux-gnu
+            arch: s390x
+            deb: s390x
+            rpm: s390x
+          - target: loongarch64-unknown-linux-gnu
+            arch: loong64
+            deb: loong64
+            rpm: loongarch64
+          - target: sparc64-unknown-linux-gnu
+            arch: sparc64
+            deb: sparc64
+            rpm: sparc64
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -102,18 +193,22 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           sed -e "s/__ARCH__/${{ matrix.arch }}/" \
+              -e "s/__DEB_ARCH__/${{ matrix.deb }}/" \
+              -e "s/__RPM_ARCH__/${{ matrix.rpm }}/" \
               -e "s/__VERSION__/$VERSION/" \
               -e "s|__SRC__|$GITHUB_WORKSPACE/build/fpm-monitor-${{ matrix.target }}|" \
               nfpm.yaml > /tmp/nfpm.yaml
+          cat /tmp/nfpm.yaml
       - name: Build packages
         run: |
           mkdir -p dist
           nfpm package --packager deb --config /tmp/nfpm.yaml --target dist/
           nfpm package --packager rpm --config /tmp/nfpm.yaml --target dist/
+          ls -la dist
       - name: Upload packages
         uses: actions/upload-artifact@v7
         with:
-          name: packages-${{ matrix.arch }}
+          name: packages-${{ matrix.deb }}
           path: dist
           if-no-files-found: error
 
@@ -204,7 +299,7 @@ jobs:
           fi
 
   docker:
-    name: Docker image (GHCR)
+    name: Docker image (GHCR, 4 architectures)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -236,7 +331,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -259,6 +354,14 @@ jobs:
           merge-multiple: true
       - name: Inspect artifacts
         run: ls -la artifacts/
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum > /tmp/SHA256SUMS
+          mv /tmp/SHA256SUMS SHA256SUMS
+          cat SHA256SUMS
       - name: Publish release
         uses: softprops/action-gh-release@v3
         with:
@@ -266,16 +369,35 @@ jobs:
           body: |
             ## fpm-monitor ${{ github.ref_name }}
 
-            ### Binaries
-            - `x86_64-unknown-linux-musl` — Linux x86_64 (static)
-            - `aarch64-unknown-linux-musl` — Linux ARM64 (static, e.g. `php:8.x-fpm-alpine` on ARM)
-            - `aarch64-apple-darwin` — macOS Apple Silicon
-            - `x86_64-apple-darwin` — macOS Intel
+            ### Static Linux binaries (musl)
+            - `x86_64-unknown-linux-musl` — amd64
+            - `aarch64-unknown-linux-musl` — arm64
+            - `armv7-unknown-linux-musleabihf` — armv7 (32-bit hard-float)
+            - `arm-unknown-linux-musleabihf` — armv6 (32-bit hard-float)
+            - `armv5te-unknown-linux-musleabi` — armv5 (32-bit soft-float)
+            - `i686-unknown-linux-musl` — 386
+            - `i586-unknown-linux-musl` — i586
+            - `riscv64gc-unknown-linux-musl` — riscv64
+            - `powerpc64le-unknown-linux-musl` — ppc64le
+            - `powerpc64-unknown-linux-musl` — ppc64 (big-endian)
+
+            ### Linux glibc binaries
+            - `s390x-unknown-linux-gnu` — s390x
+            - `loongarch64-unknown-linux-gnu` — loong64
+            - `sparc64-unknown-linux-gnu` — sparc64
+
+            ### macOS
+            - `aarch64-apple-darwin` — Apple Silicon
+            - `x86_64-apple-darwin` — Intel
+
+            ### Windows
             - `x86_64-pc-windows-msvc.exe` — Windows x86_64
+            - `i686-pc-windows-msvc.exe` — Windows x86 (32-bit)
+            - `aarch64-pc-windows-msvc.exe` — Windows on ARM64
 
             ### Linux packages
-            - `fpm-monitor_<version>_amd64.deb` / `.rpm` — Red Hat, Fedora, Debian, Ubuntu (x86_64)
-            - `fpm-monitor_<version>_arm64.deb` / `.rpm` — Red Hat, Fedora, Debian, Ubuntu (ARM64)
+            `.deb` and `.rpm` packages are provided for amd64, arm64, armhf,
+            i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64.
 
             ### Homebrew
             ```sh
@@ -283,6 +405,8 @@ jobs:
             ```
 
             ### Docker
+            A multi-arch image is published for `linux/amd64`, `linux/arm64`,
+            `linux/ppc64le` and `linux/riscv64`:
             ```sh
             docker pull ghcr.io/filoucrackeur/fpm-monitor:${{ github.ref_name }}
             docker run --rm --pid=host -v /etc/php-fpm.d:/etc/php-fpm.d:ro \
@@ -290,7 +414,7 @@ jobs:
             ```
 
             ### Checksums
-            See the attached binaries; verify with `shasum -a 256`.
+            Verify the attached files with `sha256sum -c SHA256SUMS`.
           files: |
             artifacts/*
             LICENSE
