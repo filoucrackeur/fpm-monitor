@@ -197,6 +197,8 @@ jobs:
       - name: Install Zig
         if: matrix.zig
         uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.17.1
       - name: Install cargo-zigbuild
         if: matrix.zig
         run: cargo install cargo-zigbuild --locked
@@ -216,7 +218,8 @@ jobs:
           [ -f "$bin.exe" ] && bin="$bin.exe"
           "$bin" --help > /dev/null
           "$bin" --lang fr --help > /dev/null
-          "$bin" --mock --no-color | grep -q www
+          "$bin" --mock --no-color > mock.txt
+          grep -q www mock.txt
       - name: Stage binary
         shell: bash
         run: |
@@ -293,7 +296,8 @@ jobs:
           bin="/smoke/fpm-monitor-${{ matrix.target }}"
           docker run --rm --platform "$plat" -v "$PWD/smoke:/smoke:ro" "$img" "$bin" --help > /dev/null
           docker run --rm --platform "$plat" -v "$PWD/smoke:/smoke:ro" "$img" "$bin" --lang fr --help > /dev/null
-          docker run --rm --platform "$plat" -v "$PWD/smoke:/smoke:ro" "$img" "$bin" --mock --no-color | grep -q www
+          docker run --rm --platform "$plat" -v "$PWD/smoke:/smoke:ro" "$img" "$bin" --mock --no-color > mock.txt
+          grep -q www mock.txt
 
   docker:
     name: Docker image (multi-arch build)

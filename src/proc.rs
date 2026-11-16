@@ -114,6 +114,14 @@ pub fn accept_backlog(listen: &str) -> Option<u32> {
 
 /// Sépare "ip:port" ou "port" → (hôte, port).
 /// Sans hôte, php-fpm écoute sur 0.0.0.0 (INADDR_ANY) : on renvoie "".
+#[cfg(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
 fn split_listen(listen: &str) -> (String, u16) {
     let l = listen.trim();
     match l.rsplit_once(':') {
@@ -155,6 +163,14 @@ fn read_first_arg(pid: i32) -> Option<String> {
     }
 }
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
 pub fn pool_name(cmd: &str) -> Option<String> {
     let idx = cmd.find("pool ")?;
     let name = cmd[idx + 5..].trim();
@@ -446,6 +462,14 @@ pub fn accept_backlog(_listen: &str) -> Option<u32> {
 mod tests {
     use super::*;
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))]
     #[test]
     fn extract_pool_name() {
         assert_eq!(pool_name("php-fpm: pool www").as_deref(), Some("www"));
@@ -457,6 +481,14 @@ mod tests {
         assert_eq!(pool_name("nginx"), None);
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))]
     #[test]
     fn split_listen_addr() {
         assert_eq!(split_listen("9001"), ("".to_string(), 9001));
@@ -467,6 +499,14 @@ mod tests {
         );
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))]
     #[test]
     fn split_listen_edge_cases() {
         assert_eq!(
@@ -479,6 +519,14 @@ mod tests {
         assert_eq!(split_listen("not-a-port"), ("".to_string(), 9000));
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))]
     #[test]
     fn pool_name_accepts_spaces() {
         assert_eq!(
