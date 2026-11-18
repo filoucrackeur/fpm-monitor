@@ -20,6 +20,11 @@ OUT_DIR="$3"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 mkdir -p "$OUT_DIR"
+# Resolve to absolute paths: the Windows branch changes directory before
+# invoking zip, and a relative output directory would then point inside the
+# temporary staging tree.
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+BIN_DIR="$(cd "$BIN_DIR" && pwd)"
 
 shopt -s nullglob
 found=0

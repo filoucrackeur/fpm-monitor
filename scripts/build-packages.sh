@@ -24,6 +24,8 @@ command -v "$NFPM" >/dev/null 2>&1 || {
 }
 
 mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+BIN_DIR="$(cd "$BIN_DIR" && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
