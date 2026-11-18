@@ -68,8 +68,8 @@ Les archives sont autonomes : elles contiennent l'exécutable `fpm-monitor`,
 `LICENSE` et `README.md` :
 
 ```sh
-tar -xzf fpm-monitor-1.0.0-x86_64-unknown-linux-musl.tar.gz
-./fpm-monitor-1.0.0-x86_64-unknown-linux-musl/fpm-monitor --help
+tar -xzf fpm-monitor-1.1.0-x86_64-unknown-linux-musl.tar.gz
+./fpm-monitor-1.1.0-x86_64-unknown-linux-musl/fpm-monitor --help
 ```
 
 Ou utilisez directement le binaire brut :
