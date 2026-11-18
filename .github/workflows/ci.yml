@@ -64,7 +64,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Install Rust 1.78
-        uses: dtolnay/rust-toolchain@1.78
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.78"
       - name: Cache
         uses: Swatinem/rust-cache@v2
       - name: Run tests
@@ -110,7 +112,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate coverage
-        run: cargo llvm-cov --locked --all-targets --lcov --output-path lcov.info --fail-under-lines 60
+        run: cargo llvm-cov --locked --all-targets --lcov --output-path lcov.info --fail-under-lines 75
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v7
         with:

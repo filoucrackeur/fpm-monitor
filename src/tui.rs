@@ -1383,4 +1383,179 @@ mod tests {
         assert_eq!(join_left_right("abcdef", "xy", 4), "abxy");
         assert_eq!(join_left_right("a", "b", 1), "ab");
     }
+
+    fn sample_row() -> Row {
+        Row {
+            name: "www".to_string(),
+            cfg: Some(crate::config::PoolConfig {
+                pm: Some("dynamic".to_string()),
+                listen: Some("127.0.0.1:9000".to_string()),
+                max_children: Some(10),
+                max_requests: Some(500),
+                min_spare_servers: Some(2),
+                max_spare_servers: Some(5),
+                raw: vec![("pm".to_string(), "dynamic".to_string())],
+                ..Default::default()
+            }),
+            workers: 5,
+            running: 2,
+            idle: 1,
+            backlog: Some(4),
+            backlog_max: Some(511),
+            scan: Some(crate::proc::PoolScan {
+                name: "www".to_string(),
+                workers: vec![
+                    crate::proc::Worker {
+                        pid: 10,
+                        state: 'R',
+                        rss_kb: 2048,
+                    },
+                    crate::proc::Worker {
+                        pid: 11,
+                        state: 'S',
+                        rss_kb: 1024,
+                    },
+                    crate::proc::Worker {
+                        pid: 12,
+                        state: 'Z',
+                        rss_kb: -1,
+                    },
+                    crate::proc::Worker {
+                        pid: 13,
+                        state: 'D',
+                        rss_kb: 0,
+                    },
+                    crate::proc::Worker {
+                        pid: 14,
+                        state: '?',
+                        rss_kb: 4096,
+                    },
+                ],
+            }),
+        }
+    }
+
+    #[test]
+    fn frame_helpers_draw_full_width() {
+        let mut s = String::new();
+        top_border(&mut s, 10);
+        assert!(s.contains('╭') && s.contains('╮'));
+        assert_eq!(s.matches('─').count(), 8);
+
+        bottom_border(&mut s, 10);
+        assert!(s.contains('╰') && s.contains('╯'));
+
+        sep(&mut s, 10);
+        assert!(s.contains('├') && s.contains('┤'));
+
+        let before = s.len();
+        line(&mut s, 10, "hello");
+        assert!(s.len() > before);
+        assert!(s.contains("hello"));
+
+        assert!(plain_len(&title()) > 0);
+        assert!(tabs_line(0).contains("[1 "));
+        assert!(tabs_line(3).contains("[4 "));
+        assert!(plain_len(&help_line()) > 0);
+    }
+
+    #[test]
+    fn monitoring_renders_summary_rows_and_workers() {
+        let row = sample_row();
+        let text = monitoring(&[row], &[1], 80).join("\n");
+        assert!(text.contains("www"));
+        assert!(text.contains("dynamic"));
+        assert!(text.contains("4/511"));
+        assert!(text.contains("2.0M"));
+        assert!(text.contains("pid=10"));
+        // Only the first four workers are listed, then the ellipsis line.
+        assert!(text.contains("pid=13"));
+        assert!(!text.contains("pid=14"));
+        assert!(text.contains('…'));
+
+        let empty = monitoring(&[], &[], 80).join("\n");
+        assert!(!empty.is_empty());
+    }
+
+    #[test]
+    fn worker_lines_skip_negative_rss_and_handle_unknown_state() {
+        let mut row = sample_row();
+        row.scan = Some(crate::proc::PoolScan {
+            name: "www".to_string(),
+            workers: vec![crate::proc::Worker {
+                pid: 42,
+                state: '?',
+                rss_kb: -1,
+            }],
+        });
+        let lines = worker_lines(&row);
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains("pid=42"));
+        assert!(!lines[0].contains("rss="));
+
+        row.scan = None;
+        assert!(worker_lines(&row).is_empty());
+    }
+
+    #[test]
+    fn graphs_render_empty_and_selected_pool() {
+        assert!(graphs(&[], &[], 80, 24, 0)
+            .join("\n")
+            .contains(i18n::l().no_pool));
+
+        let history = vec![Sample {
+            t: 100,
+            points: vec![("www".to_string(), 5, 2, 1, 4)],
+        }];
+        let text = graphs(&[sample_row()], &history, 80, 24, 0).join("\n");
+        assert!(text.contains("www"));
+        assert!(text.contains("dynamic"));
+        assert!(text.contains("max_requests=500"));
+    }
+
+    #[test]
+    fn logs_tab_renders_entries_and_empty_state() {
+        let logs = vec![crate::logs::PoolLogs {
+            name: "www".to_string(),
+            php_log: Some("/var/log/php.log".to_string()),
+            slow_log: None,
+            access_log: None,
+            php: vec!["PHP message: boom".to_string()],
+            slow: Vec::new(),
+            access: Vec::new(),
+        }];
+        let text = logs_tab(&[sample_row()], &logs, 80, 24, 0).join("\n");
+        assert!(text.contains("www"));
+        assert!(text.contains("PHP message: boom"));
+        assert!(text.contains("/var/log/php.log"));
+
+        assert!(logs_tab(&[], &[], 80, 24, 0)
+            .join("\n")
+            .contains(i18n::l().no_pool));
+    }
+
+    #[test]
+    fn configs_render_empty_global_and_unknown_pool() {
+        assert!(configs(&crate::config::Config::default(), &[], 0)
+            .join("\n")
+            .contains(i18n::l().no_config));
+
+        let mut cfg = crate::config::Config::default();
+        cfg.globals
+            .push(("error_log".to_string(), "/tmp/php.log".to_string()));
+        let text = configs(&cfg, &["global".to_string()], 0).join("\n");
+        assert!(text.contains("error_log"));
+        assert!(text.contains("/tmp/php.log"));
+
+        cfg.pools
+            .insert("www".to_string(), sample_row().cfg.unwrap());
+        let text = configs(&cfg, &["www".to_string()], 0).join("\n");
+        assert!(text.contains("www"));
+        assert!(text.contains("dynamic"));
+        assert!(text.contains("listen 127.0.0.1:9000"));
+
+        assert!(configs(&cfg, &["missing".to_string()], 0)
+            .join("\n")
+            .contains(i18n::l().unknown_pool));
+    }
 }
