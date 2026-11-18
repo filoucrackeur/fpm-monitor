@@ -61,9 +61,18 @@ est disponible en 8 langues (défaut : anglais) via `--lang`.
 ### Binaires prêts à l'emploi
 
 Chaque [release](https://github.com/filoucrackeur/fpm-monitor/releases) contient
-les binaires de toutes les cibles, les paquets `.deb`/`.rpm` et une formule
-Homebrew. Téléchargez le fichier correspondant à votre architecture, rendez-le
-exécutable et lancez-le :
+les binaires de toutes les cibles, une archive par cible (`.tar.gz` sous Unix,
+`.zip` sous Windows), les paquets `.deb`/`.rpm` et une formule Homebrew.
+
+Les archives sont autonomes : elles contiennent l'exécutable `fpm-monitor`,
+`LICENSE` et `README.md` :
+
+```sh
+tar -xzf fpm-monitor-1.0.0-x86_64-unknown-linux-musl.tar.gz
+./fpm-monitor-1.0.0-x86_64-unknown-linux-musl/fpm-monitor --help
+```
+
+Ou utilisez directement le binaire brut :
 
 ```sh
 chmod +x fpm-monitor-x86_64-unknown-linux-musl
@@ -109,9 +118,9 @@ docker cp target/aarch64-unknown-linux-musl/release/fpm-monitor php-fpm:/usr/loc
 ### Paquets Linux (Red Hat / Debian)
 
 Des paquets `.deb` et `.rpm` sont joints à chaque release pour amd64, arm64,
-armhf, i386, riscv64, ppc64el, ppc64, s390x, loong64 et sparc64. Les paquets
-musl n'ont aucune dépendance externe et fonctionnent sur toute version récente
-de RHEL, Fedora, CentOS, Debian ou Ubuntu.
+armhf, armel, i386, riscv64, ppc64el, ppc64, s390x, loong64 et sparc64. Les
+paquets musl n'ont aucune dépendance externe et fonctionnent sur toute version
+récente de RHEL, Fedora, CentOS, Debian ou Ubuntu.
 
 - **Red Hat, Fedora, CentOS** :
   ```sh
@@ -122,8 +131,20 @@ de RHEL, Fedora, CentOS, Debian ou Ubuntu.
   sudo apt install ./fpm-monitor_<version>_amd64.deb
   ```
 - Sur les autres architectures, remplacez `amd64`/`x86_64` par le nom du paquet
-  correspondant (`arm64`, `armhf`, `i386`, `riscv64`, `ppc64el`, `ppc64`,
-  `s390x`, `loong64`, `sparc64`).
+  correspondant (`arm64`, `armhf`, `armel`, `i386`, `riscv64`, `ppc64el`,
+  `ppc64`, `s390x`, `loong64`, `sparc64`).
+
+Pour régénérer localement les archives et les paquets depuis un `target/`
+existant :
+
+```sh
+mkdir -p dist/bin
+for t in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+  cp "target/$t/release/fpm-monitor" "dist/bin/fpm-monitor-$t"
+done
+scripts/release-artifacts.sh 1.0.0 dist/bin dist
+scripts/build-packages.sh 1.0.0 dist/bin dist   # nécessite nfpm dans le PATH
+```
 
 ### macOS (Homebrew)
 

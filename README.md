@@ -59,9 +59,18 @@ languages (default: English) via `--lang`.
 ### Prebuilt binaries
 
 Every [release](https://github.com/filoucrackeur/fpm-monitor/releases) contains
-raw binaries for all supported targets, `.deb`/`.rpm` packages and a Homebrew
-formula. Download the file matching your architecture, make it executable and
-run it:
+raw binaries for all supported targets, an archive per target (`.tar.gz` on
+Unix, `.zip` on Windows), `.deb`/`.rpm` packages and a Homebrew formula.
+
+The archives are self-contained: each one holds the `fpm-monitor` executable,
+`LICENSE` and `README.md`:
+
+```sh
+tar -xzf fpm-monitor-1.0.0-x86_64-unknown-linux-musl.tar.gz
+./fpm-monitor-1.0.0-x86_64-unknown-linux-musl/fpm-monitor --help
+```
+
+Or use the raw binary directly:
 
 ```sh
 chmod +x fpm-monitor-x86_64-unknown-linux-musl
@@ -107,9 +116,9 @@ docker cp target/aarch64-unknown-linux-musl/release/fpm-monitor php-fpm:/usr/loc
 ### Linux packages (Red Hat / Debian)
 
 `.deb` and `.rpm` packages are attached to each release for amd64, arm64,
-armhf, i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64. The musl ones
-have no external dependency and work on any recent RHEL, Fedora, CentOS, Debian
-or Ubuntu version.
+armhf, armel, i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64. The
+musl ones have no external dependency and work on any recent RHEL, Fedora,
+CentOS, Debian or Ubuntu version.
 
 - **Red Hat, Fedora, CentOS**:
   ```sh
@@ -120,8 +129,20 @@ or Ubuntu version.
   sudo apt install ./fpm-monitor_<version>_amd64.deb
   ```
 - On other architectures, replace `amd64`/`x86_64` with the matching package
-  name (`arm64`, `armhf`, `i386`, `riscv64`, `ppc64el`, `ppc64`, `s390x`,
-  `loong64`, `sparc64`).
+  name (`arm64`, `armhf`, `armel`, `i386`, `riscv64`, `ppc64el`, `ppc64`,
+  `s390x`, `loong64`, `sparc64`).
+
+To rebuild the archives and packages locally from an existing `target/`
+directory:
+
+```sh
+mkdir -p dist/bin
+for t in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+  cp "target/$t/release/fpm-monitor" "dist/bin/fpm-monitor-$t"
+done
+scripts/release-artifacts.sh 1.0.0 dist/bin dist
+scripts/build-packages.sh 1.0.0 dist/bin dist   # needs nfpm on PATH
+```
 
 ### macOS (Homebrew)
 

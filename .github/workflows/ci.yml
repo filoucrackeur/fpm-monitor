@@ -110,7 +110,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate coverage
-        run: cargo llvm-cov --locked --all-targets --lcov --output-path lcov.info
+        run: cargo llvm-cov --locked --all-targets --lcov --output-path lcov.info --fail-under-lines 60
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v7
         with:
@@ -262,6 +262,40 @@ jobs:
           path: stage
           if-no-files-found: error
 
+  packaging:
+    name: Packaging (archives + deb/rpm)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Download binaries
+        uses: actions/download-artifact@v8
+        with:
+          path: bin
+          merge-multiple: true
+      - name: Install nfpm
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+      - name: Build archives and packages
+        run: |
+          scripts/release-artifacts.sh 0.0.0 bin dist
+          scripts/build-packages.sh 0.0.0 bin dist
+      - name: Verify artifact count
+        run: |
+          archives=$(find dist -maxdepth 1 \( -name '*.tar.gz' -o -name '*.zip' \) | wc -l)
+          packages=$(find dist -maxdepth 1 \( -name '*.deb' -o -name '*.rpm' \) | wc -l)
+          echo "archives=$archives packages=$packages"
+          [ "$archives" -ge 18 ] || { echo "expected at least 18 archives, got $archives" >&2; exit 1; }
+          [ "$packages" -ge 22 ] || { echo "expected at least 22 packages, got $packages" >&2; exit 1; }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-dist
+          path: dist
+          if-no-files-found: error
+
   smoke:
     name: Smoke test (${{ matrix.target }})
     needs: build
@@ -272,31 +306,31 @@ jobs:
         include:
           - target: x86_64-unknown-linux-musl
             platform: linux/amd64
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: aarch64-unknown-linux-musl
             platform: linux/arm64
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: armv7-unknown-linux-musleabihf
             platform: linux/arm/v7
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: arm-unknown-linux-musleabihf
             platform: linux/arm/v6
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: i686-unknown-linux-musl
             platform: linux/386
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: riscv64gc-unknown-linux-musl
             platform: linux/riscv64
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: powerpc64le-unknown-linux-musl
             platform: linux/ppc64le
-            image: alpine:3.22
+            image: alpine:3.24
             container: true
           - target: s390x-unknown-linux-gnu
             platform: linux/s390x
@@ -311,7 +345,7 @@ jobs:
           name: fpm-monitor-${{ matrix.target }}
           path: smoke
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Run binary under QEMU
         run: |
           chmod +x "smoke/fpm-monitor-${{ matrix.target }}"
@@ -330,11 +364,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64

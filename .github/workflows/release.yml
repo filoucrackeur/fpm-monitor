@@ -131,89 +131,50 @@ jobs:
           path: stage
           if-no-files-found: error
 
-  package:
-    name: Package (deb/rpm, ${{ matrix.deb }})
+  packaging:
+    name: Archives and packages
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: amd64
-            deb: amd64
-            rpm: x86_64
-          - target: aarch64-unknown-linux-musl
-            arch: arm64
-            deb: arm64
-            rpm: aarch64
-          - target: armv7-unknown-linux-musleabihf
-            arch: armv7
-            deb: armhf
-            rpm: armv7hl
-          - target: i686-unknown-linux-musl
-            arch: 386
-            deb: i386
-            rpm: i386
-          - target: riscv64gc-unknown-linux-musl
-            arch: riscv64
-            deb: riscv64
-            rpm: riscv64
-          - target: powerpc64le-unknown-linux-musl
-            arch: ppc64le
-            deb: ppc64el
-            rpm: ppc64le
-          - target: powerpc64-unknown-linux-musl
-            arch: ppc64
-            deb: ppc64
-            rpm: ppc64
-          - target: s390x-unknown-linux-gnu
-            arch: s390x
-            deb: s390x
-            rpm: s390x
-          - target: loongarch64-unknown-linux-gnu
-            arch: loong64
-            deb: loong64
-            rpm: loongarch64
-          - target: sparc64-unknown-linux-gnu
-            arch: sparc64
-            deb: sparc64
-            rpm: sparc64
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Download binary
+      - name: Download binaries
         uses: actions/download-artifact@v8
         with:
-          name: fpm-monitor-${{ matrix.target }}
-          path: build
+          path: bin
+          merge-multiple: true
       - name: Install nfpm
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
-      - name: Generate nfpm config
+      - name: Determine version
+        id: version
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          sed -e "s/__ARCH__/${{ matrix.arch }}/" \
-              -e "s/__DEB_ARCH__/${{ matrix.deb }}/" \
-              -e "s/__RPM_ARCH__/${{ matrix.rpm }}/" \
-              -e "s/__VERSION__/$VERSION/" \
-              -e "s|__SRC__|$GITHUB_WORKSPACE/build/fpm-monitor-${{ matrix.target }}|" \
-              nfpm.yaml > /tmp/nfpm.yaml
-          cat /tmp/nfpm.yaml
-      - name: Build packages
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build archives and packages
         run: |
-          mkdir -p dist
-          nfpm package --packager deb --config /tmp/nfpm.yaml --target dist/
-          nfpm package --packager rpm --config /tmp/nfpm.yaml --target dist/
+          scripts/release-artifacts.sh "${{ steps.version.outputs.value }}" bin dist
+          scripts/build-packages.sh "${{ steps.version.outputs.value }}" bin dist
           ls -la dist
-      - name: Upload packages
+      - name: Verify artifact count
+        run: |
+          archives=$(find dist -maxdepth 1 \( -name '*.tar.gz' -o -name '*.zip' \) | wc -l)
+          packages=$(find dist -maxdepth 1 \( -name '*.deb' -o -name '*.rpm' \) | wc -l)
+          echo "archives=$archives packages=$packages"
+          [ "$archives" -ge 18 ] || { echo "expected at least 18 archives, got $archives" >&2; exit 1; }
+          [ "$packages" -ge 22 ] || { echo "expected at least 22 packages, got $packages" >&2; exit 1; }
+      - name: Upload archives and packages
         uses: actions/upload-artifact@v7
         with:
-          name: packages-${{ matrix.deb }}
+          name: release-dist
           path: dist
           if-no-files-found: error
+
 
   formula:
     name: Homebrew formula
@@ -311,18 +272,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/filoucrackeur/fpm-monitor
           tags: |
@@ -331,7 +292,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64
@@ -343,7 +304,7 @@ jobs:
 
   publish:
     name: Publish GitHub Release
-    needs: [build, package, formula]
+    needs: [build, packaging, formula]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -398,9 +359,13 @@ jobs:
             - `i686-pc-windows-msvc.exe` — Windows x86 (32-bit)
             - `aarch64-pc-windows-msvc.exe` — Windows on ARM64
 
+            ### Archives
+            Every binary is also shipped as a `.tar.gz` (`.zip` on Windows)
+            containing the executable, `LICENSE` and `README.md`.
+
             ### Linux packages
             `.deb` and `.rpm` packages are provided for amd64, arm64, armhf,
-            i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64.
+            armel, i386, riscv64, ppc64el, ppc64, s390x, loong64 and sparc64.
 
             ### Homebrew
             ```sh
