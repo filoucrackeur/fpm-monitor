@@ -9,13 +9,14 @@
 ![Rust](https://img.shields.io/badge/rust-2021-orange?logo=rust) ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-blue) ![Architectures](https://img.shields.io/badge/architectures-18%20targets-blueviolet) ![Static musl](https://img.shields.io/badge/static-musl-blue)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/filoucrackeur/fpm-monitor/pkgs/container/fpm-monitor) [![Downloads](https://img.shields.io/github/downloads/filoucrackeur/fpm-monitor/total)](https://github.com/filoucrackeur/fpm-monitor/releases) [![Issues](https://img.shields.io/github/issues/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/issues) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/filoucrackeur/fpm-monitor/pulls) [![Last commit](https://img.shields.io/github/last-commit/filoucrackeur/fpm-monitor)](https://github.com/filoucrackeur/fpm-monitor/commits/main)
 
-**English** | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
+**English** | [Français](README.fr.md) | [简体中文](README.zh.md) | [العربية](README.ar.md) | [Español](README.es.md) | [Italiano](README.it.md) | [日本語](README.ja.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [हिन्दी](README.hi.md) | [Bahasa Indonesia](README.id.md) | [한국어](README.ko.md) | [Norsk](README.no.md) | [Svenska](README.sv.md) | [Suomi](README.fi.md) | [Dansk](README.da.md) | [Ελληνικά](README.el.md) | [Türkçe](README.tr.md) | [Polski](README.pl.md) | [Українська](README.uk.md) | [ไทย](README.th.md) | [Tiếng Việt](README.vi.md)
 
 PHP-FPM pool monitor written in Rust (a port of `fpm-monitor.c`), with an
 interactive terminal dashboard inspired by [Ember](https://github.com/alexandre-daubois/ember).
 It ships as a single, dependency-free binary and runs on **Linux, macOS and
 Windows**, across **18 target architectures**. The interface is available in 8
-languages (default: English) via `--lang`.
+languages (default: English) via `--lang`, and this documentation is translated
+into 22 languages.
 
 <p align="center">
   <img src="docs/screenshot.en.animated.svg" alt="fpm-monitor TUI — interactive dashboard (English)" width="700">
@@ -66,8 +67,8 @@ The archives are self-contained: each one holds the `fpm-monitor` executable,
 `LICENSE` and `README.md`:
 
 ```sh
-tar -xzf fpm-monitor-1.1.0-x86_64-unknown-linux-musl.tar.gz
-./fpm-monitor-1.1.0-x86_64-unknown-linux-musl/fpm-monitor --help
+tar -xzf fpm-monitor-<version>-x86_64-unknown-linux-musl.tar.gz
+./fpm-monitor-<version>-x86_64-unknown-linux-musl/fpm-monitor --help
 ```
 
 Or use the raw binary directly:
@@ -140,8 +141,8 @@ mkdir -p dist/bin
 for t in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
   cp "target/$t/release/fpm-monitor" "dist/bin/fpm-monitor-$t"
 done
-scripts/release-artifacts.sh 1.0.0 dist/bin dist
-scripts/build-packages.sh 1.0.0 dist/bin dist   # needs nfpm on PATH
+scripts/release-artifacts.sh <version> dist/bin dist
+scripts/build-packages.sh <version> dist/bin dist   # needs nfpm on PATH
 ```
 
 ### macOS (Homebrew)

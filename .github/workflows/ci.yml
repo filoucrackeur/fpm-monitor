@@ -31,6 +31,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Check formatting
         run: cargo fmt --all -- --check
+      - name: Check translated documentation
+        run: python3 scripts/check-readmes.py
 
   clippy:
     name: Clippy (${{ matrix.name }})
