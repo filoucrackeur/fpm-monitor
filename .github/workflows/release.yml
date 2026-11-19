@@ -216,6 +216,10 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
     steps:
+      - name: Check tap token
+        if: ${{ env.TAP_TOKEN == '' }}
+        run: |
+          echo "::warning::TAP_TOKEN is not configured; the Homebrew tap was not updated."
       - name: Checkout tap repository
         if: ${{ env.TAP_TOKEN != '' }}
         uses: actions/checkout@v7
