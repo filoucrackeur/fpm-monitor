@@ -381,6 +381,12 @@ jobs:
               ghcr.io/filoucrackeur/fpm-monitor:${{ github.ref_name }} -t
             ```
 
+            ### Languages
+            The interface is available in 22 languages through `--lang`:
+            `en` (default), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`,
+            `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`.
+            The README is translated into the same 22 languages.
+
             ### Checksums
             Verify the attached files with `sha256sum -c SHA256SUMS`.
           files: |
