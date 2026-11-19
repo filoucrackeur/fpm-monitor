@@ -14,7 +14,7 @@
 Rust로 작성된 PHP-FPM 풀 모니터입니다(`fpm-monitor.c`의 포팅). [Ember](https://github.com/alexandre-daubois/ember)에서
 영감을 받은 대화형 터미널 대시보드를 제공합니다.
 의존성이 없는 단일 바이너리로 배포되며 **Linux, macOS, Windows**에서
-**18개 대상 아키텍처**를 지원합니다. 인터페이스는 `--lang`을 통해 8개
+**18개 대상 아키텍처**를 지원합니다. 인터페이스는 `--lang`을 통해 22개
 언어(기본값: 영어)로 제공되며, 이 문서는
 22개 언어로 번역되어 있습니다.
 
@@ -189,7 +189,8 @@ Options:
       --no-color          색상 비활성화
   -t, --tui               대화형 대시보드 (탭, `←`/`→` 하위 탭)
       --interval <SEC>    TUI 새로 고침 간격 (기본값 1)
-      --lang <LANG>       인터페이스 언어: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       인터페이스 언어: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (기본값: en)
       --mock              데모 데이터 (로컬 테스트)
   -h, --help              이 도움말 표시
@@ -197,7 +198,7 @@ Options:
 
 ### 인터페이스 언어
 
-`--lang`은 `en`(미국, 기본값), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`를
+`--lang`은 `en`(미국, 기본값), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`를
 허용합니다(`--lang=fr` 형식도 허용됨). TUI 대시보드는 물론 CLI 출력(헤더,
 요약, 범례)과 `--help`에도 적용됩니다.
 
@@ -225,7 +226,7 @@ TUI는 터미널 전체를 채우고(동적 크기 조정) 반응성을 유지�
 | `src/logs.rs`     | PHP 로그 및 느린 쿼리 읽기                    |
 | `src/render.rs`   | 텍스트 출력 (CLI 표)                             |
 | `src/tui.rs`      | 대화형 대시보드 (4개 탭, 그래프)              |
-| `src/i18n.rs`     | 현지화 (8개 언어, `--lang`)                |
+| `src/i18n.rs`     | 현지화 (22개 언어, `--lang`)                |
 | `src/term.rs`     | 색상 감지 / 스타일                            |
 | `tests/cli.rs`    | 엔드투엔드 CLI 테스트 (`--help`, `--mock`, i18n)      |
 | `.github/workflows` | CI (테스트, 커버리지, 18개 빌드, QEMU 스모크 테스트) |

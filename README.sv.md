@@ -14,7 +14,7 @@
 PHP-FPM-poolövervakare skriven i Rust (en port av `fpm-monitor.c`), med en
 interaktiv terminalpanel inspirerad av [Ember](https://github.com/alexandre-daubois/ember).
 Den levereras som en enda beroendefri binär och körs på **Linux, macOS och
-Windows**, över **18 målarkitekturer**. Gränssnittet finns på 8 språk
+Windows**, över **18 målarkitekturer**. Gränssnittet finns på 22 språk
 (standard: engelska) via `--lang`, och den här dokumentationen är översatt till
 22 språk.
 
@@ -190,7 +190,8 @@ Alternativ:
       --no-color          Inaktivera färg
   -t, --tui               Interaktiv panel (flikar, `←`/`→` underflikar)
       --interval <SEC>    Uppdateringsintervall för TUI (standard 1)
-      --lang <LANG>       Gränssnittsspråk: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Gränssnittsspråk: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (standard: en)
       --mock              Demodata (lokalt test)
   -h, --help              Visa denna hjälp
@@ -198,7 +199,7 @@ Alternativ:
 
 ### Gränssnittsspråk
 
-`--lang` accepterar `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` accepterar `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (formen `--lang=fr` accepteras också). Det gäller både TUI-panelen och
 CLI-utdata (rubriker, sammanfattning, teckenförklaring) samt `--help`.
 
@@ -226,7 +227,7 @@ standard 1 s); även om en läsning av `/proc` är långsam fortsätter renderin
 | `src/logs.rs`     | Läsning av PHP-logg och långsamma frågor            |
 | `src/render.rs`   | Textutdata (CLI-tabell)                             |
 | `src/tui.rs`      | Interaktiv panel (4 flikar, grafer)                 |
-| `src/i18n.rs`     | Lokalisering (8 språk, `--lang`)                    |
+| `src/i18n.rs`     | Lokalisering (22 språk, `--lang`)                    |
 | `src/term.rs`     | Färgdetektering / stilar                            |
 | `tests/cli.rs`    | End-to-end-tester för CLI (`--help`, `--mock`, i18n) |
 | `.github/workflows` | CI (tester, täckning, 18 byggen, rökprovningar i QEMU) |

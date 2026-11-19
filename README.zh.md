@@ -14,7 +14,7 @@
 用 Rust 编写的 PHP-FPM 进程池监控工具（`fpm-monitor.c` 的移植版本），并带有一个受
 [Ember](https://github.com/alexandre-daubois/ember) 启发的交互式终端仪表盘。
 它以单个无依赖的二进制文件分发，可在 **Linux、macOS 和 Windows** 上运行，覆盖
-**18 种目标架构**。界面通过 `--lang` 提供 8 种语言（默认：英语），本文档也已翻译为
+**18 种目标架构**。界面通过 `--lang` 提供 22 种语言（默认：英语），本文档也已翻译为
 22 种语言。
 
 <p align="center">
@@ -179,7 +179,8 @@ fpm-monitor [OPTIONS]
       --no-color          禁用颜色
   -t, --tui               交互式仪表盘（标签页、`←`/`→` 子标签页）
       --interval <SEC>    TUI 刷新间隔（默认 1）
-      --lang <LANG>       界面语言：en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       界面语言：en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           （默认：en）
       --mock              演示数据（本地测试）
   -h, --help              显示此帮助
@@ -187,7 +188,7 @@ fpm-monitor [OPTIONS]
 
 ### 界面语言
 
-`--lang` 接受 `en`（美式，默认）、`fr`、`zh`、`ar`、`es`、`it`、`ja`、`de`
+`--lang` 接受 `en`（美式，默认）、`fr`、`zh`、`ar`、`es`、`it`、`ja`、`de`、`ru`、`hi`、`id`、`ko`、`no`、`sv`、`fi`、`da`、`el`、`tr`、`pl`、`uk`、`th`、`vi`
 （也接受 `--lang=fr` 形式）。它既适用于 TUI 仪表盘，也适用于 CLI 输出
 （表头、摘要、图例）和 `--help`。
 
@@ -214,7 +215,7 @@ TUI 会占满整个终端（支持动态调整大小）并保持响应：数据�
 | `src/logs.rs` | 读取 PHP 日志与慢查询 |
 | `src/render.rs` | 文本输出（CLI 表格） |
 | `src/tui.rs` | 交互式仪表盘（4 个标签页、图表） |
-| `src/i18n.rs` | 本地化（8 种语言、`--lang`） |
+| `src/i18n.rs` | 本地化（22 种语言、`--lang`） |
 | `src/term.rs` | 颜色检测 / 样式 |
 | `tests/cli.rs` | CLI 端到端测试（`--help`、`--mock`、i18n） |
 | `.github/workflows` | CI（测试、覆盖率、18 个构建、QEMU 冒烟测试） |

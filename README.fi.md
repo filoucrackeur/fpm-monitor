@@ -15,7 +15,7 @@ Rustilla kirjoitettu PHP-FPM-poolien valvontaohjelma (portti `fpm-monitor.c`:st�
 jossa on [Emberin](https://github.com/alexandre-daubois/ember) innoittama
 interaktiivinen päätekojelauta. Se toimitetaan yhtenä riippuvuudettomana
 binäärinä ja toimii **Linuxilla, macOS:llä ja Windowsilla** **18
-kohdearkkitehtuurilla**. Käyttöliittymä on saatavilla 8 kielellä (oletus:
+kohdearkkitehtuurilla**. Käyttöliittymä on saatavilla 22 kielellä (oletus:
 englanti) `--lang`-valitsimella, ja tämä dokumentaatio on käännetty 22 kielelle.
 
 <p align="center">
@@ -196,7 +196,8 @@ Valinnat:
       --no-color          Poista värit käytöstä
   -t, --tui               Interaktiivinen kojelauta (välilehdet, `←`/`→`-alivälilehdet)
       --interval <SEC>    TUI:n päivitysväli (oletus 1)
-      --lang <LANG>       Käyttöliittymän kieli: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Käyttöliittymän kieli: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (oletus: en)
       --mock              Demotiedot (paikallinen testi)
   -h, --help              Näytä tämä ohje
@@ -205,7 +206,7 @@ Valinnat:
 ### Käyttöliittymän kieli
 
 `--lang` hyväksyy arvot `en` (US, oletus), `fr`, `zh`, `ar`, `es`, `it`, `ja`,
-`de` (myös muoto `--lang=fr` käy). Se koskee TUI-kojelautaa sekä CLI-tulostetta
+`de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi` (myös muoto `--lang=fr` käy). Se koskee TUI-kojelautaa sekä CLI-tulostetta
 (otsikot, yhteenveto, selite) ja `--help`-ohjetta.
 
 ### TUI-kojelauta
@@ -232,7 +233,7 @@ vaikka `/proc`-luku olisi hidas, piirto jatkuu.
 | `src/logs.rs`     | PHP-lokin ja hitaiden kyselyjen luku                |
 | `src/render.rs`   | Tekstituloste (CLI-taulukko)                        |
 | `src/tui.rs`      | Interaktiivinen kojelauta (4 välilehteä, kaaviot)   |
-| `src/i18n.rs`     | Lokalisointi (8 kieltä, `--lang`)                   |
+| `src/i18n.rs`     | Lokalisointi (22 kieltä, `--lang`)                   |
 | `src/term.rs`     | Värintunnistus / tyylit                             |
 | `tests/cli.rs`    | CLI:n end-to-end-testit (`--help`, `--mock`, i18n)  |
 | `.github/workflows` | CI (testit, kattavuus, 18 koontia, QEMU-savutestit) |

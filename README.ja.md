@@ -15,7 +15,7 @@ Rust で書かれた PHP-FPM プールモニター（`fpm-monitor.c` の移植�
 [Ember](https://github.com/alexandre-daubois/ember) に着想を得た対話型ターミナル
 ダッシュボードを備えています。単一の依存関係のないバイナリとして提供され、
 **Linux、macOS、Windows** の **18 のターゲットアーキテクチャ**で動作します。
-インターフェースは `--lang` により 8 言語（デフォルト: 英語）で利用でき、
+インターフェースは `--lang` により 22 言語（デフォルト: 英語）で利用でき、
 このドキュメントは 22 言語に翻訳されています。
 
 <p align="center">
@@ -188,7 +188,8 @@ Options:
       --no-color          色を無効化
   -t, --tui               対話型ダッシュボード（タブ、`←`/`→` サブタブ）
       --interval <SEC>    TUI の更新間隔（デフォルト 1）
-      --lang <LANG>       インターフェース言語: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       インターフェース言語: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           （デフォルト: en）
       --mock              デモデータ（ローカルテスト）
   -h, --help              このヘルプを表示
@@ -196,7 +197,7 @@ Options:
 
 ### インターフェース言語
 
-`--lang` は `en`（US、デフォルト）、`fr`、`zh`、`ar`、`es`、`it`、`ja`、`de` を
+`--lang` は `en`（US、デフォルト）、`fr`、`zh`、`ar`、`es`、`it`、`ja`、`de`、`ru`、`hi`、`id`、`ko`、`no`、`sv`、`fi`、`da`、`el`、`tr`、`pl`、`uk`、`th`、`vi` を
 受け付けます（`--lang=fr` の形式も使用できます）。TUI ダッシュボードのほか、CLI 出力
 （ヘッダー、サマリー、凡例）と `--help` にも適用されます。
 
@@ -224,7 +225,7 @@ TUI はターミナル全体を占有し（動的なリサイズ）、応答性�
 | `src/logs.rs`     | PHP ログとスロークエリの読み取り                    |
 | `src/render.rs`   | テキスト出力（CLI の表）                            |
 | `src/tui.rs`      | 対話型ダッシュボード（4 タブ、グラフ）              |
-| `src/i18n.rs`     | ローカライズ（8 言語、`--lang`）                    |
+| `src/i18n.rs`     | ローカライズ（22 言語、`--lang`）                    |
 | `src/term.rs`     | 色の検出 / スタイル                                 |
 | `tests/cli.rs`    | エンドツーエンド CLI テスト（`--help`、`--mock`、i18n） |
 | `.github/workflows` | CI（テスト、カバレッジ、18 ビルド、QEMU スモークテスト） |

@@ -14,7 +14,7 @@
 PHP-FPM-poolovervågning skrevet i Rust (en port af `fpm-monitor.c`), med et
 interaktivt terminal-dashboard inspireret af [Ember](https://github.com/alexandre-daubois/ember).
 Det leveres som én enkelt binærfil uden afhængigheder og kører på **Linux, macOS
-og Windows** på tværs af **18 target-arkitekturer**. Grænsefladen findes i 8
+og Windows** på tværs af **18 target-arkitekturer**. Grænsefladen findes i 22
 sprog (standard: engelsk) via `--lang`, og denne dokumentation er oversat til
 22 sprog.
 
@@ -189,7 +189,8 @@ Indstillinger:
       --no-color          Deaktiver farve
   -t, --tui               Interaktivt dashboard (faner, `←`/`→`-underfaner)
       --interval <SEC>    Opdateringsinterval for TUI (standard 1)
-      --lang <LANG>       Grænsefladesprog: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Grænsefladesprog: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (standard: en)
       --mock              Demodata (lokal test)
   -h, --help              Vis denne hjælp
@@ -197,7 +198,7 @@ Indstillinger:
 
 ### Grænsefladesprog
 
-`--lang` accepterer `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` accepterer `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (formen `--lang=fr` accepteres også). Det gælder både TUI-dashboardet og
 CLI-outputtet (overskrifter, oversigt, forklaring) samt `--help`.
 
@@ -226,7 +227,7 @@ renderingen.
 | `src/logs.rs`     | Læsning af PHP-log og langsomme forespørgsler       |
 | `src/render.rs`   | Tekstoutput (CLI-tabel)                             |
 | `src/tui.rs`      | Interaktivt dashboard (4 faner, grafer)             |
-| `src/i18n.rs`     | Lokalisering (8 sprog, `--lang`)                    |
+| `src/i18n.rs`     | Lokalisering (22 sprog, `--lang`)                    |
 | `src/term.rs`     | Farvedetektering / stilarter                        |
 | `tests/cli.rs`    | End-to-end CLI-tests (`--help`, `--mock`, i18n)     |
 | `.github/workflows` | CI (tests, dækning, 18 builds, QEMU-smoketests)   |

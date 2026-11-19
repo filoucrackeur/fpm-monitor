@@ -1,0 +1,63 @@
+use super::Labels;
+
+pub(super) const LABELS: &Labels = &Labels {
+    tab_monitoring: "모니터링",
+    tab_graphs: "그래프",
+    tab_logs: "로그",
+    tab_configs: "설정",
+    pools: "풀",
+    workers: "워커",
+    running: "실행 중",
+    idle: "유휴",
+    backlog: "백로그",
+    mem: "메모리",
+    master: "마스터",
+    help: "q 종료 · Tab 다음 탭 · 1-4 탭 · ← → 하위 탭 · ↑ ↓ 모니터링",
+    no_pool: "풀이 감지되지 않았습니다.",
+    last_measurements: "최근 {}회 측정",
+    g_running: "실행 중",
+    g_workers: "워커",
+    g_idle: "유휴",
+    g_backlog: "백로그",
+    log_php: "PHP 로그",
+    slow_queries: "느린 쿼리",
+    access: "액세스",
+    no_entries: "(항목 없음)",
+    older_lines: "이전 줄 +{}개",
+    more_workers: "+{}개 더",
+    pool_configs: "풀 설정",
+    no_config: "설정을 찾을 수 없습니다.",
+    unknown_pool: "알 수 없는 풀입니다.",
+    no_directives: "(읽은 지시문 없음)",
+    master_pid: "마스터 PID",
+    legend: "범례:",
+    leg_red: "빨강 = 포화/백로그",
+    leg_green: "초록 = 정상/유휴",
+    leg_white: "흰색 = 중립/ondemand",
+    leg_blue: "파랑 = 활성/static",
+    read_proc: "/proc을(를) 읽을 수 없습니다 (Linux 필요): {}",
+    unknown_option: "알 수 없는 옵션: {}",
+    run_help: "--help로 실행하세요",
+};
+
+pub(super) const USAGE: &str = "\
+fpm-monitor — PHP-FPM 풀 모니터 (fpm-monitor.c의 Rust 포팅)
+
+사용법: fpm-monitor [옵션]
+
+옵션:
+  -c, --config <경로>    분석할 php-fpm.conf 파일 또는 풀 디렉터리
+  -v, --verbose          각 워커의 상세 정보 표시 (pid, 상태, RSS)
+      --color            색상 강제 적용
+      --no-color         색상 비활성화
+  -t, --tui              대화형 대시보드 (Ember 스타일) — 탭
+                         모니터링, 그래프, 로그, 설정 (하위 탭은
+                         ← →로 이동). 종료: q / Ctrl-C
+      --interval <초>    TUI 새로 고침 간격 (기본값 1)
+      --lang <언어>      UI 언어: en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
+      --mock             데모 데이터 표시 (로컬 테스트)
+  -h, --help             이 도움말 표시
+
+감지는 자동입니다 (일반적인 위치 + include 지시문).
+";

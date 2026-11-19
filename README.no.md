@@ -15,7 +15,7 @@ PHP-FPM-poolovervåker skrevet i Rust (en port av `fpm-monitor.c`), med et
 interaktivt terminaldashbord inspirert av [Ember](https://github.com/alexandre-daubois/ember).
 Den leveres som én enkelt binærfil uten avhengigheter og kjører på **Linux, macOS
 og Windows**, på tvers av **18 målargitekturer**. Grensesnittet er tilgjengelig på
-8 språk (standard: engelsk) via `--lang`, og denne dokumentasjonen er oversatt
+22 språk (standard: engelsk) via `--lang`, og denne dokumentasjonen er oversatt
 til 22 språk.
 
 <p align="center">
@@ -191,7 +191,8 @@ Options:
       --no-color          Deaktiver farger
   -t, --tui               Interaktivt dashbord (faner, `←`/`→`-underfaner)
       --interval <SEC>    Oppdateringsintervall for TUI (standard 1)
-      --lang <LANG>       Grensesnittspråk: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Grensesnittspråk: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (standard: en)
       --mock              Demodata (lokal test)
   -h, --help              Vis denne hjelpen
@@ -199,7 +200,7 @@ Options:
 
 ### Grensesnittspråk
 
-`--lang` godtar `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` godtar `en` (US, standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (også formen `--lang=fr` godtas). Det gjelder både TUI-dashbordet og CLI-utdataene
 (overskrifter, sammendrag, tegnforklaring) og `--help`.
 
@@ -227,7 +228,7 @@ standard 1 s); selv om en `/proc`-lesing er treg, fortsetter gjengivelsen.
 | `src/logs.rs`     | Lesing av PHP-logg og trege spørringer              |
 | `src/render.rs`   | Tekstutdata (CLI-tabell)                            |
 | `src/tui.rs`      | Interaktivt dashbord (4 faner, grafer)              |
-| `src/i18n.rs`     | Lokalisering (8 språk, `--lang`)                    |
+| `src/i18n.rs`     | Lokalisering (22 språk, `--lang`)                    |
 | `src/term.rs`     | Fargedeteksjon / stiler                             |
 | `tests/cli.rs`    | Ende-til-ende-CLI-tester (`--help`, `--mock`, i18n) |
 | `.github/workflows` | CI (tester, dekning, 18 bygg, QEMU-røyktester)    |

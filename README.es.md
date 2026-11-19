@@ -15,7 +15,7 @@ Monitor de pools PHP-FPM escrito en Rust (un port de `fpm-monitor.c`), con un
 panel interactivo de terminal inspirado en [Ember](https://github.com/alexandre-daubois/ember).
 Se distribuye como un único binario sin dependencias y funciona en **Linux, macOS
 y Windows**, en **18 arquitecturas de destino**. La interfaz está disponible en
-8 idiomas (predeterminado: inglés) mediante `--lang`, y esta documentación está
+22 idiomas (predeterminado: inglés) mediante `--lang`, y esta documentación está
 traducida a 22 idiomas.
 
 <p align="center">
@@ -197,7 +197,8 @@ Opciones:
       --no-color          Desactiva el color
   -t, --tui               Panel interactivo (pestañas, subpestañas `←`/`→`)
       --interval <SEC>    Intervalo de actualización del TUI (predeterminado 1)
-      --lang <LANG>       Idioma de la interfaz: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Idioma de la interfaz: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (predeterminado: en)
       --mock              Datos de demostración (prueba local)
   -h, --help              Muestra esta ayuda
@@ -206,7 +207,7 @@ Opciones:
 ### Idioma de la interfaz
 
 `--lang` acepta `en` (US, predeterminado), `fr`, `zh`, `ar`, `es`, `it`, `ja`,
-`de` (también se acepta la forma `--lang=fr`). Se aplica al panel TUI, a la
+`de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi` (también se acepta la forma `--lang=fr`). Se aplica al panel TUI, a la
 salida de la CLI (encabezados, resumen, leyenda) y a `--help`.
 
 ### Panel TUI
@@ -234,7 +235,7 @@ dibujado continúa.
 | `src/logs.rs`     | Lectura del log de PHP y de las consultas lentas    |
 | `src/render.rs`   | Salida de texto (tabla CLI)                         |
 | `src/tui.rs`      | Panel interactivo (4 pestañas, gráficas)            |
-| `src/i18n.rs`     | Localización (8 idiomas, `--lang`)                  |
+| `src/i18n.rs`     | Localización (22 idiomas, `--lang`)                  |
 | `src/term.rs`     | Detección de color / estilos                        |
 | `tests/cli.rs`    | Pruebas de extremo a extremo de la CLI (`--help`, `--mock`, i18n) |
 | `.github/workflows` | CI (pruebas, cobertura, 18 compilaciones, pruebas de humo en QEMU) |

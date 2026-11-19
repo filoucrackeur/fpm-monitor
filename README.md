@@ -14,7 +14,7 @@
 PHP-FPM pool monitor written in Rust (a port of `fpm-monitor.c`), with an
 interactive terminal dashboard inspired by [Ember](https://github.com/alexandre-daubois/ember).
 It ships as a single, dependency-free binary and runs on **Linux, macOS and
-Windows**, across **18 target architectures**. The interface is available in 8
+Windows**, across **18 target architectures**. The interface is available in 22
 languages (default: English) via `--lang`, and this documentation is translated
 into 22 languages.
 
@@ -188,7 +188,8 @@ Options:
       --no-color          Disable color
   -t, --tui               Interactive dashboard (tabs, `←`/`→` sub-tabs)
       --interval <SEC>    TUI refresh interval (default 1)
-      --lang <LANG>       Interface language: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Interface language: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (default: en)
       --mock              Demo data (local test)
   -h, --help              Show this help
@@ -196,7 +197,7 @@ Options:
 
 ### Interface language
 
-`--lang` accepts `en` (US, default), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` accepts `en` (US, default), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (the `--lang=fr` form is also accepted). It applies to the TUI dashboard as well
 as the CLI output (headers, summary, legend) and `--help`.
 
@@ -224,7 +225,7 @@ even if a `/proc` read is slow, rendering keeps going.
 | `src/logs.rs`     | PHP log and slow queries reading                    |
 | `src/render.rs`   | Text output (CLI table)                             |
 | `src/tui.rs`      | Interactive dashboard (4 tabs, graphs)              |
-| `src/i18n.rs`     | Localization (8 languages, `--lang`)                |
+| `src/i18n.rs`     | Localization (22 languages, `--lang`)                |
 | `src/term.rs`     | Color detection / styles                            |
 | `tests/cli.rs`    | End-to-end CLI tests (`--help`, `--mock`, i18n)      |
 | `.github/workflows` | CI (tests, coverage, 18 builds, QEMU smoke tests) |

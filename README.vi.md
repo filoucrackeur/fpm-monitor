@@ -15,7 +15,7 @@ Trình giám sát pool PHP-FPM viết bằng Rust (bản chuyển từ `fpm-moni
 bảng điều khiển tương tác trên terminal lấy cảm hứng từ
 [Ember](https://github.com/alexandre-daubois/ember). Ứng dụng được phát hành dưới
 dạng một tệp nhị phân duy nhất, không phụ thuộc, chạy trên **Linux, macOS và
-Windows**, trên **18 kiến trúc mục tiêu**. Giao diện có sẵn 8 ngôn ngữ (mặc định:
+Windows**, trên **18 kiến trúc mục tiêu**. Giao diện có sẵn 22 ngôn ngữ (mặc định:
 tiếng Anh) qua `--lang`, và tài liệu này được dịch sang 22 ngôn ngữ.
 
 <p align="center">
@@ -185,7 +185,8 @@ Options:
       --no-color          tắt màu
   -t, --tui               bảng điều khiển tương tác (tab, tab con `←`/`→`)
       --interval <SEC>    khoảng thời gian làm mới TUI (mặc định 1)
-      --lang <LANG>       ngôn ngữ giao diện: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       ngôn ngữ giao diện: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (mặc định: en)
       --mock              dữ liệu demo (kiểm thử cục bộ)
   -h, --help              hiển thị trợ giúp này
@@ -193,7 +194,7 @@ Options:
 
 ### Ngôn ngữ giao diện
 
-`--lang` chấp nhận `en` (Mỹ, mặc định), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` chấp nhận `en` (Mỹ, mặc định), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (cũng chấp nhận dạng `--lang=fr`). Tùy chọn này áp dụng cho cả bảng điều khiển TUI
 lẫn đầu ra CLI (tiêu đề, tóm tắt, chú giải) và `--help`.
 
@@ -221,7 +222,7 @@ việc đọc `/proc` chậm, quá trình hiển thị vẫn tiếp tục.
 | `src/logs.rs`     | Đọc log PHP và truy vấn chậm                    |
 | `src/render.rs`   | Đầu ra văn bản (bảng CLI)                             |
 | `src/tui.rs`      | Bảng điều khiển tương tác (4 tab, biểu đồ)              |
-| `src/i18n.rs`     | Bản địa hóa (8 ngôn ngữ, `--lang`)                |
+| `src/i18n.rs`     | Bản địa hóa (22 ngôn ngữ, `--lang`)                |
 | `src/term.rs`     | Phát hiện màu / kiểu                            |
 | `tests/cli.rs`    | Kiểm thử CLI đầu-cuối (`--help`, `--mock`, i18n)      |
 | `.github/workflows` | CI (kiểm thử, độ phủ, 18 bản dựng, kiểm thử QEMU) |

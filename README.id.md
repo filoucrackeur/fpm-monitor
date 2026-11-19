@@ -15,7 +15,7 @@ Monitor pool PHP-FPM yang ditulis dalam Rust (port dari `fpm-monitor.c`), dengan
 dasbor terminal interaktif yang terinspirasi oleh
 [Ember](https://github.com/alexandre-daubois/ember). Dirilis sebagai satu biner
 tanpa dependensi dan berjalan di **Linux, macOS, dan Windows**, pada **18
-arsitektur target**. Antarmuka tersedia dalam 8 bahasa (default: Inggris)
+arsitektur target**. Antarmuka tersedia dalam 22 bahasa (default: Inggris)
 melalui `--lang`, dan dokumentasi ini diterjemahkan ke dalam 22 bahasa.
 
 <p align="center">
@@ -193,7 +193,8 @@ Pilihan:
       --no-color          Nonaktifkan warna
   -t, --tui               Dasbor interaktif (tab, sub-tab `←`/`→`)
       --interval <SEC>    Interval penyegaran TUI (default 1)
-      --lang <LANG>       Bahasa antarmuka: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Bahasa antarmuka: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (default: en)
       --mock              Data demo (uji lokal)
   -h, --help              Tampilkan bantuan ini
@@ -201,7 +202,7 @@ Pilihan:
 
 ### Bahasa antarmuka
 
-`--lang` menerima `en` (US, default), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` menerima `en` (US, default), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (bentuk `--lang=fr` juga diterima). Ini berlaku untuk dasbor TUI serta keluaran
 CLI (header, ringkasan, legenda) dan `--help`.
 
@@ -229,7 +230,7 @@ disegarkan di latar belakang pada interval yang ditentukan (`--interval`, defaul
 | `src/logs.rs` | Pembacaan log PHP dan kueri lambat |
 | `src/render.rs` | Keluaran teks (tabel CLI) |
 | `src/tui.rs` | Dasbor interaktif (4 tab, grafik) |
-| `src/i18n.rs` | Lokalisasi (8 bahasa, `--lang`) |
+| `src/i18n.rs` | Lokalisasi (22 bahasa, `--lang`) |
 | `src/term.rs` | Deteksi warna / gaya |
 | `tests/cli.rs` | Uji CLI end-to-end (`--help`, `--mock`, i18n) |
 | `.github/workflows` | CI (uji, cakupan, 18 build, uji asap QEMU) |

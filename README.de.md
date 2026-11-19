@@ -15,7 +15,7 @@ Ein in Rust geschriebener PHP-FPM-Pool-Monitor (ein Port von `fpm-monitor.c`) mi
 einem interaktiven Terminal-Dashboard nach dem Vorbild von
 [Ember](https://github.com/alexandre-daubois/ember). Er wird als einzelne,
 abhängigkeitsfreie Binärdatei ausgeliefert und läuft unter **Linux, macOS und
-Windows** auf **18 Zielarchitekturen**. Die Oberfläche ist über `--lang` in 8
+Windows** auf **18 Zielarchitekturen**. Die Oberfläche ist über `--lang` in 22
 Sprachen verfügbar (Standard: Englisch), und diese Dokumentation ist in 22
 Sprachen übersetzt.
 
@@ -191,7 +191,8 @@ Optionen:
       --no-color          Farbe deaktivieren
   -t, --tui               Interaktives Dashboard (Tabs, `←`/`→`-Untertabs)
       --interval <SEC>    Aktualisierungsintervall des TUI (Standard: 1)
-      --lang <LANG>       Sprache der Oberfläche: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Sprache der Oberfläche: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (Standard: en)
       --mock              Demodaten (lokaler Test)
   -h, --help              Diese Hilfe anzeigen
@@ -199,7 +200,7 @@ Optionen:
 
 ### Sprache der Oberfläche
 
-`--lang` akzeptiert `en` (US, Standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang` akzeptiert `en` (US, Standard), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 (die Form `--lang=fr` wird ebenfalls akzeptiert). Sie gilt sowohl für das
 TUI-Dashboard als auch für die CLI-Ausgabe (Kopfzeilen, Zusammenfassung, Legende)
 und für `--help`.
@@ -229,7 +230,7 @@ langsam ist, läuft die Darstellung weiter.
 | `src/logs.rs`     | Lesen des PHP-Logs und der langsamen Abfragen        |
 | `src/render.rs`   | Textausgabe (CLI-Tabelle)                            |
 | `src/tui.rs`      | Interaktives Dashboard (4 Tabs, Diagramme)           |
-| `src/i18n.rs`     | Lokalisierung (8 Sprachen, `--lang`)                 |
+| `src/i18n.rs`     | Lokalisierung (22 Sprachen, `--lang`)                 |
 | `src/term.rs`     | Farberkennung / Stile                                |
 | `tests/cli.rs`    | End-to-End-CLI-Tests (`--help`, `--mock`, i18n)      |
 | `.github/workflows` | CI (Tests, Coverage, 18 Builds, QEMU-Smoke-Tests)  |

@@ -1,5 +1,20 @@
 use std::sync::OnceLock;
 
+mod da;
+mod el;
+mod fi;
+mod hi;
+mod id;
+mod ko;
+mod no;
+mod pl;
+mod ru;
+mod sv;
+mod th;
+mod tr;
+mod uk;
+mod vi;
+
 pub static LANG: OnceLock<Lang> = OnceLock::new();
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -12,6 +27,20 @@ pub enum Lang {
     It,
     Ja,
     De,
+    Ru,
+    Hi,
+    Id,
+    Ko,
+    No,
+    Sv,
+    Fi,
+    Da,
+    El,
+    Tr,
+    Pl,
+    Uk,
+    Th,
+    Vi,
 }
 
 /// Définit la langue depuis la valeur de `--lang`.
@@ -25,9 +54,24 @@ pub fn set(name: &str) -> Result<Lang, String> {
         "it" | "italien" | "italian" => Lang::It,
         "ja" | "japonais" | "japanese" => Lang::Ja,
         "de" | "allemand" | "german" => Lang::De,
+        "ru" | "russe" | "russian" => Lang::Ru,
+        "hi" | "hindi" => Lang::Hi,
+        "id" | "indonesien" | "indonésien" | "indonesian" => Lang::Id,
+        "ko" | "coreen" | "coréen" | "korean" => Lang::Ko,
+        "no" | "nb" | "norvegien" | "norvégien" | "norwegian" => Lang::No,
+        "sv" | "suedois" | "suédois" | "swedish" => Lang::Sv,
+        "fi" | "finlandais" | "finnish" => Lang::Fi,
+        "da" | "danois" | "danish" => Lang::Da,
+        "el" | "grec" | "greek" => Lang::El,
+        "tr" | "turc" | "turkish" => Lang::Tr,
+        "pl" | "polonais" | "polish" => Lang::Pl,
+        "uk" | "ukrainien" | "ukrainian" => Lang::Uk,
+        "th" | "thai" | "thaï" => Lang::Th,
+        "vi" | "vietnamien" | "vietnamese" => Lang::Vi,
         other => {
             return Err(format!(
-                "unknown language: {other} (expected: en, fr, zh, ar, es, it, ja, de)"
+                "unknown language: {other} (expected: en, fr, zh, ar, es, it, ja, de, \
+ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi)"
             ))
         }
     };
@@ -49,6 +93,20 @@ pub fn l() -> &'static Labels {
         Lang::It => IT,
         Lang::Ja => JA,
         Lang::De => DE,
+        Lang::Ru => ru::LABELS,
+        Lang::Hi => hi::LABELS,
+        Lang::Id => id::LABELS,
+        Lang::Ko => ko::LABELS,
+        Lang::No => no::LABELS,
+        Lang::Sv => sv::LABELS,
+        Lang::Fi => fi::LABELS,
+        Lang::Da => da::LABELS,
+        Lang::El => el::LABELS,
+        Lang::Tr => tr::LABELS,
+        Lang::Pl => pl::LABELS,
+        Lang::Uk => uk::LABELS,
+        Lang::Th => th::LABELS,
+        Lang::Vi => vi::LABELS,
     }
 }
 
@@ -430,7 +488,8 @@ Options:
                          monitoring, graphs, logs and configs (sub-tabs
                          navigable with ← →). Quit: q / Ctrl-C
       --interval <SEC>   TUI refresh interval (default 1)
-      --lang <LANG>      UI language: en (US), fr, zh, ar, es, it, ja, de
+      --lang <LANG>      UI language: en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Show demo data (local test)
   -h, --help             Show this help
 
@@ -452,7 +511,8 @@ Options:
                          monitoring, graphiques, logs et configs (sous-
                          onglets navigables ← →). Quitter: q / Ctrl-C
       --interval <SEC>   Intervalle de rafraîchissement du TUI (défaut 1)
-      --lang <LANG>      Langue de l'interface : en (US), fr, zh, ar, es, it, ja, de
+      --lang <LANG>      Langue de l'interface : en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Affiche des données de démonstration (test local)
   -h, --help             Affiche cette aide
 
@@ -473,7 +533,8 @@ fpm-monitor — PHP-FPM 进程池监视器（fpm-monitor.c 的 Rust 移植版）
   -t, --tui              交互式仪表盘（类似 Ember）—— 标签页
                          监控、图表、日志和配置（子标签可用 ← → 导航）。退出: q / Ctrl-C
       --interval <秒>    TUI 刷新间隔（默认 1）
-      --lang <语言>      界面语言：en (US)、fr、zh、ar、es、it、ja、de
+      --lang <语言>      界面语言：en (US)、fr、zh、ar、es、it、ja、de、
+                         ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock             显示演示数据（本地测试）
   -h, --help             显示此帮助
 
@@ -495,7 +556,8 @@ fpm-monitor — مراقب تجمعات PHP-FPM (منفذ بلغة Rust من fpm
                          المراقبة والرسوم البيانية والسجلات والإعدادات (تبويبات
                          فرعية تُتنقّل بـ ← →). الخروج: q / Ctrl-C
       --interval <ث>     فترة تحديث الواجهة (الافتراضي 1)
-      --lang <اللغة>     لغة الواجهة: en (US)، fr، zh، ar، es، it، ja، de
+      --lang <اللغة>     لغة الواجهة: en (US)، fr، zh، ar، es، it، ja، de،
+                         ru، hi، id، ko، no، sv، fi، da، el، tr، pl، uk، th، vi
       --mock             عرض بيانات تجريبية (اختبار محلي)
   -h, --help             عرض هذه المساعدة
 
@@ -517,7 +579,8 @@ Opciones:
                          monitoreo, gráficas, registros y configuración (sub-
                          pestañas navegables con ← →). Salir: q / Ctrl-C
       --interval <SEG>   Intervalo de refresco del TUI (por defecto 1)
-      --lang <LANG>      Idioma: en (US), fr, zh, ar, es, it, ja, de
+      --lang <LANG>      Idioma: en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Mostrar datos de demostración (prueba local)
   -h, --help             Muestra esta ayuda
 
@@ -539,7 +602,8 @@ Opzioni:
                            monitoraggio, grafici, log e configurazioni (sotto-
                            schede navigabili con ← →). Esci: q / Ctrl-C
       --interval <SEC>     Intervallo di aggiornamento del TUI (default 1)
-      --lang <LINGUA>      Lingua interfaccia: en (US), fr, zh, ar, es, it, ja, de
+      --lang <LINGUA>      Lingua interfaccia: en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock               Mostra dati dimostrativi (test locale)
   -h, --help               Mostra questo aiuto
 
@@ -561,7 +625,8 @@ fpm-monitor — PHP-FPM プールモニター（fpm-monitor.c の Rust 移植版
                          モニタリング、グラフ、ログ、設定（サブタブは
                          ← → で移動）。終了: q / Ctrl-C
       --interval <秒>   TUI 更新間隔（デフォルト 1）
-      --lang <言語>      UI 言語: en (US)、fr、zh、ar、es、it、ja、de
+      --lang <言語>      UI 言語: en (US)、fr、zh、ar、es、it、ja、de、
+                         ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock            デモデータを表示（ローカルテスト）
   -h, --help            このヘルプを表示
 
@@ -583,12 +648,27 @@ Optionen:
                          Überwachung, Diagramme, Logs und Konfigurationen
                          (Untertabs mit ← →). Beenden: q / Ctrl-C
       --interval <SEK>   TUI-Aktualisierungsintervall (Standard 1)
-      --lang <SPRACHE>   UI-Sprache: en (US), fr, zh, ar, es, it, ja, de
+      --lang <SPRACHE>   UI-Sprache: en (US), fr, zh, ar, es, it, ja, de,
+                         ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Demodaten anzeigen (lokaler Test)
   -h, --help             Diese Hilfe anzeigen
 
 Die Erkennung ist automatisch (übliche Orte + include-Direktive).
 "
         }
+        Lang::Ru => ru::USAGE,
+        Lang::Hi => hi::USAGE,
+        Lang::Id => id::USAGE,
+        Lang::Ko => ko::USAGE,
+        Lang::No => no::USAGE,
+        Lang::Sv => sv::USAGE,
+        Lang::Fi => fi::USAGE,
+        Lang::Da => da::USAGE,
+        Lang::El => el::USAGE,
+        Lang::Tr => tr::USAGE,
+        Lang::Pl => pl::USAGE,
+        Lang::Uk => uk::USAGE,
+        Lang::Th => th::USAGE,
+        Lang::Vi => vi::USAGE,
     }
 }

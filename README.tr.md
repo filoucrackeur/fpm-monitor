@@ -15,7 +15,7 @@ Rust ile yazılmış bir PHP-FPM havuz monitörü (`fpm-monitor.c` portu) olup
 [Ember](https://github.com/alexandre-daubois/ember) esinli etkileşimli bir terminal
 panosu sunar. Bağımlılık gerektirmeyen tek bir ikili dosya olarak dağıtılır ve
 **Linux, macOS ve Windows** üzerinde **18 hedef mimaride** çalışır. Arayüz, `--lang`
-ile 8 dilde (varsayılan: İngilizce) kullanılabilir ve bu belge 22 dile çevrilmiştir.
+ile 22 dilde (varsayılan: İngilizce) kullanılabilir ve bu belge 22 dile çevrilmiştir.
 
 <p align="center">
   <img src="docs/screenshot.en.animated.svg" alt="fpm-monitor TUI — etkileşimli pano (İngilizce)" width="700">
@@ -190,7 +190,8 @@ Options:
       --no-color          Rengi devre dışı bırak
   -t, --tui               Etkileşimli pano (sekmeler, `←`/`→` alt sekmeler)
       --interval <SEC>    TUI yenileme aralığı (varsayılan 1)
-      --lang <LANG>       Arayüz dili: en, fr, zh, ar, es, it, ja, de
+      --lang <LANG>       Arayüz dili: en, fr, zh, ar, es, it, ja, de,
+                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (varsayılan: en)
       --mock              Demo verileri (yerel test)
   -h, --help              Bu yardımı göster
@@ -198,7 +199,7 @@ Options:
 
 ### Arayüz dili
 
-`--lang`, `en` (ABD, varsayılan), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`
+`--lang`, `en` (ABD, varsayılan), `fr`, `zh`, `ar`, `es`, `it`, `ja`, `de`, `ru`, `hi`, `id`, `ko`, `no`, `sv`, `fi`, `da`, `el`, `tr`, `pl`, `uk`, `th`, `vi`
 değerlerini kabul eder (`--lang=fr` biçimi de kabul edilir). Hem TUI panosuna hem de
 CLI çıktısına (başlıklar, özet, açıklama) ve `--help` çıktısına uygulanır.
 
@@ -226,7 +227,7 @@ yenilenir; bir `/proc` okuması yavaş olsa bile çizim sürer.
 | `src/logs.rs`     | PHP günlüğü ve yavaş sorguları okuma                |
 | `src/render.rs`   | Metin çıktısı (CLI tablosu)                         |
 | `src/tui.rs`      | Etkileşimli pano (4 sekme, grafikler)               |
-| `src/i18n.rs`     | Yerelleştirme (8 dil, `--lang`)                     |
+| `src/i18n.rs`     | Yerelleştirme (22 dil, `--lang`)                     |
 | `src/term.rs`     | Renk algılama / stiller                             |
 | `tests/cli.rs`    | Uçtan uca CLI testleri (`--help`, `--mock`, i18n)   |
 | `.github/workflows` | CI (testler, kapsam, 18 derleme, QEMU duman testleri) |
