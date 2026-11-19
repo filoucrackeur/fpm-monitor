@@ -148,15 +148,6 @@ scripts/build-packages.sh <version> dist/bin dist   # PATH에 nfpm 필요
 
 ### macOS (Homebrew)
 
-바로 사용할 수 있는 포뮬러가 생성되어 모든 릴리스에 첨부됩니다:
-
-```sh
-brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
-```
-
-대신 tap으로 호스팅하려면 파일을
-`<owner>/homebrew-fpm-monitor/Formula/fpm-monitor.rb`로 옮긴 후:
-
 ```sh
 brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor

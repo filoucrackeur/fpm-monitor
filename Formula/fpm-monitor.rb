@@ -8,8 +8,6 @@
 # filoucrackeur/homebrew-fpm-monitor. Install with:
 #
 #   brew install filoucrackeur/fpm-monitor/fpm-monitor
-#   # or directly from a GitHub release:
-#   brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
 
 class FpmMonitor < Formula
   desc "PHP-FPM pools monitor (Rust port of fpm-monitor.c)"

@@ -147,15 +147,6 @@ scripts/build-packages.sh <version> dist/bin dist   # PATH に nfpm が必要
 
 ### macOS（Homebrew）
 
-すぐに使える formula が生成され、各リリースに添付されます:
-
-```sh
-brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
-```
-
-代わりに tap としてホストするには、ファイルを
-`<owner>/homebrew-fpm-monitor/Formula/fpm-monitor.rb` に移動してから:
-
 ```sh
 brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor

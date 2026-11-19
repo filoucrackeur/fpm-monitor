@@ -152,15 +152,6 @@ scripts/build-packages.sh <version> dist/bin dist   # wymaga nfpm w PATH
 
 ### macOS (Homebrew)
 
-Gotowa do użycia formuła jest generowana i dołączana do każdego wydania:
-
-```sh
-brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
-```
-
-Aby hostować ją jako tap, przenieś plik do
-`<owner>/homebrew-fpm-monitor/Formula/fpm-monitor.rb`, a następnie:
-
 ```sh
 brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor

@@ -155,15 +155,6 @@ scripts/build-packages.sh <version> dist/bin dist   # edellyttää nfpm-työkalu
 
 ### macOS (Homebrew)
 
-Valmis kaava luodaan ja liitetään jokaiseen julkaisuun:
-
-```sh
-brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
-```
-
-Jos haluat sen sijaan isännöidä sitä tap-varastona, siirrä tiedosto polkuun
-`<owner>/homebrew-fpm-monitor/Formula/fpm-monitor.rb` ja aja sitten:
-
 ```sh
 brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor

@@ -373,7 +373,8 @@ jobs:
 
             ### Homebrew
             ```sh
-            brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/${{ github.ref_name }}/fpm-monitor.rb
+            brew tap filoucrackeur/fpm-monitor
+            brew install fpm-monitor
             ```
 
             ### Docker

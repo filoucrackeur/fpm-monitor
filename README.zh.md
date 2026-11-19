@@ -139,15 +139,6 @@ scripts/build-packages.sh <version> dist/bin dist   # 需要在 PATH 中提供 n
 
 ### macOS（Homebrew）
 
-每次发布都会生成并附带一个可直接使用的 formula：
-
-```sh
-brew install https://github.com/filoucrackeur/fpm-monitor/releases/download/v<version>/fpm-monitor.rb
-```
-
-若要将其作为 tap 托管，请把文件移动到
-`<owner>/homebrew-fpm-monitor/Formula/fpm-monitor.rb`，然后：
-
 ```sh
 brew tap filoucrackeur/fpm-monitor
 brew install fpm-monitor
