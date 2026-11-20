@@ -121,7 +121,8 @@
   .log pre { margin: 0; padding: 12px 14px; min-height: 120px; max-height: 300px; overflow: auto; font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: #c9d5e2; white-space: pre-wrap; word-break: break-word; }
   .log pre.empty { color: var(--muted); font-style: italic; }
   .directives { width: 100%; }
-  .directives td:first-child { width: 46%; color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .directives td { text-align: left; }
+  .directives td:first-child { width: 1%; white-space: nowrap; padding-right: 28px; color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
   .directives td:last-child { color: #c9d5e2; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; white-space: normal; }
   .empty-state { color: var(--muted); padding: 18px 0; }
   footer { max-width: 1320px; margin: 0 auto; padding: 0 28px 30px; color: var(--muted); font-size: 12px; }
@@ -529,9 +530,12 @@
 
   const PANELS = ["monitoring", "graphs", "logs", "configs"];
 
-  function setTab(tab) {
+  function setTab(tab, updateHash) {
     if (PANELS.indexOf(tab) < 0) return;
     ui.tab = tab;
+    if (updateHash !== false && window.location.hash !== "#" + tab) {
+      window.history.replaceState(null, "", "#" + tab);
+    }
     document.querySelectorAll("#tabs button").forEach((b) => {
       b.classList.toggle("active", b.dataset.tab === tab);
     });
@@ -604,6 +608,10 @@
     b.addEventListener("click", () => setTab(b.dataset.tab));
   });
 
+  window.addEventListener("hashchange", () => {
+    setTab(window.location.hash.slice(1), false);
+  });
+
   document.addEventListener("keydown", (event) => {
     const tag = (event.target && event.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -619,6 +627,8 @@
   });
 
   poll();
+  const initial = window.location.hash.slice(1);
+  setTab(PANELS.indexOf(initial) >= 0 ? initial : "monitoring", false);
 })();
 </script>
 </body>
