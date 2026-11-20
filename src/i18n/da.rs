@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "kan ikke læse /proc (kræver Linux): {}",
     unknown_option: "ukendt valgmulighed: {}",
     run_help: "kør med --help",
+    invalid_port: "ugyldig port: {} (forventet 1-65535)",
+    web_serving: "webgrænsefladen lytter på http://127.0.0.1:{} (Ctrl-C for at afslutte)",
+    web_error: "kan ikke starte webgrænsefladen: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Muligheder:
       --lang <SPROG>     UI-sprog: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Vis demodata (lokal test)
+      --watch            Start webgrænsefladen i stedet for CLI-visningen
+      --port <PORT>      Port til webgrænsefladen (standard 8471)
   -h, --help             Vis denne hjælp
 
 Registreringen sker automatisk (sædvanlige placeringer + include-direktiv).

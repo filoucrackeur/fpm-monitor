@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "kan inte läsa /proc (Linux krävs): {}",
     unknown_option: "okänt alternativ: {}",
     run_help: "kör med --help",
+    invalid_port: "ogiltig port: {} (förväntat 1-65535)",
+    web_serving: "webbgränssnittet lyssnar på http://127.0.0.1:{} (Ctrl-C för att avsluta)",
+    web_error: "kan inte starta webbgränssnittet: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Alternativ:
       --lang <SPRÅK>     Gränssnittsspråk: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Visa demodata (lokalt test)
+      --watch            Starta webbgränssnittet i stället för CLI-vyn
+      --port <PORT>      Port för webbgränssnittet (standard 8471)
   -h, --help             Visa denna hjälp
 
 Identifieringen är automatisk (vanliga platser + include-direktiv).

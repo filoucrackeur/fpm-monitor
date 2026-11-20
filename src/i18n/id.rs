@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "tidak dapat membaca /proc (memerlukan Linux): {}",
     unknown_option: "opsi tidak dikenal: {}",
     run_help: "jalankan dengan --help",
+    invalid_port: "port tidak valid: {} (diharapkan 1-65535)",
+    web_serving: "antarmuka web mendengarkan di http://127.0.0.1:{} (Ctrl-C untuk keluar)",
+    web_error: "tidak dapat memulai antarmuka web: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Opsi:
       --lang <LANG>      Bahasa antarmuka: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Tampilkan data demo (uji lokal)
+      --watch            Mulai antarmuka web alih-alih tampilan CLI
+      --port <PORT>      Port antarmuka web (default 8471)
   -h, --help             Tampilkan bantuan ini
 
 Deteksi bersifat otomatis (lokasi umum + direktif include).

@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "không thể đọc /proc (cần Linux): {}",
     unknown_option: "tùy chọn không xác định: {}",
     run_help: "chạy với --help",
+    invalid_port: "cổng không hợp lệ: {} (mong đợi 1-65535)",
+    web_serving: "giao diện web đang lắng nghe tại http://127.0.0.1:{} (Ctrl-C để thoát)",
+    web_error: "không thể khởi động giao diện web: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Tùy chọn:
       --lang <LANG>      Ngôn ngữ giao diện: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Hiển thị dữ liệu demo (kiểm thử cục bộ)
+      --watch            Khởi động giao diện web thay vì chế độ CLI
+      --port <PORT>      Cổng của giao diện web (mặc định 8471)
   -h, --help             Hiển thị trợ giúp này
 
 Việc phát hiện diễn ra tự động (vị trí thông thường + chỉ thị include).

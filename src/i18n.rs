@@ -148,6 +148,9 @@ pub struct Labels {
     pub read_proc: &'static str,
     pub unknown_option: &'static str,
     pub run_help: &'static str,
+    pub invalid_port: &'static str,
+    pub web_serving: &'static str,
+    pub web_error: &'static str,
 }
 
 const EN: &Labels = &Labels {
@@ -188,6 +191,9 @@ const EN: &Labels = &Labels {
     read_proc: "unable to read /proc (Linux required): {}",
     unknown_option: "unknown option: {}",
     run_help: "run with --help",
+    invalid_port: "invalid port: {} (expected 1-65535)",
+    web_serving: "web UI listening on http://127.0.0.1:{} (Ctrl-C to quit)",
+    web_error: "unable to start the web UI: {}",
 };
 
 const FR: &Labels = &Labels {
@@ -228,6 +234,9 @@ const FR: &Labels = &Labels {
     read_proc: "impossible de lire /proc (Linux requis) : {}",
     unknown_option: "option inconnue : {}",
     run_help: "lancer avec --help",
+    invalid_port: "port invalide : {} (attendu 1-65535)",
+    web_serving: "interface web à l'écoute sur http://127.0.0.1:{} (Ctrl-C pour quitter)",
+    web_error: "impossible de démarrer l'interface web : {}",
 };
 
 const ZH: &Labels = &Labels {
@@ -268,6 +277,9 @@ const ZH: &Labels = &Labels {
     read_proc: "无法读取 /proc（需要 Linux）：{}",
     unknown_option: "未知选项：{}",
     run_help: "使用 --help 运行",
+    invalid_port: "无效端口：{}（应为 1-65535）",
+    web_serving: "Web 界面正在监听 http://127.0.0.1:{}（Ctrl-C 退出）",
+    web_error: "无法启动 Web 界面：{}",
 };
 
 const AR: &Labels = &Labels {
@@ -308,6 +320,9 @@ const AR: &Labels = &Labels {
     read_proc: "تعذّر قراءة /proc (يتطلب لينكس): {}",
     unknown_option: "خيار غير معروف: {}",
     run_help: "شغّل مع --help",
+    invalid_port: "منفذ غير صالح: {} (المتوقع 1-65535)",
+    web_serving: "واجهة الويب تستمع على http://127.0.0.1:{} (Ctrl-C للخروج)",
+    web_error: "تعذّر تشغيل واجهة الويب: {}",
 };
 
 const ES: &Labels = &Labels {
@@ -348,6 +363,9 @@ const ES: &Labels = &Labels {
     read_proc: "no se puede leer /proc (requiere Linux): {}",
     unknown_option: "opción desconocida: {}",
     run_help: "ejecuta con --help",
+    invalid_port: "puerto no válido: {} (se espera 1-65535)",
+    web_serving: "interfaz web escuchando en http://127.0.0.1:{} (Ctrl-C para salir)",
+    web_error: "no se puede iniciar la interfaz web: {}",
 };
 
 const IT: &Labels = &Labels {
@@ -388,6 +406,9 @@ const IT: &Labels = &Labels {
     read_proc: "impossibile leggere /proc (richiede Linux): {}",
     unknown_option: "opzione sconosciuta: {}",
     run_help: "esegui con --help",
+    invalid_port: "porta non valida: {} (previsto 1-65535)",
+    web_serving: "interfaccia web in ascolto su http://127.0.0.1:{} (Ctrl-C per uscire)",
+    web_error: "impossibile avviare l'interfaccia web: {}",
 };
 
 const JA: &Labels = &Labels {
@@ -428,6 +449,9 @@ const JA: &Labels = &Labels {
     read_proc: "/proc を読み取れません（Linux が必要）：{}",
     unknown_option: "不明なオプション：{}",
     run_help: "--help で実行",
+    invalid_port: "無効なポート: {}（1〜65535 の範囲）",
+    web_serving: "Web UI は http://127.0.0.1:{} で待機中（Ctrl-C で終了）",
+    web_error: "Web UI を起動できません：{}",
 };
 
 const DE: &Labels = &Labels {
@@ -468,6 +492,9 @@ const DE: &Labels = &Labels {
     read_proc: "/proc kann nicht gelesen werden (Linux erforderlich): {}",
     unknown_option: "unbekannte Option: {}",
     run_help: "mit --help ausführen",
+    invalid_port: "ungültiger Port: {} (erwartet 1-65535)",
+    web_serving: "Weboberfläche lauscht auf http://127.0.0.1:{} (Ctrl-C zum Beenden)",
+    web_error: "Weboberfläche konnte nicht gestartet werden: {}",
 };
 
 /// Aide `--help` localisée.
@@ -491,6 +518,8 @@ Options:
       --lang <LANG>      UI language: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Show demo data (local test)
+      --watch            Start the web UI instead of the CLI view
+      --port <PORT>      Web UI port (default 8471)
   -h, --help             Show this help
 
 Detection is automatic (usual locations + include directive).
@@ -514,6 +543,8 @@ Options:
       --lang <LANG>      Langue de l'interface : en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Affiche des données de démonstration (test local)
+      --watch            Démarre l'interface web au lieu de la vue CLI
+      --port <PORT>      Port de l'interface web (défaut 8471)
   -h, --help             Affiche cette aide
 
 La détection est automatique (emplacements usuels + directive include).
@@ -536,6 +567,8 @@ fpm-monitor — PHP-FPM 进程池监视器（fpm-monitor.c 的 Rust 移植版）
       --lang <语言>      界面语言：en (US)、fr、zh、ar、es、it、ja、de、
                          ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock             显示演示数据（本地测试）
+      --watch            启动 Web 界面，而不是 CLI 视图
+      --port <PORT>      Web 界面端口（默认 8471）
   -h, --help             显示此帮助
 
 自动检测（常用位置 + include 指令）。
@@ -559,6 +592,8 @@ fpm-monitor — مراقب تجمعات PHP-FPM (منفذ بلغة Rust من fpm
       --lang <اللغة>     لغة الواجهة: en (US)، fr، zh، ar، es، it، ja، de،
                          ru، hi، id، ko، no، sv، fi، da، el، tr، pl، uk، th، vi
       --mock             عرض بيانات تجريبية (اختبار محلي)
+      --watch            تشغيل واجهة الويب بدلاً من عرض CLI
+      --port <PORT>      منفذ واجهة الويب (الافتراضي 8471)
   -h, --help             عرض هذه المساعدة
 
 الاكتشاف تلقائي (الأماكن المعتادة + توجيه include).
@@ -582,6 +617,8 @@ Opciones:
       --lang <LANG>      Idioma: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Mostrar datos de demostración (prueba local)
+      --watch            Inicia la interfaz web en lugar de la vista CLI
+      --port <PORT>      Puerto de la interfaz web (por defecto 8471)
   -h, --help             Muestra esta ayuda
 
 La detección es automática (ubicaciones usuales + directiva include).
@@ -605,6 +642,8 @@ Opzioni:
       --lang <LINGUA>      Lingua interfaccia: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock               Mostra dati dimostrativi (test locale)
+      --watch            Avvia l'interfaccia web invece della vista CLI
+      --port <PORT>      Porta dell'interfaccia web (predefinita 8471)
   -h, --help               Mostra questo aiuto
 
 La rilevazione è automatica (posizioni usuali + direttiva include).
@@ -628,6 +667,8 @@ fpm-monitor — PHP-FPM プールモニター（fpm-monitor.c の Rust 移植版
       --lang <言語>      UI 言語: en (US)、fr、zh、ar、es、it、ja、de、
                          ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock            デモデータを表示（ローカルテスト）
+      --watch            CLI ビューの代わりに Web UI を起動します
+      --port <PORT>      Web UI のポート（デフォルト 8471）
   -h, --help            このヘルプを表示
 
 検出は自動です（一般的な場所 + include ディレクティブ）。
@@ -651,6 +692,8 @@ Optionen:
       --lang <SPRACHE>   UI-Sprache: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Demodaten anzeigen (lokaler Test)
+      --watch            Startet die Weboberfläche statt der CLI-Ansicht
+      --port <PORT>      Port der Weboberfläche (Standard 8471)
   -h, --help             Diese Hilfe anzeigen
 
 Die Erkennung ist automatisch (übliche Orte + include-Direktive).

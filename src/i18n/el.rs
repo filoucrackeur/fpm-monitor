@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "αδυναμία ανάγνωσης /proc (απαιτείται Linux): {}",
     unknown_option: "άγνωστη επιλογή: {}",
     run_help: "εκτελέστε με --help",
+    invalid_port: "μη έγκυρη θύρα: {} (αναμένεται 1-65535)",
+    web_serving: "η διεπαφή web ακούει στο http://127.0.0.1:{} (Ctrl-C για έξοδο)",
+    web_error: "δεν ήταν δυνατή η εκκίνηση της διεπαφής web: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ fpm-monitor — παρακολούθηση δεξαμενών PHP-FPM (μετα�
       --lang <ΓΛΩΣΣΑ>       Γλώσσα διεπαφής: en (US), fr, zh, ar, es, it, ja, de,
                             ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock                Εμφάνιση δεδομένων επίδειξης (τοπική δοκιμή)
+      --watch            Εκκίνηση της διεπαφής web αντί της προβολής CLI
+      --port <PORT>      Θύρα της διεπαφής web (προεπιλογή 8471)
   -h, --help                Εμφάνιση αυτής της βοήθειας
 
 Η ανίχνευση είναι αυτόματη (συνήθεις τοποθεσίες + οδηγία include).

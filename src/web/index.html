@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>fpm-monitor — web dashboard</title>
+<style>
+  :root {
+    --bg: #0b1016;
+    --panel: #111922;
+    --panel-2: #151f2b;
+    --line: #22303f;
+    --text: #e6edf3;
+    --muted: #8b9bab;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --green: #34d399;
+    --red: #f87171;
+    --pink: #f472b6;
+    --purple: #a78bfa;
+    --amber: #fbbf24;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1100px 500px at 10% -10%, rgba(56,189,248,.10), transparent 60%),
+      radial-gradient(900px 480px at 95% -5%, rgba(129,140,248,.10), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 22px 28px 14px; max-width: 1320px; margin: 0 auto;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+  .brand h1 span { color: var(--accent); }
+  .brand small { color: var(--muted); font-size: 12px; }
+  .spacer { flex: 1; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 999px; padding: 5px 11px; font-size: 12px; color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+  .badge.live .dot { background: var(--green); box-shadow: 0 0 0 4px rgba(52,211,153,.14); }
+  .badge.down .dot { background: var(--red); box-shadow: 0 0 0 4px rgba(248,113,113,.15); }
+  nav {
+    display: flex; gap: 6px; padding: 0 28px; max-width: 1320px; margin: 0 auto;
+    border-bottom: 1px solid var(--line);
+  }
+  nav button {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    padding: 12px 14px; font: inherit; font-weight: 600; cursor: pointer;
+    border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0;
+  }
+  nav button:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+  nav button kbd { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; margin-left: 6px; }
+  main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 56px; }
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 40%), var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; margin-bottom: 16px;
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+  .banner {
+    display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid rgba(248,113,113,.35); background: rgba(248,113,113,.10);
+    color: #fecaca; font-size: 13px;
+  }
+  .banner.show { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .card .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; }
+  .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; letter-spacing: -.02em; }
+  .card .s { color: var(--muted); font-size: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:hover { background: rgba(255,255,255,.025); }
+  .pool { font-weight: 700; }
+  .type { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--line); }
+  .type.static { color: #93c5fd; border-color: rgba(147,197,253,.35); background: rgba(147,197,253,.08); }
+  .type.dynamic { color: #6ee7b7; border-color: rgba(110,231,183,.35); background: rgba(110,231,183,.08); }
+  .type.ondemand { color: #e5e7eb; border-color: rgba(229,231,235,.25); background: rgba(229,231,235,.06); }
+  .type.unknown { color: var(--muted); }
+  .ok { color: var(--green); } .warn { color: var(--amber); } .bad { color: var(--red); }
+  details.workers { margin-top: 4px; }
+  details.workers summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  .workers-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .worker { border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 4px 8px; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+  .worker b { color: var(--text); font-weight: 600; }
+  .subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .subtabs button {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+    padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .subtabs button.active { color: #04121c; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .graphs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .graph { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .graph .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .graph .title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .graph .now { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .graph .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .graph .legend i { display: inline-block; width: 14px; height: 0; border-top: 2px dashed currentColor; vertical-align: middle; margin-right: 4px; }
+  .graph svg { display: block; width: 100%; height: 116px; margin-top: 8px; }
+  .logs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .log { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .log .head { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .log .head b { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .log .head span { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log pre { margin: 0; padding: 12px 14px; min-height: 120px; max-height: 300px; overflow: auto; font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: #c9d5e2; white-space: pre-wrap; word-break: break-word; }
+  .log pre.empty { color: var(--muted); font-style: italic; }
+  .directives { width: 100%; }
+  .directives td:first-child { width: 46%; color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .directives td:last-child { color: #c9d5e2; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; white-space: normal; }
+  .empty-state { color: var(--muted); padding: 18px 0; }
+  footer { max-width: 1320px; margin: 0 auto; padding: 0 28px 30px; color: var(--muted); font-size: 12px; }
+  .hide { display: none !important; }
+  @media (max-width: 640px) {
+    header, nav, main, footer { padding-left: 14px; padding-right: 14px; }
+    .card .v { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>fpm<span>-</span>monitor <small>web dashboard</small></h1>
+  </div>
+  <div class="spacer"></div>
+  <span id="mode" class="badge"><span class="dot"></span><span id="modeText">connecting…</span></span>
+  <span class="badge"><span class="dot" style="background:var(--accent)"></span><span id="updated">—</span></span>
+</header>
+
+<nav id="tabs">
+  <button data-tab="monitoring" class="active">Monitoring <kbd>1</kbd></button>
+  <button data-tab="graphs">Graphs <kbd>2</kbd></button>
+  <button data-tab="logs">Logs <kbd>3</kbd></button>
+  <button data-tab="configs">Configurations <kbd>4</kbd></button>
+</nav>
+
+<main>
+  <div id="error" class="banner"></div>
+
+  <section data-panel="monitoring">
+    <div class="cards" id="cards"></div>
+    <div class="panel">
+      <h2>Pools</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th><th>Type</th><th>Workers</th><th>Running</th><th>Idle</th>
+              <th>Backlog</th><th>Max child</th><th>Max req</th><th>Memory</th>
+            </tr>
+          </thead>
+          <tbody id="poolRows"></tbody>
+        </table>
+      </div>
+      <div id="noPools" class="empty-state hide">No pool detected.</div>
+    </div>
+  </section>
+
+  <section data-panel="graphs" class="hide">
+    <div class="subtabs" id="graphPools"></div>
+    <div class="graphs" id="graphGrid"></div>
+  </section>
+
+  <section data-panel="logs" class="hide">
+    <div class="subtabs" id="logPools"></div>
+    <div class="logs" id="logGrid"></div>
+  </section>
+
+  <section data-panel="configs" class="hide">
+    <div class="subtabs" id="cfgPools"></div>
+    <div class="panel">
+      <h2 id="cfgTitle">Directives</h2>
+      <div id="cfgBody"></div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer">fpm-monitor · reads the local process table, no network access.</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  const ui = { data: null, tab: "monitoring", graph: 0, log: 0, cfg: 0, timer: null };
+  const $ = (id) => document.getElementById(id);
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function setStatus(kind, text) {
+    const mode = $("mode");
+    mode.className = "badge " + (kind || "");
+    $("modeText").textContent = text;
+  }
+
+  function fmtMem(kb) {
+    if (kb === null || kb === undefined || kb < 0) return "—";
+    if (kb >= 1048576) return (kb / 1048576).toFixed(1) + " GB";
+    if (kb >= 1024) return (kb / 1024).toFixed(1) + " MB";
+    return kb + " KB";
+  }
+
+  function fmtTime(epoch) {
+    if (!epoch) return "—";
+    return new Date(epoch * 1000).toLocaleTimeString();
+  }
+
+  function opt(v) { return v === null || v === undefined ? "—" : String(v); }
+
+  function ratioClass(value, limit) {
+    if (!limit || limit <= 0) return "";
+    if (value >= limit) return "bad";
+    if (value >= limit * 0.8) return "warn";
+    return "ok";
+  }
+
+  function currentPool(key) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (!pools.length) return null;
+    if (ui[key] >= pools.length) ui[key] = 0;
+    return pools[ui[key]];
+  }
+
+  function subtabs(container, names, active, onPick) {
+    container.textContent = "";
+    names.forEach((name, i) => {
+      const b = el("button", i === active ? "active" : "", name);
+      b.addEventListener("click", () => onPick(i));
+      container.appendChild(b);
+    });
+  }
+
+  // ---------- Monitoring ----------
+
+  function renderCards(pools) {
+    const total = (k) => pools.reduce((acc, p) => acc + (p[k] || 0), 0);
+    const memory = pools.reduce((acc, p) => acc + (p.memory_kb || 0), 0);
+    const backlog = pools.reduce((acc, p) => acc + (p.backlog || 0), 0);
+    const items = [
+      ["Pools", pools.length, "configured + detected"],
+      ["Workers", total("workers"), "total processes"],
+      ["Running", total("running"), "state R"],
+      ["Idle", total("idle"), "state S"],
+      ["Backlog", backlog, "pending connections"],
+      ["Memory", fmtMem(memory), "sum of worker RSS"],
+    ];
+    const box = $("cards");
+    box.textContent = "";
+    items.forEach(([k, v, s]) => {
+      const card = el("div", "card");
+      card.appendChild(el("div", "k", k));
+      card.appendChild(el("div", "v", v));
+      card.appendChild(el("div", "s", s));
+      box.appendChild(card);
+    });
+  }
+
+  function renderPools() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const body = $("poolRows");
+    body.textContent = "";
+    $("noPools").classList.toggle("hide", pools.length > 0);
+
+    pools.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "pool", p.name));
+
+      const type = el("td");
+      const badge = el("span", "type " + (p.pm || "unknown"), p.pm || "?");
+      type.appendChild(badge);
+      tr.appendChild(type);
+
+      tr.appendChild(el("td", "", p.workers));
+      const running = el("td", ratioClass(p.running, p.max_children), p.running);
+      tr.appendChild(running);
+      tr.appendChild(el("td", "", p.idle));
+      tr.appendChild(el("td", p.backlog ? "warn" : "", p.backlog === null ? opt(p.backlog_max) : p.backlog + " / " + opt(p.backlog_max)));
+      tr.appendChild(el("td", "", opt(p.max_children)));
+      tr.appendChild(el("td", "", opt(p.max_requests)));
+      tr.appendChild(el("td", "", fmtMem(p.memory_kb)));
+
+      body.appendChild(tr);
+
+      if (p.worker_list && p.worker_list.length) {
+        const detail = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 9;
+        const box = el("details", "workers");
+        const summary = el("summary", "", p.worker_list.length + " workers");
+        box.appendChild(summary);
+        const grid = el("div", "workers-grid");
+        p.worker_list.forEach((w) => {
+          const item = el("span", "worker");
+          item.appendChild(el("b", "", w.pid));
+          item.appendChild(document.createTextNode(" " + w.state + " · " + fmtMem(w.rss_kb)));
+          grid.appendChild(item);
+        });
+        box.appendChild(grid);
+        cell.appendChild(box);
+        detail.appendChild(cell);
+        body.appendChild(detail);
+      }
+    });
+  }
+
+  // ---------- Graphs ----------
+
+  const METRICS = [
+    { key: "running", label: "Running", color: "#34d399", threshold: "max_children", tcolor: "#8b9bab" },
+    { key: "workers", label: "Workers", color: "#38bdf8", threshold: "max_children", tcolor: "#8b9bab" },
+    { key: "idle", label: "Idle", color: "#a78bfa", threshold: "min_spare", tcolor: "#f472b6" },
+    { key: "backlog", label: "Backlog", color: "#fbbf24", threshold: "backlog_max", tcolor: "#f87171" }
+  ];
+
+  function spark(values, color, thresholds) {
+    const W = 360, H = 116, pad = 8;
+    const nums = values.filter((v) => v !== null && v !== undefined);
+    const maxValue = Math.max(
+      1,
+      ...nums,
+      ...thresholds.filter((t) => t.value !== null && t.value !== undefined).map((t) => t.value)
+    ) * 1.12;
+    const n = values.length;
+    const x = (i) => (n <= 1 ? pad : pad + (i * (W - 2 * pad)) / (n - 1));
+    const y = (v) => H - pad - ((v || 0) / maxValue) * (H - 2 * pad);
+
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("preserveAspectRatio", "none");
+
+    for (let g = 1; g <= 3; g++) {
+      const line = document.createElementNS(NS, "line");
+      const gy = pad + ((H - 2 * pad) * g) / 4;
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", gy);
+      line.setAttribute("y2", gy);
+      line.setAttribute("stroke", "#22303f");
+      line.setAttribute("stroke-width", "1");
+      svg.appendChild(line);
+    }
+
+    if (n > 0) {
+      let d = "";
+      let area = "M " + x(0) + " " + (H - pad);
+      values.forEach((v, i) => {
+        const cmd = i === 0 ? "M" : "L";
+        d += cmd + " " + x(i).toFixed(1) + " " + y(v).toFixed(1) + " ";
+        area += " L " + x(i).toFixed(1) + " " + y(v).toFixed(1);
+      });
+      area += " L " + x(n - 1).toFixed(1) + " " + (H - pad) + " Z";
+
+      const fill = document.createElementNS(NS, "path");
+      fill.setAttribute("d", area);
+      fill.setAttribute("fill", color);
+      fill.setAttribute("opacity", "0.10");
+      svg.appendChild(fill);
+
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d.trim());
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("stroke-linejoin", "round");
+      path.setAttribute("stroke-linecap", "round");
+      svg.appendChild(path);
+
+      const last = document.createElementNS(NS, "circle");
+      last.setAttribute("cx", x(n - 1));
+      last.setAttribute("cy", y(values[n - 1]));
+      last.setAttribute("r", "3");
+      last.setAttribute("fill", color);
+      svg.appendChild(last);
+    }
+
+    thresholds.forEach((t) => {
+      if (t.value === null || t.value === undefined) return;
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", y(t.value));
+      line.setAttribute("y2", y(t.value));
+      line.setAttribute("stroke", t.color);
+      line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke-dasharray", "5 4");
+      line.setAttribute("opacity", "0.8");
+      svg.appendChild(line);
+    });
+
+    return svg;
+  }
+
+  function renderGraphs() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const history = (ui.data && ui.data.history) || [];
+    if (ui.graph >= pools.length) ui.graph = 0;
+    subtabs($("graphPools"), pools.map((p) => p.name), ui.graph, (i) => { ui.graph = i; renderGraphs(); });
+    const grid = $("graphGrid");
+    grid.textContent = "";
+    const pool = currentPool("graph");
+    if (!pool) {
+      grid.appendChild(el("div", "empty-state", "No pool detected."));
+      return;
+    }
+
+    METRICS.forEach((m) => {
+      const values = history.map((sample) => {
+        const point = (sample.pools || []).find((p) => p.name === pool.name);
+        return point ? point[m.key] : null;
+      });
+      const thresholds = [];
+      if (m.key === "idle") {
+        thresholds.push({ value: pool.min_spare, color: "#f472b6" });
+        thresholds.push({ value: pool.max_spare, color: "#a78bfa" });
+      } else {
+        thresholds.push({ value: pool[m.threshold], color: m.tcolor });
+      }
+
+      const card = el("div", "graph");
+      const head = el("div", "head");
+      head.appendChild(el("span", "title", m.label));
+      head.appendChild(el("span", "now", opt(pool[m.key])));
+      card.appendChild(head);
+      card.appendChild(spark(values, m.color, thresholds));
+
+      const legend = el("div", "legend");
+      legend.appendChild(el("span", "", (history.length || 0) + " points"));
+      thresholds.forEach((t) => {
+        if (t.value === null || t.value === undefined) return;
+        const item = el("span", "");
+        const dash = el("i");
+        dash.style.color = t.color;
+        item.appendChild(dash);
+        item.appendChild(document.createTextNode(m.key === "idle" ? (t.color === "#f472b6" ? "min_spare " : "max_spare ") + t.value : m.threshold + " " + t.value));
+        legend.appendChild(item);
+      });
+      card.appendChild(legend);
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------- Logs ----------
+
+  function logColumn(title, path, lines) {
+    const box = el("div", "log");
+    const head = el("div", "head");
+    head.appendChild(el("b", "", title));
+    head.appendChild(el("span", "", path || "—"));
+    box.appendChild(head);
+    const pre = el("pre", lines.length ? "" : "empty", lines.length ? lines.join("\n") : "(no entries)");
+    box.appendChild(pre);
+    return box;
+  }
+
+  function renderLogs() {
+    const logs = (ui.data && ui.data.logs) || [];
+    if (ui.log >= logs.length) ui.log = 0;
+    subtabs($("logPools"), logs.map((l) => l.name), ui.log, (i) => { ui.log = i; renderLogs(); });
+    const grid = $("logGrid");
+    grid.textContent = "";
+    if (!logs.length) {
+      grid.appendChild(el("div", "empty-state", "No pool detected."));
+      return;
+    }
+    const log = logs[ui.log];
+    grid.appendChild(logColumn("PHP log", log.php_path, log.php || []));
+    grid.appendChild(logColumn("Slow queries", log.slow_path, log.slow || []));
+    grid.appendChild(logColumn("Access", log.access_path, log.access || []));
+  }
+
+  // ---------- Configurations ----------
+
+  function renderConfigs() {
+    const config = (ui.data && ui.data.config) || { globals: [], pools: [] };
+    const pools = config.pools || [];
+    const names = ["global"].concat(pools.map((p) => p.name));
+    if (ui.cfg >= names.length) ui.cfg = 0;
+    subtabs($("cfgPools"), names, ui.cfg, (i) => { ui.cfg = i; renderConfigs(); });
+
+    const body = $("cfgBody");
+    body.textContent = "";
+    let directives;
+    if (ui.cfg === 0) {
+      $("cfgTitle").textContent = "Global directives";
+      directives = config.globals || [];
+    } else {
+      const pool = pools[ui.cfg - 1];
+      $("cfgTitle").textContent = "Pool " + pool.name;
+      directives = pool.directives || [];
+    }
+
+    if (!directives.length) {
+      body.appendChild(el("div", "empty-state", "(no directives read)"));
+      return;
+    }
+    const table = el("table", "directives");
+    const tbody = document.createElement("tbody");
+    directives.forEach(([key, value]) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "", key));
+      tr.appendChild(el("td", "", value));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  // ---------- Tabs & polling ----------
+
+  const PANELS = ["monitoring", "graphs", "logs", "configs"];
+
+  function setTab(tab) {
+    if (PANELS.indexOf(tab) < 0) return;
+    ui.tab = tab;
+    document.querySelectorAll("#tabs button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tab === tab);
+    });
+    document.querySelectorAll("section[data-panel]").forEach((s) => {
+      s.classList.toggle("hide", s.dataset.panel !== tab);
+    });
+  }
+
+  function cycleSub(dir) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (ui.tab === "graphs" && pools.length) {
+      ui.graph = (ui.graph + dir + pools.length) % pools.length;
+      renderGraphs();
+    } else if (ui.tab === "logs" && pools.length) {
+      ui.log = (ui.log + dir + pools.length) % pools.length;
+      renderLogs();
+    } else if (ui.tab === "configs") {
+      const total = 1 + ((ui.data && ui.data.config && ui.data.config.pools) || []).length;
+      ui.cfg = (ui.cfg + dir + total) % total;
+      renderConfigs();
+    }
+  }
+
+  function render() {
+    const data = ui.data;
+    if (!data) return;
+    setStatus(data.mock ? "live" : "live", data.mock ? "mock data" : "live");
+    $("updated").textContent = "updated " + fmtTime(data.updated);
+    const banner = $("error");
+    if (data.error) {
+      banner.textContent = "Collection error: " + data.error;
+      banner.classList.add("show");
+    } else {
+      banner.classList.remove("show");
+      banner.textContent = "";
+    }
+
+    const pools = data.pools || [];
+    renderCards(pools);
+    renderPools();
+    renderGraphs();
+    renderLogs();
+    renderConfigs();
+
+    const masters = (data.masters || []).join(", ") || "—";
+    $("footer").textContent =
+      "fpm-monitor · refresh " + (data.interval || 1) + "s · master PID " + masters +
+      " · reads the local process table, no network access.";
+  }
+
+  async function poll() {
+    let delay = 1000;
+    try {
+      const res = await fetch("/api/state", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      ui.data = await res.json();
+      if (ui.data.interval) delay = Math.max(500, ui.data.interval * 1000);
+      render();
+    } catch (err) {
+      setStatus("down", "disconnected");
+      const banner = $("error");
+      banner.textContent = "Cannot reach fpm-monitor: " + err.message;
+      banner.classList.add("show");
+      delay = 2000;
+    }
+    ui.timer = setTimeout(poll, delay);
+  }
+
+  document.querySelectorAll("#tabs button").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.dataset.tab));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const tag = (event.target && event.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (event.key >= "1" && event.key <= "4") {
+      setTab(PANELS[Number(event.key) - 1]);
+    } else if (event.key === "ArrowRight") {
+      cycleSub(1);
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft") {
+      cycleSub(-1);
+      event.preventDefault();
+    }
+  });
+
+  poll();
+})();
+</script>
+</body>
+</html>

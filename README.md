@@ -36,6 +36,10 @@ into 22 languages.
     queries (`slowlog`) and the **access log** (`access.log`, colorized HTTP
     codes), in sub-tabs.
   - **Configurations**: directives read from the files (`global` + pools) in sub-tabs.
+- **Web dashboard** (`--watch`): the same four views in the browser, served on
+  `http://127.0.0.1:8471` by a dependency-free HTTP server. The port is set with
+  `--port`; data is sampled in the background at `--interval` and the page keeps
+  60 points of history for its charts.
 - Automatic configuration discovery (usual locations + `include` directive).
 - No network calls: everything is read directly from `/proc` (processes, RSS,
   state, TCP socket accept queue). On macOS and BSD, the same data is read from
@@ -178,7 +182,9 @@ Options:
       --color             Force color
       --no-color          Disable color
   -t, --tui               Interactive dashboard (tabs, `←`/`→` sub-tabs)
-      --interval <SEC>    TUI refresh interval (default 1)
+      --interval <SEC>    Refresh interval (default 1)
+      --watch             Web dashboard instead of the CLI view
+      --port <PORT>       Web dashboard port (default 8471)
       --lang <LANG>       Interface language: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (default: en)
@@ -205,6 +211,31 @@ even if a `/proc` read is slow, rendering keeps going.
 | `↑` / `↓`      | Scroll the Monitoring view         |
 | `q`, `Ctrl-C`  | Quit                               |
 
+### Web dashboard
+
+`--watch` serves the same data as a single-page web application instead of
+printing the CLI table:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # custom port
+fpm-monitor --watch --mock          # demo data, no PHP-FPM required
+```
+
+The server listens on loopback only and uses no third-party crate: it is a small
+`std::net::TcpListener` with three routes (`/`, `/api/state`, `/favicon.ico`).
+`/api/state` returns the pools, worker details, logs, configuration directives
+and the last 60 samples as JSON. Data is collected in the background at
+`--interval` (default 1 s), so a slow scan never blocks a request.
+
+The page has four tabs — **Monitoring**, **Graphs**, **Logs** and
+**Configurations** — with `1`–`4` and `←`/`→` as shortcuts, per-pool charts
+with the same thresholds as the TUI, and the latest log lines. It refreshes
+itself automatically and shows a banner if collection fails.
+
+`--port` accepts `1`–`65535` (`--port=9000` also works); anything else exits
+with code `2`. The server never makes an outgoing request.
+
 ## Project structure
 
 | File              | Role                                                |
@@ -216,6 +247,8 @@ even if a `/proc` read is slow, rendering keeps going.
 | `src/logs.rs`     | PHP log and slow queries reading                    |
 | `src/render.rs`   | Text output (CLI table)                             |
 | `src/tui.rs`      | Interactive dashboard (4 tabs, graphs)              |
+| `src/web.rs`      | Web server, background sampler, JSON snapshot        |
+| `src/web/index.html` | Embedded single-page web dashboard               |
 | `src/i18n.rs`     | Localization (22 languages, `--lang`)                |
 | `src/term.rs`     | Color detection / styles                            |
 | `tests/cli.rs`    | End-to-end CLI tests (`--help`, `--mock`, i18n)      |

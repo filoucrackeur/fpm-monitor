@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "/proc을(를) 읽을 수 없습니다 (Linux 필요): {}",
     unknown_option: "알 수 없는 옵션: {}",
     run_help: "--help로 실행하세요",
+    invalid_port: "잘못된 포트: {} (1-65535 기대)",
+    web_serving: "웹 UI가 http://127.0.0.1:{} 에서 대기 중입니다 (Ctrl-C로 종료)",
+    web_error: "웹 UI를 시작할 수 없습니다: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ fpm-monitor — PHP-FPM 풀 모니터 (fpm-monitor.c의 Rust 포팅)
       --lang <언어>      UI 언어: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             데모 데이터 표시 (로컬 테스트)
+      --watch            CLI 보기 대신 웹 UI를 시작합니다
+      --port <PORT>      웹 UI 포트 (기본값 8471)
   -h, --help             이 도움말 표시
 
 감지는 자동입니다 (일반적인 위치 + include 지시문).

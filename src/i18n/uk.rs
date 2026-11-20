@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "не вдалося прочитати /proc (потрібен Linux): {}",
     unknown_option: "невідомий параметр: {}",
     run_help: "запустіть із --help",
+    invalid_port: "недійсний порт: {} (очікується 1-65535)",
+    web_serving: "веб-інтерфейс слухає http://127.0.0.1:{} (Ctrl-C для виходу)",
+    web_error: "не вдалося запустити веб-інтерфейс: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ fpm-monitor — монітор пулів PHP-FPM (порт fpm-monitor.c на R
       --lang <МОВА>      мова інтерфейсу: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             показати демонстраційні дані (локальний тест)
+      --watch            запустити веб-інтерфейс замість подання CLI
+      --port <PORT>      порт веб-інтерфейсу (типово 8471)
   -h, --help             показати цю довідку
 
 Виявлення виконується автоматично (звичайні розташування + директива include).
