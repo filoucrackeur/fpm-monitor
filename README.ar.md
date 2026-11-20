@@ -1,5 +1,5 @@
 <p align="center" dir="rtl">
-  <img src="docs/logo.png" alt="fpm-monitor" width="160">
+  <img src="docs/logo.png" alt="fpm-monitor" width="760">
 </p>
 
 # fpm-monitor
