@@ -38,6 +38,10 @@ til 22 språk.
     HTTP-koder), i underfaner.
   - **Konfigurasjoner**: direktiver lest fra filene (`global` + pooler) i
     underfaner.
+- **Nettdashbord** (`--watch`): de samme fire visningene i nettleseren, servert på
+  `http://127.0.0.1:8471` av en HTTP-server uten avhengigheter. Porten velges med
+  `--port`; data samles i bakgrunnen ved `--interval`, og siden beholder
+  60 historikkpunkter til diagrammene.
 - Automatisk konfigurasjonsoppdagelse (vanlige plasseringer + `include`-direktivet).
 - Ingen nettverkskall: alt leses direkte fra `/proc` (prosesser, RSS, tilstand,
   TCP-socketens accept-kø). På macOS og BSD leses de samme dataene fra `ps` og
@@ -182,6 +186,8 @@ Options:
       --no-color          Deaktiver farger
   -t, --tui               Interaktivt dashbord (faner, `←`/`→`-underfaner)
       --interval <SEC>    Oppdateringsintervall for TUI (standard 1)
+      --watch             Nettdashbord i stedet for CLI-visningen
+      --port <PORT>       Port for nettdashbordet (standard 8471)
       --lang <LANG>       Grensesnittspråk: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (standard: en)
@@ -208,6 +214,27 @@ standard 1 s); selv om en `/proc`-lesing er treg, fortsetter gjengivelsen.
 | `↑` / `↓`      | Rull i overvåkingsvisningen        |
 | `q`, `Ctrl-C`  | Avslutt                            |
 
+### Nettdashbord
+
+`--watch` serverer de samme dataene som en én-sides webapp i stedet for å skrive
+ut CLI-tabellen:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # egendefinert port
+fpm-monitor --watch --mock          # demodata uten PHP-FPM
+```
+
+Serveren lytter bare på loopback, uten tredjepartsavhengigheter, og siden spør
+`/api/state` om pooler, workerdetaljer, logger, konfigurasjonsdirektiver og de
+siste 60 prøvene. Data samles i bakgrunnen ved `--interval` (standard 1 s), så en
+treg skanning blokkerer aldri en forespørsel. De fire fanene er **Overvåking**,
+**Diagrammer**, **Logger** og **Konfigurasjoner**; `1`–`4` og `←`/`→` velger
+faner og underfaner.
+
+`--port` godtar `1`–`65535` (`--port=9000` virker også); andre verdier avsluttes
+med kode `2`. Serveren sender aldri en utgående forespørsel.
+
 ## Prosjektstruktur
 
 | Fil               | Rolle                                               |
@@ -219,6 +246,8 @@ standard 1 s); selv om en `/proc`-lesing er treg, fortsetter gjengivelsen.
 | `src/logs.rs`     | Lesing av PHP-logg og trege spørringer              |
 | `src/render.rs`   | Tekstutdata (CLI-tabell)                            |
 | `src/tui.rs`      | Interaktivt dashbord (4 faner, grafer)              |
+| `src/web.rs`       | Webserver, bakgrunnsinnsamling, JSON-øyeblikksbilde |
+| `src/web/index.html` | Innebygd nettdashbord på én side                   |
 | `src/i18n.rs`     | Lokalisering (22 språk, `--lang`)                    |
 | `src/term.rs`     | Fargedeteksjon / stiler                             |
 | `tests/cli.rs`    | Ende-til-ende-CLI-tester (`--help`, `--mock`, i18n) |

@@ -37,6 +37,10 @@ Sprachen übersetzt.
     langsamen Abfragen (`slowlog`) und des **Access-Logs** (`access.log`, farbige
     HTTP-Codes), in Untertabs.
   - **Konfigurationen**: aus den Dateien gelesene Direktiven (`global` + Pools) in Untertabs.
+- **Web-Dashboard** (`--watch`): dieselben vier Ansichten im Browser, unter
+  `http://127.0.0.1:8471` von einem HTTP-Server ohne Abhängigkeiten bereitgestellt.
+  Der Port wird mit `--port` gesetzt; die Daten werden im Hintergrund im
+  `--interval`-Takt erfasst und die Seite behält 60 Verlaufspunkte für die Diagramme.
 - Automatische Konfigurationserkennung (übliche Orte + `include`-Direktive).
 - Keine Netzwerkaufrufe: alles wird direkt aus `/proc` gelesen (Prozesse, RSS,
   Status, Annahmewarteschlange der TCP-Sockets). Unter macOS und BSD werden dieselben
@@ -182,6 +186,8 @@ Optionen:
       --no-color          Farbe deaktivieren
   -t, --tui               Interaktives Dashboard (Tabs, `←`/`→`-Untertabs)
       --interval <SEC>    Aktualisierungsintervall des TUI (Standard: 1)
+      --watch             Web-Dashboard statt der CLI-Ansicht
+      --port <PORT>       Port des Web-Dashboards (Standard 8471)
       --lang <LANG>       Sprache der Oberfläche: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (Standard: en)
@@ -210,6 +216,28 @@ langsam ist, läuft die Darstellung weiter.
 | `↑` / `↓`        | Ansicht „Überwachung“ scrollen            |
 | `q`, `Ctrl-C`    | Beenden                                   |
 
+### Web-Dashboard
+
+`--watch` liefert dieselben Daten als einseitige Webanwendung, statt die
+CLI-Tabelle auszugeben:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # eigener Port
+fpm-monitor --watch --mock          # Demodaten ohne PHP-FPM
+```
+
+Der Server lauscht nur auf der lokalen Schnittstelle, ohne externe
+Abhängigkeiten, und die Seite fragt `/api/state` nach Pools, Worker-Details,
+Logs, Konfigurationsdirektiven und den letzten 60 Messpunkten. Die Daten werden
+im Hintergrund im `--interval`-Takt (standardmäßig 1 s) erfasst, sodass ein
+langsamer Scan nie eine Anfrage blockiert. Die vier Tabs sind **Überwachung**,
+**Diagramme**, **Logs** und **Konfigurationen**; `1`–`4` und `←`/`→` wählen Tabs
+und Untertabs.
+
+`--port` akzeptiert `1`–`65535` (`--port=9000` funktioniert ebenfalls); jeder
+andere Wert endet mit Code `2`. Der Server sendet nie eine ausgehende Anfrage.
+
 ## Projektstruktur
 
 | Datei             | Rolle                                                |
@@ -221,6 +249,8 @@ langsam ist, läuft die Darstellung weiter.
 | `src/logs.rs`     | Lesen des PHP-Logs und der langsamen Abfragen        |
 | `src/render.rs`   | Textausgabe (CLI-Tabelle)                            |
 | `src/tui.rs`      | Interaktives Dashboard (4 Tabs, Diagramme)           |
+| `src/web.rs`       | Webserver, Hintergrundsammlung, JSON-Momentaufnahme  |
+| `src/web/index.html` | Eingebettetes einseitiges Web-Dashboard            |
 | `src/i18n.rs`     | Lokalisierung (22 Sprachen, `--lang`)                 |
 | `src/term.rs`     | Farberkennung / Stile                                |
 | `tests/cli.rs`    | End-to-End-CLI-Tests (`--help`, `--mock`, i18n)      |

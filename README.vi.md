@@ -35,6 +35,10 @@ tiếng Anh) qua `--lang`, và tài liệu này được dịch sang 22 ngôn ng
   - **Nhật ký**: theo từng pool, các dòng mới nhất của log PHP (`error_log`), truy vấn
     chậm (`slowlog`) và **access log** (`access.log`, mã HTTP được tô màu), trong các tab con.
   - **Cấu hình**: các chỉ thị đọc từ tệp (`global` + các pool) trong các tab con.
+- **Bảng điều khiển web** (`--watch`): bốn chế độ xem giống nhau trong trình
+  duyệt, được phục vụ tại `http://127.0.0.1:8471` bởi máy chủ HTTP không phụ
+  thuộc bên ngoài. Cổng đặt bằng `--port`; dữ liệu được lấy mẫu nền theo
+  `--interval` và trang giữ 60 điểm lịch sử cho biểu đồ.
 - Tự động phát hiện cấu hình (các vị trí thông thường + chỉ thị `include`).
 - Không gọi qua mạng: mọi thứ được đọc trực tiếp từ `/proc` (tiến trình, RSS,
   trạng thái, hàng đợi chấp nhận kết nối của socket TCP). Trên macOS và BSD, dữ liệu
@@ -176,6 +180,8 @@ Options:
       --no-color          tắt màu
   -t, --tui               bảng điều khiển tương tác (tab, tab con `←`/`→`)
       --interval <SEC>    khoảng thời gian làm mới TUI (mặc định 1)
+      --watch             Bảng điều khiển web thay vì chế độ CLI
+      --port <PORT>       Cổng bảng điều khiển web (mặc định 8471)
       --lang <LANG>       ngôn ngữ giao diện: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (mặc định: en)
@@ -202,6 +208,27 @@ việc đọc `/proc` chậm, quá trình hiển thị vẫn tiếp tục.
 | `↑` / `↓`      | Cuộn chế độ xem Giám sát         |
 | `q`, `Ctrl-C`  | Thoát                               |
 
+### Bảng điều khiển web
+
+`--watch` phục vụ cùng dữ liệu dưới dạng ứng dụng web một trang thay vì in bảng
+CLI:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # cổng tùy chỉnh
+fpm-monitor --watch --mock          # dữ liệu demo không cần PHP-FPM
+```
+
+Máy chủ chỉ lắng nghe trên giao diện cục bộ, không dùng thư viện bên ngoài, và
+trang truy vấn `/api/state` để lấy pool, chi tiết worker, nhật ký, chỉ thị cấu
+hình và 60 mẫu gần nhất. Dữ liệu được thu thập nền theo `--interval` (mặc định
+1 giây), nên một lần quét chậm không bao giờ chặn yêu cầu. Bốn tab là **Giám
+sát**, **Biểu đồ**, **Nhật ký** và **Cấu hình**; `1`–`4` và `←`/`→` chọn tab và
+tab con.
+
+`--port` chấp nhận `1`–`65535` (`--port=9000` cũng được); giá trị khác thoát với
+mã `2`. Máy chủ không bao giờ gửi yêu cầu ra ngoài.
+
 ## Cấu trúc dự án
 
 | Tệp              | Vai trò                                                |
@@ -213,6 +240,8 @@ việc đọc `/proc` chậm, quá trình hiển thị vẫn tiếp tục.
 | `src/logs.rs`     | Đọc log PHP và truy vấn chậm                    |
 | `src/render.rs`   | Đầu ra văn bản (bảng CLI)                             |
 | `src/tui.rs`      | Bảng điều khiển tương tác (4 tab, biểu đồ)              |
+| `src/web.rs`       | Máy chủ web, lấy mẫu nền, ảnh chụp JSON              |
+| `src/web/index.html` | Bảng điều khiển web một trang nhúng               |
 | `src/i18n.rs`     | Bản địa hóa (22 ngôn ngữ, `--lang`)                |
 | `src/term.rs`     | Phát hiện màu / kiểu                            |
 | `tests/cli.rs`    | Kiểm thử CLI đầu-cuối (`--help`, `--mock`, i18n)      |

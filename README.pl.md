@@ -38,6 +38,10 @@ została przetłumaczona na 22 języki.
     wolnych zapytań (`slowlog`) oraz **dziennika dostępu** (`access.log`, kody HTTP
     z kolorowaniem), w podzakładkach.
   - **Konfiguracje**: dyrektywy odczytane z plików (`global` + pule) w podzakładkach.
+- **Panel webowy** (`--watch`): te same cztery widoki w przeglądarce, serwowane
+  na `http://127.0.0.1:8471` przez serwer HTTP bez zależności. Port ustawia się
+  przez `--port`; dane są próbkowane w tle co `--interval`, a strona zachowuje
+  60 punktów historii dla wykresów.
 - Automatyczne wykrywanie konfiguracji (typowe lokalizacje + dyrektywa `include`).
 - Brak połączeń sieciowych: wszystko jest odczytywane bezpośrednio z `/proc`
   (procesy, RSS, stan, kolejka akceptacji gniazd TCP). W systemach macOS i BSD te
@@ -184,6 +188,8 @@ Options:
       --no-color          Wyłącz kolor
   -t, --tui               Interaktywny panel (zakładki, podzakładki `←`/`→`)
       --interval <SEC>    Interwał odświeżania TUI (domyślnie 1)
+      --watch             Panel webowy zamiast widoku CLI
+      --port <PORT>       Port panelu webowego (domyślnie 8471)
       --lang <LANG>       Język interfejsu: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (domyślnie: en)
@@ -210,6 +216,27 @@ nawet jeśli odczyt `/proc` jest wolny, renderowanie jest kontynuowane.
 | `↑` / `↓`      | Przewiń widok Monitorowanie         |
 | `q`, `Ctrl-C`  | Wyjście                            |
 
+### Panel webowy
+
+`--watch` udostępnia te same dane jako jednostronicową aplikację webową zamiast
+wypisywać tabelę CLI:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # własny port
+fpm-monitor --watch --mock          # dane demonstracyjne bez PHP-FPM
+```
+
+Serwer nasłuchuje tylko na interfejsie lokalnym, bez żadnych zależności
+zewnętrznych, a strona odpytuje `/api/state` o pule, szczegóły workerów, logi,
+dyrektywy konfiguracji i ostatnie 60 próbek. Dane są zbierane w tle co
+`--interval` (domyślnie 1 s), więc wolne skanowanie nigdy nie blokuje żądania.
+Cztery zakładki to **Monitorowanie**, **Wykresy**, **Logi** i **Konfiguracje**;
+`1`–`4` oraz `←`/`→` wybierają zakładki i podzakładki.
+
+`--port` akceptuje `1`–`65535` (działa też `--port=9000`); inna wartość kończy
+się kodem `2`. Serwer nigdy nie wysyła żądania wychodzącego.
+
 ## Struktura projektu
 
 | Plik              | Rola                                                |
@@ -221,6 +248,8 @@ nawet jeśli odczyt `/proc` jest wolny, renderowanie jest kontynuowane.
 | `src/logs.rs`     | Odczyt dziennika PHP i wolnych zapytań              |
 | `src/render.rs`   | Wyjście tekstowe (tabela CLI)                       |
 | `src/tui.rs`      | Interaktywny panel (4 zakładki, wykresy)            |
+| `src/web.rs`       | Serwer webowy, próbkowanie w tle, migawka JSON       |
+| `src/web/index.html` | Wbudowany jednostronicowy panel webowy             |
 | `src/i18n.rs`     | Lokalizacja (22 języków, `--lang`)                   |
 | `src/term.rs`     | Wykrywanie kolorów / style                          |
 | `tests/cli.rs`    | Testy CLI end-to-end (`--help`, `--mock`, i18n)     |

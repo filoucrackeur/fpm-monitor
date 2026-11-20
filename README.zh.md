@@ -34,6 +34,9 @@
   - **日志**：按进程池分别显示 PHP 日志（`error_log`）、慢查询（`slowlog`）和
     **访问日志**（`access.log`，HTTP 状态码着色）的最新行，以子标签页呈现。
   - **配置**：以子标签页显示从文件中读取的指令（`global` + 进程池）。
+- **Web 仪表盘**（`--watch`）：在浏览器中显示同样的四个视图，由无外部依赖的
+  HTTP 服务器在 `http://127.0.0.1:8471` 提供。端口通过 `--port` 修改；数据按
+  `--interval` 在后台采样，页面为图表保留 60 个历史点。
 - 自动发现配置（常见位置 + `include` 指令）。
 - 无任何网络调用：所有数据都直接从 `/proc` 读取（进程、RSS、状态、TCP 套接字接受队列）。
   在 macOS 和 BSD 上，相同数据从 `ps` 和 `netstat` 读取；无需任何 FPM 状态配置
@@ -170,6 +173,8 @@ fpm-monitor [OPTIONS]
       --no-color          禁用颜色
   -t, --tui               交互式仪表盘（标签页、`←`/`→` 子标签页）
       --interval <SEC>    TUI 刷新间隔（默认 1）
+      --watch             使用 Web 仪表盘代替 CLI 视图
+      --port <PORT>       Web 仪表盘端口（默认 8471）
       --lang <LANG>       界面语言：en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           （默认：en）
@@ -195,6 +200,25 @@ TUI 会占满整个终端（支持动态调整大小）并保持响应：数据�
 | `↑` / `↓` | 滚动监控视图 |
 | `q`、`Ctrl-C` | 退出 |
 
+### Web 仪表盘
+
+`--watch` 以单页 Web 应用的形式提供相同的数据，而不是打印 CLI 表格：
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # 自定义端口
+fpm-monitor --watch --mock          # 无需 PHP-FPM 的演示数据
+```
+
+服务器仅监听本地回环地址，不使用任何第三方依赖。页面从 `/api/state` 获取
+进程池、worker 详情、日志、配置指令和最近 60 个样本。数据按 `--interval`
+（默认 1 秒）在后台采集，因此缓慢的扫描不会阻塞请求。四个标签页为
+**监控**、**图表**、**日志**和**配置**；使用 `1`–`4` 和 `←`/`→` 切换标签页
+和子标签页。
+
+`--port` 接受 `1`–`65535`（也支持 `--port=9000`）；其他值以代码 `2` 退出。
+服务器从不发起任何出站请求。
+
 ## 项目结构
 
 | 文件 | 作用 |
@@ -206,6 +230,8 @@ TUI 会占满整个终端（支持动态调整大小）并保持响应：数据�
 | `src/logs.rs` | 读取 PHP 日志与慢查询 |
 | `src/render.rs` | 文本输出（CLI 表格） |
 | `src/tui.rs` | 交互式仪表盘（4 个标签页、图表） |
+| `src/web.rs`       | Web 服务器、后台采样、JSON 快照                     |
+| `src/web/index.html` | 内嵌单页 Web 仪表盘                              |
 | `src/i18n.rs` | 本地化（22 种语言、`--lang`） |
 | `src/term.rs` | 颜色检测 / 样式 |
 | `tests/cli.rs` | CLI 端到端测试（`--help`、`--mock`、i18n） |
