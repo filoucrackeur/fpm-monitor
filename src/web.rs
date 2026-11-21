@@ -705,6 +705,10 @@ mod tests {
         assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
         assert!(response.contains("Content-Type: text/html; charset=utf-8"));
         assert!(response.contains("fpm-monitor"));
+        assert!(response.contains("id=\"theme\""));
+        assert!(response.contains("data-theme"));
+        assert!(response.contains("details.workers"));
+        assert!(response.contains("openPools"));
     }
 
     #[test]
