@@ -365,6 +365,13 @@
     storageSet(OPEN_POOLS_KEY, JSON.stringify(Array.from(ui.openPools)));
   }
 
+  function rememberOpenPool(name, open) {
+    const changed = ui.openPools.has(name) !== open;
+    if (open) ui.openPools.add(name);
+    else ui.openPools.delete(name);
+    if (changed) saveOpenPools();
+  }
+
   function el(tag, cls, text) {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -449,10 +456,8 @@
     body.querySelectorAll("details.workers").forEach((node) => {
       const name = node.dataset.pool;
       if (!name) return;
-      if (node.open) ui.openPools.add(name);
-      else ui.openPools.delete(name);
+      rememberOpenPool(name, node.open);
     });
-    saveOpenPools();
 
     body.textContent = "";
     $("noPools").classList.toggle("hide", pools.length > 0);
@@ -484,11 +489,7 @@
         const box = el("details", "workers");
         box.dataset.pool = p.name;
         box.open = ui.openPools.has(p.name);
-        box.addEventListener("toggle", () => {
-          if (box.open) ui.openPools.add(p.name);
-          else ui.openPools.delete(p.name);
-          saveOpenPools();
-        });
+        box.addEventListener("toggle", () => rememberOpenPool(p.name, box.open));
         const summary = el("summary", "", p.worker_list.length + " workers");
         box.appendChild(summary);
         const grid = el("div", "workers-grid");
