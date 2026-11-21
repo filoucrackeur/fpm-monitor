@@ -6,6 +6,7 @@ mod proc;
 mod render;
 mod term;
 mod tui;
+mod web;
 
 use std::path::PathBuf;
 use std::process::exit;
@@ -20,6 +21,8 @@ fn main() {
     let mut no_color = false;
     let mut mock = false;
     let mut tui_mode = false;
+    let mut watch = false;
+    let mut port = web::DEFAULT_PORT;
     let mut interval = Duration::from_secs(1);
 
     let args: Vec<String> = std::env::args().collect();
@@ -61,7 +64,13 @@ fn main() {
             "--color" => force_color = true,
             "--no-color" => no_color = true,
             "-t" | "--tui" => tui_mode = true,
+            "--watch" => watch = true,
             "--mock" => mock = true,
+            "--port" => {
+                i += 1;
+                let value = args.get(i).map(String::as_str).unwrap_or("");
+                port = port_arg(value);
+            }
             "--interval" => {
                 i += 1;
                 if let Some(v) = args.get(i) {
@@ -81,6 +90,7 @@ fn main() {
             s if s.starts_with("--config=") => {
                 cli_config = Some(PathBuf::from(&s[9..]));
             }
+            s if s.starts_with("--port=") => port = port_arg(&s[7..]),
             s => {
                 eprintln!("{}", i18n::l().unknown_option.replace("{}", s));
                 eprintln!("{}", i18n::l().run_help);
@@ -94,6 +104,13 @@ fn main() {
 
     if mock {
         let cfg = data::mock_config();
+        if watch {
+            if let Err(e) = web::run(cfg, interval, port, true) {
+                eprintln!("{}", i18n::l().web_error.replace("{}", &e.to_string()));
+                exit(1);
+            }
+            return;
+        }
         if tui_mode {
             let cfg_thread = cfg.clone();
             let masters = data::mock_scan().masters;
@@ -116,6 +133,14 @@ fn main() {
 
     let files = config::discover(cli_config.as_deref());
     let cfg = config::load(&files);
+
+    if watch {
+        if let Err(e) = web::run(cfg, interval, port, false) {
+            eprintln!("{}", i18n::l().web_error.replace("{}", &e.to_string()));
+            exit(1);
+        }
+        return;
+    }
 
     if tui_mode {
         let cfg2 = cfg.clone();
@@ -150,4 +175,15 @@ fn main() {
     let masters = scan.masters.clone();
     let rows = data::build_rows(scan, &cfg);
     render::render(&rows, &masters, verbose, &style);
+}
+
+/// Parses `--port`, exiting with code 2 and a localized message on error.
+fn port_arg(value: &str) -> u16 {
+    match web::parse_port(value) {
+        Some(port) => port,
+        None => {
+            eprintln!("{}", i18n::l().invalid_port.replace("{}", value));
+            exit(2);
+        }
+    }
 }

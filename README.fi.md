@@ -40,6 +40,10 @@ englanti) `--lang`-valitsimella, ja tämä dokumentaatio on käännetty 22 kiele
     alivälilehdillä.
   - **Asetukset**: tiedostoista luetut direktiivit (`global` + poolit)
     alivälilehdillä.
+- **Verkkopaneeli** (`--watch`): samat neljä näkymää selaimessa,
+  `http://127.0.0.1:8471`-osoitteessa ilman riippuvuuksia toimivan HTTP-palvelimen
+  tarjoamana. Portti asetetaan `--port`-valitsimella; tiedot kerätään taustalla
+  `--interval`-välillä ja sivu säilyttää 60 historia­pistettä kaavioilleen.
 - Automaattinen asetusten tunnistus (tavalliset sijainnit + `include`-direktiivi).
 - Ei verkkokutsuja: kaikki luetaan suoraan `/proc`-hakemistosta (prosessit, RSS,
   tila, TCP-soketin vastaanottojono). macOS:llä ja BSD:llä samat tiedot luetaan
@@ -187,6 +191,8 @@ Valinnat:
       --no-color          Poista värit käytöstä
   -t, --tui               Interaktiivinen kojelauta (välilehdet, `←`/`→`-alivälilehdet)
       --interval <SEC>    TUI:n päivitysväli (oletus 1)
+      --watch             Verkkopaneeli CLI-näkymän sijaan
+      --port <PORT>       Verkkopaneelin portti (oletus 8471)
       --lang <LANG>       Käyttöliittymän kieli: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (oletus: en)
@@ -213,6 +219,27 @@ vaikka `/proc`-luku olisi hidas, piirto jatkuu.
 | `↑` / `↓`     | Vieritä seurantanäkymää            |
 | `q`, `Ctrl-C` | Lopeta                             |
 
+### Verkkopaneeli
+
+`--watch` tarjoilee samat tiedot yksisivuisena verkkosovelluksena CLI-taulukon
+tulostamisen sijaan:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # mukautettu portti
+fpm-monitor --watch --mock          # demotiedot ilman PHP-FPM:ää
+```
+
+Palvelin kuuntelee vain paikallista rajapintaa eikä käytä ulkoisia
+riippuvuuksia; sivu kysyy `/api/state`-rajapinnasta poolit, workerien tiedot,
+lokit, kokoonpanodirektiivit ja viimeiset 60 näytettä. Tiedot kerätään taustalla
+`--interval`-välillä (oletus 1 s), joten hidas skannaus ei koskaan estä pyyntöä.
+Neljä välilehteä ovat **Valvonta**, **Kaaviot**, **Lokit** ja **Kokoonpanot**;
+`1`–`4` ja `←`/`→` valitsevat välilehdet ja alivälilehdet.
+
+`--port` hyväksyy arvot `1`–`65535` (`--port=9000` toimii myös); muu arvo
+lopettaa koodilla `2`. Palvelin ei koskaan tee lähtevää pyyntöä.
+
 ## Projektin rakenne
 
 | Tiedosto          | Tehtävä                                             |
@@ -224,6 +251,8 @@ vaikka `/proc`-luku olisi hidas, piirto jatkuu.
 | `src/logs.rs`     | PHP-lokin ja hitaiden kyselyjen luku                |
 | `src/render.rs`   | Tekstituloste (CLI-taulukko)                        |
 | `src/tui.rs`      | Interaktiivinen kojelauta (4 välilehteä, kaaviot)   |
+| `src/web.rs`       | Verkkopalvelin, taustakeruu, JSON-tilannekuva        |
+| `src/web/index.html` | Upotettu yksisivuinen verkkopaneeli                |
 | `src/i18n.rs`     | Lokalisointi (22 kieltä, `--lang`)                   |
 | `src/term.rs`     | Värintunnistus / tyylit                             |
 | `tests/cli.rs`    | CLI:n end-to-end-testit (`--help`, `--mock`, i18n)  |

@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "/proc-tiedostoa ei voi lukea (vaatii Linuxin): {}",
     unknown_option: "tuntematon valitsin: {}",
     run_help: "suorita --help-valitsimella",
+    invalid_port: "virheellinen portti: {} (odotettu 1-65535)",
+    web_serving: "verkkokäyttöliittymä kuuntelee osoitteessa http://127.0.0.1:{} (Ctrl-C lopettaa)",
+    web_error: "verkkokäyttöliittymää ei voi käynnistää: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Valitsimet:
       --lang <KIELI>     Käyttöliittymän kieli: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Näytä demodata (paikallinen testi)
+      --watch            Käynnistä verkkokäyttöliittymä CLI-näkymän sijaan
+      --port <PORT>      Verkkokäyttöliittymän portti (oletus 8471)
   -h, --help             Näytä tämä ohje
 
 Tunnistus on automaattinen (tavalliset sijainnit + include-direktiivi).

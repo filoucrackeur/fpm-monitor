@@ -36,6 +36,10 @@ et cette documentation est traduite en 22 langues.
     requêtes lentes (`slowlog`) et du **journal d'accès** (`access.log`, codes HTTP
     colorés), dans des sous-onglets.
   - **Configurations** : directives lues dans les fichiers (`global` + pools) dans des sous-onglets.
+- **Tableau de bord web** (`--watch`) : les mêmes quatre vues dans le navigateur,
+  servies sur `http://127.0.0.1:8471` par un serveur HTTP sans dépendance. Le port
+  se règle avec `--port` ; les données sont échantillonnées en arrière-plan à
+  `--interval` et la page conserve 60 points d'historique pour ses graphiques.
 - Découverte automatique de la configuration (emplacements habituels + directive `include`).
 - Aucun appel réseau : tout est lu directement depuis `/proc` (processus, RSS, état,
   file d'attente d'acceptation des sockets TCP). Sous macOS et BSD, les mêmes données
@@ -182,6 +186,8 @@ Options:
       --no-color          Désactive la couleur
   -t, --tui               Tableau de bord interactif (onglets, sous-onglets `←`/`→`)
       --interval <SEC>    Intervalle de rafraîchissement du TUI (1 par défaut)
+      --watch             Tableau de bord web au lieu de la vue CLI
+      --port <PORT>       Port du tableau de bord web (8471 par défaut)
       --lang <LANG>       Langue de l'interface : en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (par défaut : en)
@@ -208,6 +214,28 @@ par défaut) ; même si une lecture de `/proc` est lente, le rendu continue.
 | `↑` / `↓`        | Faire défiler la vue Surveillance          |
 | `q`, `Ctrl-C`    | Quitter                                    |
 
+### Tableau de bord web
+
+`--watch` sert les mêmes données sous forme d'application web d'une seule page
+au lieu d'afficher le tableau CLI :
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # port personnalisé
+fpm-monitor --watch --mock          # données de démo, sans PHP-FPM
+```
+
+Le serveur n'écoute que sur la boucle locale, sans aucune dépendance externe, et
+la page interroge `/api/state` pour les pools, le détail des workers, les
+journaux, les directives de configuration et les 60 derniers échantillons. Les
+données sont collectées en arrière-plan à `--interval` (1 s par défaut), donc un
+scan lent ne bloque jamais une requête. Les quatre onglets sont
+**Surveillance**, **Graphiques**, **Journaux** et **Configurations** ; `1`–`4`
+et `←`/`→` sélectionnent les onglets et sous-onglets.
+
+`--port` accepte `1`–`65535` (`--port=9000` fonctionne aussi) ; toute autre
+valeur quitte avec le code `2`. Le serveur n'émet jamais de requête sortante.
+
 ## Structure du projet
 
 | Fichier            | Rôle                                                |
@@ -219,6 +247,8 @@ par défaut) ; même si une lecture de `/proc` est lente, le rendu continue.
 | `src/logs.rs`      | Lecture du journal PHP et des requêtes lentes       |
 | `src/render.rs`    | Sortie texte (tableau CLI)                          |
 | `src/tui.rs`       | Tableau de bord interactif (4 onglets, graphiques)  |
+| `src/web.rs`       | Serveur web, échantillonnage, instantané JSON        |
+| `src/web/index.html` | Tableau de bord web d'une seule page embarqué     |
 | `src/i18n.rs`      | Localisation (22 langues, `--lang`)                  |
 | `src/term.rs`      | Détection des couleurs / styles                     |
 | `tests/cli.rs`     | Tests CLI de bout en bout (`--help`, `--mock`, i18n) |

@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "kan ikke lese /proc (krever Linux): {}",
     unknown_option: "ukjent alternativ: {}",
     run_help: "kjør med --help",
+    invalid_port: "ugyldig port: {} (forventet 1-65535)",
+    web_serving: "nettgrensesnittet lytter på http://127.0.0.1:{} (Ctrl-C for å avslutte)",
+    web_error: "kan ikke starte nettgrensesnittet: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Alternativer:
       --lang <SPRÅK>     UI-språk: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Vis demodata (lokal test)
+      --watch            Start nettgrensesnittet i stedet for CLI-visningen
+      --port <PORT>      Port for nettgrensesnittet (standard 8471)
   -h, --help             Vis denne hjelpen
 
 Gjenkjenning skjer automatisk (vanlige plasseringer + include-direktiv).

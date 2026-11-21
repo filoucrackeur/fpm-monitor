@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "nie można odczytać /proc (wymagany Linux): {}",
     unknown_option: "nieznana opcja: {}",
     run_help: "uruchom z --help",
+    invalid_port: "nieprawidłowy port: {} (oczekiwano 1-65535)",
+    web_serving: "interfejs webowy nasłuchuje na http://127.0.0.1:{} (Ctrl-C, aby wyjść)",
+    web_error: "nie można uruchomić interfejsu webowego: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Opcje:
       --lang <JĘZYK>     język interfejsu: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             pokaż dane demonstracyjne (test lokalny)
+      --watch            uruchom interfejs webowy zamiast widoku CLI
+      --port <PORT>      port interfejsu webowego (domyślnie 8471)
   -h, --help             pokaż tę pomoc
 
 Wykrywanie jest automatyczne (typowe lokalizacje + dyrektywa include).

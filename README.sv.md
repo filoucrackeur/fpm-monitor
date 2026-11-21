@@ -39,6 +39,10 @@ Windows**, över **18 målarkitekturer**. Gränssnittet finns på 22 språk
     färgkodade HTTP-statuskoder), i underflikar.
   - **Konfigurationer**: direktiv som läses från filerna (`global` + pooler) i
     underflikar.
+- **Webbpanel** (`--watch`): samma fyra vyer i webbläsaren, serverade på
+  `http://127.0.0.1:8471` av en HTTP-server utan beroenden. Porten ställs in med
+  `--port`; data samplas i bakgrunden vid `--interval` och sidan behåller
+  60 historikpunkter för diagrammen.
 - Automatisk konfigurationsupptäckt (vanliga platser + `include`-direktivet).
 - Inga nätverksanrop: allt läses direkt från `/proc` (processer, RSS, tillstånd,
   TCP-socketens acceptkö). På macOS och BSD läses samma data från `ps` och
@@ -181,6 +185,8 @@ Alternativ:
       --no-color          Inaktivera färg
   -t, --tui               Interaktiv panel (flikar, `←`/`→` underflikar)
       --interval <SEC>    Uppdateringsintervall för TUI (standard 1)
+      --watch             Webbpanel i stället för CLI-vyn
+      --port <PORT>       Port för webbpanelen (standard 8471)
       --lang <LANG>       Gränssnittsspråk: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (standard: en)
@@ -207,6 +213,27 @@ standard 1 s); även om en läsning av `/proc` är långsam fortsätter renderin
 | `↑` / `↓`     | Scrolla i övervakningsvyn          |
 | `q`, `Ctrl-C` | Avsluta                            |
 
+### Webbpanel
+
+`--watch` serverar samma data som en ensidig webbapp i stället för att skriva ut
+CLI-tabellen:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # egen port
+fpm-monitor --watch --mock          # demodata utan PHP-FPM
+```
+
+Servern lyssnar bara på loopback, utan tredjepartsberoenden, och sidan frågar
+`/api/state` efter pooler, workerdetaljer, loggar, konfigurationsdirektiv och de
+senaste 60 proverna. Data samlas i bakgrunden vid `--interval` (standard 1 s), så
+en långsam skanning blockerar aldrig en begäran. De fyra flikarna är
+**Övervakning**, **Diagram**, **Loggar** och **Konfigurationer**; `1`–`4` och
+`←`/`→` väljer flikar och underflikar.
+
+`--port` accepterar `1`–`65535` (`--port=9000` fungerar också); andra värden
+avslutas med kod `2`. Servern skickar aldrig någon utgående begäran.
+
 ## Projektstruktur
 
 | Fil               | Roll                                                |
@@ -218,6 +245,8 @@ standard 1 s); även om en läsning av `/proc` är långsam fortsätter renderin
 | `src/logs.rs`     | Läsning av PHP-logg och långsamma frågor            |
 | `src/render.rs`   | Textutdata (CLI-tabell)                             |
 | `src/tui.rs`      | Interaktiv panel (4 flikar, grafer)                 |
+| `src/web.rs`       | Webbserver, bakgrundsinsamling, JSON-ögonblicksbild |
+| `src/web/index.html` | Inbäddad ensidig webbpanel                       |
 | `src/i18n.rs`     | Lokalisering (22 språk, `--lang`)                    |
 | `src/term.rs`     | Färgdetektering / stilar                            |
 | `tests/cli.rs`    | End-to-end-tester för CLI (`--help`, `--mock`, i18n) |

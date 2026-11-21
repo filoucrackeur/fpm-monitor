@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<script>
+  (function () {
+    var theme = null;
+    try {
+      var forced = new URLSearchParams(window.location.search).get("theme");
+      if (forced === "light" || forced === "dark") {
+        theme = forced;
+      } else {
+        var stored = localStorage.getItem("fpm-monitor.theme");
+        if (stored === "light" || stored === "dark") {
+          theme = stored;
+        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          theme = "dark";
+        }
+      }
+    } catch (e) {}
+    document.documentElement.dataset.theme = theme || "light";
+  })();
+</script>
+<title>fpm-monitor — web dashboard</title>
+<style>
+  :root {
+    /* Design tokens — php.net official charte graphique */
+    color-scheme: light;
+    --bg: #333;
+    --bg-text: #ccc;
+    --surface: #f2f2f2;
+    --surface-text: #333;
+    --surface-muted: #666;
+    --surface-head: #c4c9df;
+    --blue: #4f5b93;
+    --blue-mid: #7a86b8;
+    --blue-light: #e2e4ef;
+    --magenta: #793862;
+    --magenta-mid: #ae508d;
+    --magenta-light: #cf82b1;
+    --link: #369;
+    --border: #d9d9d9;
+
+    --panel: #ffffff;
+    --panel-2: #e6e6e6;
+    --text: #333;
+    --muted: #666;
+    --accent: #4f5b93;
+    --accent-2: #ae508d;
+    --radius: 8px;
+
+    --grid: #d9d9d9;
+    --row-odd: #ffffff;
+    --row-even: #e6e6e6;
+    --row-hover: rgba(79, 91, 147, 0.06);
+    --code-bg: #ffffff;
+    --code-shadow: rgba(0, 0, 0, 0.15);
+
+    --amber: #fbbf24;
+    --ok: #15803d;
+    --warn: #b45309;
+    --bad: #b91c1c;
+    --ok-bg: rgba(21, 128, 61, 0.12);
+    --ok-line: rgba(21, 128, 61, 0.35);
+    --warn-bg: rgba(180, 83, 9, 0.12);
+    --warn-line: rgba(180, 83, 9, 0.35);
+    --bad-bg: rgba(185, 28, 28, 0.1);
+    --bad-line: rgba(185, 28, 28, 0.35);
+  }
+
+  /* Dark mode: same php.net identity, inverted surfaces. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1117;
+    --bg-text: #b8bfce;
+    --surface: #171a23;
+    --surface-text: #e4e7ee;
+    --surface-muted: #9aa1b2;
+    --surface-head: #262b3a;
+    --blue: #9aa6dd;
+    --blue-mid: #b4bfe8;
+    --blue-light: #2b3145;
+    --magenta: #d18ab5;
+    --magenta-mid: #d89bc2;
+    --magenta-light: #e3aad0;
+    --link: #9db4ff;
+    --border: #343a4c;
+
+    --panel: #1e2230;
+    --panel-2: #272c3d;
+    --text: #e4e7ee;
+    --muted: #9aa1b2;
+    --accent: #4f5b93;
+    --accent-2: #ae508d;
+
+    --grid: #343a4c;
+    --row-odd: #1e2230;
+    --row-even: #232838;
+    --row-hover: rgba(255, 255, 255, 0.045);
+    --code-bg: #141721;
+    --code-shadow: rgba(0, 0, 0, 0.55);
+
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --ok-bg: rgba(74, 222, 128, 0.12);
+    --ok-line: rgba(74, 222, 128, 0.35);
+    --warn-bg: rgba(251, 191, 36, 0.12);
+    --warn-line: rgba(251, 191, 36, 0.35);
+    --bad-bg: rgba(248, 113, 113, 0.12);
+    --bad-line: rgba(248, 113, 113, 0.35);
+  }
+  :root[data-theme="dark"] body { background-image: none; }
+  :root[data-theme="dark"] header { background-color: #39406b; }
+  :root[data-theme="dark"] .type.static { border-color: rgba(154, 166, 221, 0.45); background: rgba(154, 166, 221, 0.12); }
+  :root[data-theme="dark"] .type.dynamic { border-color: rgba(209, 138, 181, 0.45); background: rgba(209, 138, 181, 0.12); }
+  :root[data-theme="dark"] .type.ondemand { border-color: rgba(180, 191, 232, 0.45); background: rgba(180, 191, 232, 0.10); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath style='stroke:%23000;stroke-width:.5;stroke-opacity:.25' d='M 0,0 4,4 M 0,4 4,0'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    color: var(--bg-text);
+    font: 16px/1.5 "Fira Sans", "Source Sans Pro", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    min-height: 100vh;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover, a:focus { color: var(--magenta-mid); border-color: var(--magenta-mid); }
+
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 0 28px;
+    max-width: 1320px; margin: 0 auto;
+    min-height: 64px;
+    background-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  }
+  header nav {
+    display: flex; gap: 4px; margin-left: 8px; padding: 0;
+    max-width: none; margin: 0; border-bottom: 0;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { margin: 0; font-size: 1.75rem; font-weight: 500; letter-spacing: -0.02em; color: #fff; }
+  .brand h1 span { color: var(--magenta-light); }
+  .brand small { color: rgba(255, 255, 255, 0.75); font-size: 12px; }
+  .spacer { flex: 1; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px; padding: 5px 11px; font-size: 12px; color: #fff;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+  .badge.live .dot { background: #34d399; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.25); }
+  .badge.down .dot { background: #f87171; box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.25); }
+  .theme-toggle {
+    appearance: none; display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px;
+    color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  .theme-toggle:hover { background: rgba(255, 255, 255, 0.16); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--magenta-light); outline-offset: 2px; }
+  .theme-toggle .icon { font-size: 13px; line-height: 1; }
+  nav button {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    color: #efedfd; font: inherit; font-weight: 600; font-size: 15px;
+    padding: 10px 14px; border-radius: 8px; border-bottom: 2px solid transparent;
+  }
+  nav button:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+  nav button.active { color: #fff; background: rgba(0, 0, 0, 0.18); border-bottom-color: transparent; }
+  nav button kbd { color: rgba(255, 255, 255, 0.6); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; margin-left: 6px; }
+
+  main {
+    max-width: 1320px; margin: 0 auto; padding: 22px 28px 56px;
+    background-color: var(--surface); color: var(--surface-text);
+    min-height: 60vh;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; margin-bottom: 16px;
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+  .banner {
+    display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: var(--radius);
+    border: 1px solid var(--bad-line); background: var(--bad-bg); color: var(--bad);
+    font-size: 13px;
+  }
+  .banner.show { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .card .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; }
+  .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; letter-spacing: -.02em; }
+  .card .s { color: var(--muted); font-size: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--surface-text); background: var(--surface-head); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; border-bottom: 1px solid var(--blue-mid); }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:nth-child(odd) { background: var(--row-odd); }
+  tbody tr:nth-child(even) { background: var(--row-even); }
+  tbody tr:hover { background: var(--row-hover); }
+  .pool { font-weight: 700; }
+  .type { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); }
+  .type.static { color: var(--blue); border-color: rgba(79, 91, 147, 0.4); background: rgba(79, 91, 147, 0.08); }
+  .type.dynamic { color: var(--magenta); border-color: rgba(121, 56, 98, 0.4); background: rgba(121, 56, 98, 0.08); }
+  .type.ondemand { color: var(--blue-mid); border-color: rgba(122, 134, 184, 0.45); background: rgba(122, 134, 184, 0.1); }
+  .type.unknown { color: var(--muted); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  details.workers { margin-top: 4px; }
+  details.workers summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  .workers-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .worker { border: 1px solid var(--border); background: var(--panel-2); border-radius: 8px; padding: 4px 8px; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+  .worker b { color: var(--surface-text); font-weight: 600; }
+  .subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .subtabs button {
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+    padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .subtabs button:hover { color: var(--surface-text); }
+  .subtabs button.active { color: #fff; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .graphs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .graph { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .graph .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .graph .title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .graph .now { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .graph .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .graph .legend i { display: inline-block; width: 14px; height: 0; border-top: 2px dashed currentColor; vertical-align: middle; margin-right: 4px; }
+  .graph svg { display: block; width: 100%; height: 116px; margin-top: 8px; }
+  .logs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .log { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .log .head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .log .head b { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .log .head span { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log pre { margin: 0; padding: 12px 14px; min-height: 120px; max-height: 300px; overflow: auto; font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--surface-text); background: var(--code-bg); box-shadow: inset 0 0 0 1px var(--code-shadow); border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+  .log pre.empty { color: var(--muted); font-style: italic; background: transparent; box-shadow: none; }
+  .directives { width: 100%; }
+  .directives td { text-align: left; }
+  .directives td:first-child { width: 1%; white-space: nowrap; padding-right: 28px; color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .directives td:last-child { color: var(--surface-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; white-space: normal; }
+  .empty-state { color: var(--muted); padding: 18px 0; }
+  footer { max-width: 1320px; margin: 0 auto; padding: 0 28px 30px; color: var(--bg-text); font-size: 12px; }
+  .hide { display: none !important; }
+  @media (max-width: 640px) {
+    header, nav, main, footer { padding-left: 14px; padding-right: 14px; }
+    .card .v { font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>fpm<span>-</span>monitor <small>web dashboard</small></h1>
+  </div>
+  <nav id="tabs">
+    <button data-tab="monitoring" class="active">Monitoring <kbd>1</kbd></button>
+    <button data-tab="graphs">Graphs <kbd>2</kbd></button>
+    <button data-tab="logs">Logs <kbd>3</kbd></button>
+    <button data-tab="configs">Configurations <kbd>4</kbd></button>
+  </nav>
+  <div class="spacer"></div>
+  <span id="mode" class="badge"><span class="dot"></span><span id="modeText">connecting…</span></span>
+  <span class="badge"><span class="dot" style="background:var(--blue-mid)"></span><span id="updated">—</span></span>
+  <button id="theme" class="theme-toggle" type="button" aria-label="Switch between light and dark mode" title="Switch between light and dark mode">
+    <span id="themeIcon" class="icon" aria-hidden="true">☾</span><span id="themeText">Dark mode</span>
+  </button>
+</header>
+
+<main>
+  <div id="error" class="banner"></div>
+
+  <section data-panel="monitoring">
+    <div class="cards" id="cards"></div>
+    <div class="panel">
+      <h2>Pools</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th><th>Type</th><th>Workers</th><th>Running</th><th>Idle</th>
+              <th>Backlog</th><th>Max child</th><th>Max req</th><th>Memory</th>
+            </tr>
+          </thead>
+          <tbody id="poolRows"></tbody>
+        </table>
+      </div>
+      <div id="noPools" class="empty-state hide">No pool detected.</div>
+    </div>
+  </section>
+
+  <section data-panel="graphs" class="hide">
+    <div class="subtabs" id="graphPools"></div>
+    <div class="graphs" id="graphGrid"></div>
+  </section>
+
+  <section data-panel="logs" class="hide">
+    <div class="subtabs" id="logPools"></div>
+    <div class="logs" id="logGrid"></div>
+  </section>
+
+  <section data-panel="configs" class="hide">
+    <div class="subtabs" id="cfgPools"></div>
+    <div class="panel">
+      <h2 id="cfgTitle">Directives</h2>
+      <div id="cfgBody"></div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer">fpm-monitor · reads the local process table, no network access.</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  const THEME_KEY = "fpm-monitor.theme";
+  const OPEN_POOLS_KEY = "fpm-monitor.openPools";
+
+  const ui = {
+    data: null, tab: "monitoring", graph: 0, log: 0, cfg: 0, timer: null,
+    openPools: new Set()
+  };
+  const $ = (id) => document.getElementById(id);
+
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (e) { /* private mode */ }
+  }
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  // ---------- Theme ----------
+
+  function currentTheme() {
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  }
+
+  function applyTheme(theme, persist) {
+    document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+    $("themeIcon").textContent = theme === "dark" ? "☀" : "☾";
+    $("themeText").textContent = theme === "dark" ? "Light mode" : "Dark mode";
+    if (persist) storageSet(THEME_KEY, theme);
+  }
+
+  // ---------- Open pools (kept across refreshes) ----------
+
+  function loadOpenPools() {
+    try {
+      const saved = JSON.parse(storageGet(OPEN_POOLS_KEY) || "[]");
+      if (Array.isArray(saved)) saved.forEach((name) => ui.openPools.add(String(name)));
+    } catch (e) { /* ignore malformed state */ }
+  }
+
+  function saveOpenPools() {
+    storageSet(OPEN_POOLS_KEY, JSON.stringify(Array.from(ui.openPools)));
+  }
+
+  function rememberOpenPool(name, open) {
+    const changed = ui.openPools.has(name) !== open;
+    if (open) ui.openPools.add(name);
+    else ui.openPools.delete(name);
+    if (changed) saveOpenPools();
+  }
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function setStatus(kind, text) {
+    const mode = $("mode");
+    mode.className = "badge " + (kind || "");
+    $("modeText").textContent = text;
+  }
+
+  function fmtMem(kb) {
+    if (kb === null || kb === undefined || kb < 0) return "—";
+    if (kb >= 1048576) return (kb / 1048576).toFixed(1) + " GB";
+    if (kb >= 1024) return (kb / 1024).toFixed(1) + " MB";
+    return kb + " KB";
+  }
+
+  function fmtTime(epoch) {
+    if (!epoch) return "—";
+    return new Date(epoch * 1000).toLocaleTimeString();
+  }
+
+  function opt(v) { return v === null || v === undefined ? "—" : String(v); }
+
+  function ratioClass(value, limit) {
+    if (!limit || limit <= 0) return "";
+    if (value >= limit) return "bad";
+    if (value >= limit * 0.8) return "warn";
+    return "ok";
+  }
+
+  function currentPool(key) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (!pools.length) return null;
+    if (ui[key] >= pools.length) ui[key] = 0;
+    return pools[ui[key]];
+  }
+
+  function subtabs(container, names, active, onPick) {
+    container.textContent = "";
+    names.forEach((name, i) => {
+      const b = el("button", i === active ? "active" : "", name);
+      b.addEventListener("click", () => onPick(i));
+      container.appendChild(b);
+    });
+  }
+
+  // ---------- Monitoring ----------
+
+  function renderCards(pools) {
+    const total = (k) => pools.reduce((acc, p) => acc + (p[k] || 0), 0);
+    const memory = pools.reduce((acc, p) => acc + (p.memory_kb || 0), 0);
+    const backlog = pools.reduce((acc, p) => acc + (p.backlog || 0), 0);
+    const items = [
+      ["Pools", pools.length, "configured + detected"],
+      ["Workers", total("workers"), "total processes"],
+      ["Running", total("running"), "state R"],
+      ["Idle", total("idle"), "state S"],
+      ["Backlog", backlog, "pending connections"],
+      ["Memory", fmtMem(memory), "sum of worker RSS"],
+    ];
+    const box = $("cards");
+    box.textContent = "";
+    items.forEach(([k, v, s]) => {
+      const card = el("div", "card");
+      card.appendChild(el("div", "k", k));
+      card.appendChild(el("div", "v", v));
+      card.appendChild(el("div", "s", s));
+      box.appendChild(card);
+    });
+  }
+
+  function renderPools() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const body = $("poolRows");
+
+    // Remember which worker lists are open before rebuilding the table,
+    // so the periodic refresh does not collapse them under the user.
+    body.querySelectorAll("details.workers").forEach((node) => {
+      const name = node.dataset.pool;
+      if (!name) return;
+      rememberOpenPool(name, node.open);
+    });
+
+    body.textContent = "";
+    $("noPools").classList.toggle("hide", pools.length > 0);
+
+    pools.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "pool", p.name));
+
+      const type = el("td");
+      const badge = el("span", "type " + (p.pm || "unknown"), p.pm || "?");
+      type.appendChild(badge);
+      tr.appendChild(type);
+
+      tr.appendChild(el("td", "", p.workers));
+      const running = el("td", ratioClass(p.running, p.max_children), p.running);
+      tr.appendChild(running);
+      tr.appendChild(el("td", "", p.idle));
+      tr.appendChild(el("td", p.backlog ? "warn" : "", p.backlog === null ? opt(p.backlog_max) : p.backlog + " / " + opt(p.backlog_max)));
+      tr.appendChild(el("td", "", opt(p.max_children)));
+      tr.appendChild(el("td", "", opt(p.max_requests)));
+      tr.appendChild(el("td", "", fmtMem(p.memory_kb)));
+
+      body.appendChild(tr);
+
+      if (p.worker_list && p.worker_list.length) {
+        const detail = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 9;
+        const box = el("details", "workers");
+        box.dataset.pool = p.name;
+        box.open = ui.openPools.has(p.name);
+        box.addEventListener("toggle", () => rememberOpenPool(p.name, box.open));
+        const summary = el("summary", "", p.worker_list.length + " workers");
+        box.appendChild(summary);
+        const grid = el("div", "workers-grid");
+        p.worker_list.forEach((w) => {
+          const item = el("span", "worker");
+          item.appendChild(el("b", "", w.pid));
+          item.appendChild(document.createTextNode(" " + w.state + " · " + fmtMem(w.rss_kb)));
+          grid.appendChild(item);
+        });
+        box.appendChild(grid);
+        cell.appendChild(box);
+        detail.appendChild(cell);
+        body.appendChild(detail);
+      }
+    });
+  }
+
+  // ---------- Graphs ----------
+
+  const METRICS = [
+    { key: "running", label: "Running", color: "--blue", threshold: "max_children", tcolor: "--magenta-mid" },
+    { key: "workers", label: "Workers", color: "--blue-mid", threshold: "max_children", tcolor: "--magenta-mid" },
+    { key: "idle", label: "Idle", color: "--magenta-mid", threshold: "min_spare", tcolor: "--magenta" },
+    { key: "backlog", label: "Backlog", color: "--magenta", threshold: "backlog_max", tcolor: "--blue" }
+  ];
+
+  function spark(values, color, thresholds) {
+    const W = 360, H = 116, pad = 8;
+    const nums = values.filter((v) => v !== null && v !== undefined);
+    const maxValue = Math.max(
+      1,
+      ...nums,
+      ...thresholds.filter((t) => t.value !== null && t.value !== undefined).map((t) => t.value)
+    ) * 1.12;
+    const n = values.length;
+    const x = (i) => (n <= 1 ? pad : pad + (i * (W - 2 * pad)) / (n - 1));
+    const y = (v) => H - pad - ((v || 0) / maxValue) * (H - 2 * pad);
+
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("preserveAspectRatio", "none");
+
+    for (let g = 1; g <= 3; g++) {
+      const line = document.createElementNS(NS, "line");
+      const gy = pad + ((H - 2 * pad) * g) / 4;
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", gy);
+      line.setAttribute("y2", gy);
+      line.setAttribute("stroke", cssVar("--grid"));
+      line.setAttribute("stroke-width", "1");
+      svg.appendChild(line);
+    }
+
+    if (n > 0) {
+      let d = "";
+      let area = "M " + x(0) + " " + (H - pad);
+      values.forEach((v, i) => {
+        const cmd = i === 0 ? "M" : "L";
+        d += cmd + " " + x(i).toFixed(1) + " " + y(v).toFixed(1) + " ";
+        area += " L " + x(i).toFixed(1) + " " + y(v).toFixed(1);
+      });
+      area += " L " + x(n - 1).toFixed(1) + " " + (H - pad) + " Z";
+
+      const fill = document.createElementNS(NS, "path");
+      fill.setAttribute("d", area);
+      fill.setAttribute("fill", color);
+      fill.setAttribute("opacity", "0.10");
+      svg.appendChild(fill);
+
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d.trim());
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("stroke-linejoin", "round");
+      path.setAttribute("stroke-linecap", "round");
+      svg.appendChild(path);
+
+      const last = document.createElementNS(NS, "circle");
+      last.setAttribute("cx", x(n - 1));
+      last.setAttribute("cy", y(values[n - 1]));
+      last.setAttribute("r", "3");
+      last.setAttribute("fill", color);
+      svg.appendChild(last);
+    }
+
+    thresholds.forEach((t) => {
+      if (t.value === null || t.value === undefined) return;
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", y(t.value));
+      line.setAttribute("y2", y(t.value));
+      line.setAttribute("stroke", t.color);
+      line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke-dasharray", "5 4");
+      line.setAttribute("opacity", "0.8");
+      svg.appendChild(line);
+    });
+
+    return svg;
+  }
+
+  function renderGraphs() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const history = (ui.data && ui.data.history) || [];
+    if (ui.graph >= pools.length) ui.graph = 0;
+    subtabs($("graphPools"), pools.map((p) => p.name), ui.graph, (i) => { ui.graph = i; renderGraphs(); });
+    const grid = $("graphGrid");
+    grid.textContent = "";
+    const pool = currentPool("graph");
+    if (!pool) {
+      grid.appendChild(el("div", "empty-state", "No pool detected."));
+      return;
+    }
+
+    METRICS.forEach((m) => {
+      const values = history.map((sample) => {
+        const point = (sample.pools || []).find((p) => p.name === pool.name);
+        return point ? point[m.key] : null;
+      });
+      const thresholds = [];
+      if (m.key === "idle") {
+        thresholds.push({ value: pool.min_spare, color: cssVar("--magenta-mid"), label: "min_spare" });
+        thresholds.push({ value: pool.max_spare, color: cssVar("--blue-mid"), label: "max_spare" });
+      } else {
+        thresholds.push({ value: pool[m.threshold], color: cssVar(m.tcolor), label: m.threshold });
+      }
+
+      const card = el("div", "graph");
+      const head = el("div", "head");
+      head.appendChild(el("span", "title", m.label));
+      head.appendChild(el("span", "now", opt(pool[m.key])));
+      card.appendChild(head);
+      card.appendChild(spark(values, cssVar(m.color), thresholds));
+
+      const legend = el("div", "legend");
+      legend.appendChild(el("span", "", (history.length || 0) + " points"));
+      thresholds.forEach((t) => {
+        if (t.value === null || t.value === undefined) return;
+        const item = el("span", "");
+        const dash = el("i");
+        dash.style.color = t.color;
+        item.appendChild(dash);
+        item.appendChild(document.createTextNode(t.label + " " + t.value));
+        legend.appendChild(item);
+      });
+      card.appendChild(legend);
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------- Logs ----------
+
+  function logColumn(title, path, lines) {
+    const box = el("div", "log");
+    const head = el("div", "head");
+    head.appendChild(el("b", "", title));
+    head.appendChild(el("span", "", path || "—"));
+    box.appendChild(head);
+    const pre = el("pre", lines.length ? "" : "empty", lines.length ? lines.join("\n") : "(no entries)");
+    box.appendChild(pre);
+    return box;
+  }
+
+  function renderLogs() {
+    const logs = (ui.data && ui.data.logs) || [];
+    if (ui.log >= logs.length) ui.log = 0;
+    subtabs($("logPools"), logs.map((l) => l.name), ui.log, (i) => { ui.log = i; renderLogs(); });
+    const grid = $("logGrid");
+    grid.textContent = "";
+    if (!logs.length) {
+      grid.appendChild(el("div", "empty-state", "No pool detected."));
+      return;
+    }
+    const log = logs[ui.log];
+    grid.appendChild(logColumn("PHP log", log.php_path, log.php || []));
+    grid.appendChild(logColumn("Slow queries", log.slow_path, log.slow || []));
+    grid.appendChild(logColumn("Access", log.access_path, log.access || []));
+  }
+
+  // ---------- Configurations ----------
+
+  function renderConfigs() {
+    const config = (ui.data && ui.data.config) || { globals: [], pools: [] };
+    const pools = config.pools || [];
+    const names = ["global"].concat(pools.map((p) => p.name));
+    if (ui.cfg >= names.length) ui.cfg = 0;
+    subtabs($("cfgPools"), names, ui.cfg, (i) => { ui.cfg = i; renderConfigs(); });
+
+    const body = $("cfgBody");
+    body.textContent = "";
+    let directives;
+    if (ui.cfg === 0) {
+      $("cfgTitle").textContent = "Global directives";
+      directives = config.globals || [];
+    } else {
+      const pool = pools[ui.cfg - 1];
+      $("cfgTitle").textContent = "Pool " + pool.name;
+      directives = pool.directives || [];
+    }
+
+    if (!directives.length) {
+      body.appendChild(el("div", "empty-state", "(no directives read)"));
+      return;
+    }
+    const table = el("table", "directives");
+    const tbody = document.createElement("tbody");
+    directives.forEach(([key, value]) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "", key));
+      tr.appendChild(el("td", "", value));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  // ---------- Tabs & polling ----------
+
+  const PANELS = ["monitoring", "graphs", "logs", "configs"];
+
+  function setTab(tab, updateHash) {
+    if (PANELS.indexOf(tab) < 0) return;
+    ui.tab = tab;
+    if (updateHash !== false && window.location.hash !== "#" + tab) {
+      window.history.replaceState(null, "", "#" + tab);
+    }
+    document.querySelectorAll("#tabs button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tab === tab);
+    });
+    document.querySelectorAll("section[data-panel]").forEach((s) => {
+      s.classList.toggle("hide", s.dataset.panel !== tab);
+    });
+  }
+
+  function cycleSub(dir) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (ui.tab === "graphs" && pools.length) {
+      ui.graph = (ui.graph + dir + pools.length) % pools.length;
+      renderGraphs();
+    } else if (ui.tab === "logs" && pools.length) {
+      ui.log = (ui.log + dir + pools.length) % pools.length;
+      renderLogs();
+    } else if (ui.tab === "configs") {
+      const total = 1 + ((ui.data && ui.data.config && ui.data.config.pools) || []).length;
+      ui.cfg = (ui.cfg + dir + total) % total;
+      renderConfigs();
+    }
+  }
+
+  function render() {
+    const data = ui.data;
+    if (!data) return;
+    setStatus(data.mock ? "live" : "live", data.mock ? "mock data" : "live");
+    $("updated").textContent = "updated " + fmtTime(data.updated);
+    const banner = $("error");
+    if (data.error) {
+      banner.textContent = "Collection error: " + data.error;
+      banner.classList.add("show");
+    } else {
+      banner.classList.remove("show");
+      banner.textContent = "";
+    }
+
+    const pools = data.pools || [];
+    renderCards(pools);
+    renderPools();
+    renderGraphs();
+    renderLogs();
+    renderConfigs();
+
+    const masters = (data.masters || []).join(", ") || "—";
+    $("footer").textContent =
+      "fpm-monitor · refresh " + (data.interval || 1) + "s · master PID " + masters +
+      " · reads the local process table, no network access.";
+  }
+
+  async function poll() {
+    let delay = 1000;
+    try {
+      const res = await fetch("/api/state", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      ui.data = await res.json();
+      if (ui.data.interval) delay = Math.max(500, ui.data.interval * 1000);
+      render();
+    } catch (err) {
+      setStatus("down", "disconnected");
+      const banner = $("error");
+      banner.textContent = "Cannot reach fpm-monitor: " + err.message;
+      banner.classList.add("show");
+      delay = 2000;
+    }
+    ui.timer = setTimeout(poll, delay);
+  }
+
+  document.querySelectorAll("#tabs button").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.dataset.tab));
+  });
+
+  window.addEventListener("hashchange", () => {
+    setTab(window.location.hash.slice(1), false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const tag = (event.target && event.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (event.key >= "1" && event.key <= "4") {
+      setTab(PANELS[Number(event.key) - 1]);
+    } else if (event.key === "ArrowRight") {
+      cycleSub(1);
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft") {
+      cycleSub(-1);
+      event.preventDefault();
+    }
+  });
+
+  $("theme").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    applyTheme(next, true);
+    // Charts read their colours from CSS variables at render time.
+    render();
+  });
+  applyTheme(currentTheme(), false);
+  loadOpenPools();
+
+  poll();
+  const initial = window.location.hash.slice(1);
+  setTab(PANELS.indexOf(initial) >= 0 ? initial : "monitoring", false);
+})();
+</script>
+</body>
+</html>

@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "/proc पढ़ने में असमर्थ (Linux आवश्यक): {}",
     unknown_option: "अज्ञात विकल्प: {}",
     run_help: "--help के साथ चलाएँ",
+    invalid_port: "अमान्य पोर्ट: {} (1-65535 अपेक्षित)",
+    web_serving: "वेब UI http://127.0.0.1:{} पर सुन रहा है (Ctrl-C से बाहर)",
+    web_error: "वेब UI शुरू नहीं हो सका: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ fpm-monitor — PHP-FPM पूल मॉनिटर (fpm-monitor.c का Rust 
       --lang <भाषा>      UI भाषा: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             डेमो डेटा दिखाएँ (स्थानीय परीक्षण)
+      --watch            CLI दृश्य के बजाय वेब UI शुरू करें
+      --port <PORT>      वेब UI पोर्ट (डिफ़ॉल्ट 8471)
   -h, --help             यह सहायता दिखाएँ
 
 पहचान स्वचालित है (सामान्य स्थान + include निर्देश)।

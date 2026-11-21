@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "ไม่สามารถอ่าน /proc ได้ (ต้องใช้ Linux): {}",
     unknown_option: "ตัวเลือกที่ไม่รู้จัก: {}",
     run_help: "เรียกใช้ด้วย --help",
+    invalid_port: "พอร์ตไม่ถูกต้อง: {} (ต้องเป็น 1-65535)",
+    web_serving: "เว็บ UI กำลังฟังที่ http://127.0.0.1:{} (Ctrl-C เพื่อออก)",
+    web_error: "ไม่สามารถเริ่มเว็บ UI: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ fpm-monitor — โปรแกรมตรวจสอบพูล PHP-FPM (พ
       --lang <ภาษา>       ภาษาของอินเทอร์เฟซ: en (US), fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock              แสดงข้อมูลตัวอย่าง (ทดสอบในเครื่อง)
+      --watch            เริ่มเว็บ UI แทนมุมมอง CLI
+      --port <PORT>      พอร์ตของเว็บ UI (ค่าเริ่มต้น 8471)
   -h, --help              แสดงความช่วยเหลือนี้
 
 การตรวจจับเป็นไปโดยอัตโนมัติ (ตำแหน่งปกติ + คำสั่ง include)

@@ -27,8 +27,100 @@ fn help_english() {
     let text = stdout(&out);
     assert!(text.contains("Usage: fpm-monitor [OPTIONS]"));
     assert!(text.contains("--tui"));
+    assert!(text.contains("--watch"));
+    assert!(text.contains("--port"));
     assert!(text.contains("--lang"));
     assert!(text.contains("--mock"));
+}
+
+#[test]
+fn invalid_port_exits_with_code_2() {
+    for value in ["0", "65536", "abc", "-1", "12.5"] {
+        let out = run(&["--mock", "--port", value]);
+        assert_eq!(out.status.code(), Some(2), "--port {value}");
+        let text = stderr(&out);
+        assert!(text.contains("invalid port"), "--port {value}: {text:?}");
+        assert!(text.contains(value), "--port {value}: value missing");
+    }
+}
+
+#[test]
+fn invalid_port_is_localized() {
+    let out = run(&["--mock", "--port", "0", "--lang", "fr"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("port invalide"));
+}
+
+#[test]
+fn port_equals_form_is_validated() {
+    let out = run(&["--mock", "--port=0"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(stderr(&out).contains("invalid port"));
+}
+
+#[test]
+fn watch_serves_the_dashboard_and_the_api() {
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::time::{Duration, Instant};
+
+    // Reserve a free loopback port, then hand it to the child process.
+    let probe = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = probe.local_addr().unwrap().port();
+    drop(probe);
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_fpm-monitor"))
+        .args([
+            "--mock",
+            "--watch",
+            "--port",
+            &port.to_string(),
+            "--lang",
+            "en",
+            "--interval",
+            "1",
+        ])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .expect("failed to start the web UI");
+
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut stream = loop {
+        match TcpStream::connect(("127.0.0.1", port)) {
+            Ok(stream) => break stream,
+            Err(e) if Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(50));
+                let _ = e;
+            }
+            Err(e) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("web UI did not start on port {port}: {e}");
+            }
+        }
+    };
+    stream
+        .write_all(b"GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .unwrap();
+    let mut page = String::new();
+    stream.read_to_string(&mut page).unwrap();
+    assert!(page.starts_with("HTTP/1.1 200 OK\r\n"), "{page}");
+    assert!(page.contains("fpm-monitor"));
+    assert!(page.contains("api/state"));
+
+    let mut api = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    api.write_all(b"GET /api/state HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .unwrap();
+    let mut body = String::new();
+    api.read_to_string(&mut body).unwrap();
+    let _ = child.kill();
+    let _ = child.wait();
+
+    assert!(body.starts_with("HTTP/1.1 200 OK\r\n"), "{body}");
+    assert!(body.contains("\"pools\""));
+    assert!(body.contains("\"www\""));
+    assert!(body.contains("\"history\""));
 }
 
 #[test]

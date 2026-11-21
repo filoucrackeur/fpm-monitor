@@ -38,6 +38,9 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "/proc okunamadı (Linux gerekli): {}",
     unknown_option: "bilinmeyen seçenek: {}",
     run_help: "--help ile çalıştırın",
+    invalid_port: "geçersiz port: {} (1-65535 bekleniyor)",
+    web_serving: "web arayüzü http://127.0.0.1:{} adresinde dinliyor (çıkmak için Ctrl-C)",
+    web_error: "web arayüzü başlatılamadı: {}",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +60,8 @@ Seçenekler:
       --lang <DİL>       arayüz dili: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             demo verilerini göster (yerel test)
+      --watch            CLI görünümü yerine web arayüzünü başlat
+      --port <PORT>      Web arayüzü portu (varsayılan 8471)
   -h, --help             bu yardımı göster
 
 Algılama otomatiktir (olağan konumlar + include yönergesi).

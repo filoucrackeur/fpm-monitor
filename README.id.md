@@ -39,6 +39,10 @@ melalui `--lang`, dan dokumentasi ini diterjemahkan ke dalam 22 bahasa.
     sub-tab.
   - **Konfigurasi**: direktif yang dibaca dari berkas (`global` + pool) dalam
     sub-tab.
+- **Dasbor web** (`--watch`): empat tampilan yang sama di browser, disajikan di
+  `http://127.0.0.1:8471` oleh server HTTP tanpa dependensi. Port diatur dengan
+  `--port`; data diambil di latar belakang pada `--interval` dan halaman menyimpan
+  60 titik riwayat untuk grafiknya.
 - Penemuan konfigurasi otomatis (lokasi umum + direktif `include`).
 - Tanpa panggilan jaringan: semuanya dibaca langsung dari `/proc` (proses, RSS,
   status, antrean penerimaan soket TCP). Di macOS dan BSD, data yang sama dibaca
@@ -184,6 +188,8 @@ Pilihan:
       --no-color          Nonaktifkan warna
   -t, --tui               Dasbor interaktif (tab, sub-tab `←`/`→`)
       --interval <SEC>    Interval penyegaran TUI (default 1)
+      --watch             Dasbor web sebagai ganti tampilan CLI
+      --port <PORT>       Port dasbor web (default 8471)
       --lang <LANG>       Bahasa antarmuka: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (default: en)
@@ -210,6 +216,27 @@ disegarkan di latar belakang pada interval yang ditentukan (`--interval`, defaul
 | `↑` / `↓` | Menggulir tampilan Pemantauan |
 | `q`, `Ctrl-C` | Keluar |
 
+### Dasbor web
+
+`--watch` menyajikan data yang sama sebagai aplikasi web satu halaman alih-alih
+mencetak tabel CLI:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # port khusus
+fpm-monitor --watch --mock          # data demo tanpa PHP-FPM
+```
+
+Server hanya mendengarkan di antarmuka lokal, tanpa dependensi eksternal, dan
+halaman mengambil `/api/state` untuk pool, detail worker, log, direktif
+konfigurasi, dan 60 sampel terakhir. Data dikumpulkan di latar belakang pada
+`--interval` (default 1 dtk), sehingga pemindaian lambat tidak pernah memblokir
+permintaan. Empat tab adalah **Pemantauan**, **Grafik**, **Log**, dan
+**Konfigurasi**; `1`–`4` dan `←`/`→` memilih tab dan sub-tab.
+
+`--port` menerima `1`–`65535` (`--port=9000` juga berfungsi); nilai lain keluar
+dengan kode `2`. Server tidak pernah membuat permintaan keluar.
+
 ## Struktur proyek
 
 | Berkas | Peran |
@@ -221,6 +248,8 @@ disegarkan di latar belakang pada interval yang ditentukan (`--interval`, defaul
 | `src/logs.rs` | Pembacaan log PHP dan kueri lambat |
 | `src/render.rs` | Keluaran teks (tabel CLI) |
 | `src/tui.rs` | Dasbor interaktif (4 tab, grafik) |
+| `src/web.rs`       | Server web, pengambilan sampel, snapshot JSON        |
+| `src/web/index.html` | Dasbor web satu halaman yang tertanam              |
 | `src/i18n.rs` | Lokalisasi (22 bahasa, `--lang`) |
 | `src/term.rs` | Deteksi warna / gaya |
 | `tests/cli.rs` | Uji CLI end-to-end (`--help`, `--mock`, i18n) |
