@@ -21,6 +21,43 @@ pub const DEFAULT_PORT: u16 = 8471;
 
 const INDEX_HTML: &str = include_str!("web/index.html");
 
+/// The php.net Fira webfonts, bundled so the page makes no outgoing request.
+const FONTS: &[(&str, &[u8])] = &[
+    (
+        "/fonts/FiraSans-Book.woff2",
+        include_bytes!("web/fonts/FiraSans-Book.woff2"),
+    ),
+    (
+        "/fonts/FiraSans-BookItalic.woff2",
+        include_bytes!("web/fonts/FiraSans-BookItalic.woff2"),
+    ),
+    (
+        "/fonts/FiraSans-Medium.woff2",
+        include_bytes!("web/fonts/FiraSans-Medium.woff2"),
+    ),
+    (
+        "/fonts/FiraSans-MediumItalic.woff2",
+        include_bytes!("web/fonts/FiraSans-MediumItalic.woff2"),
+    ),
+    (
+        "/fonts/FiraMono-Regular.woff2",
+        include_bytes!("web/fonts/FiraMono-Regular.woff2"),
+    ),
+    (
+        "/fonts/FiraMono-Bold.woff2",
+        include_bytes!("web/fonts/FiraMono-Bold.woff2"),
+    ),
+];
+
+fn font_bytes(path: &str) -> Option<&'static [u8]> {
+    FONTS
+        .iter()
+        .find(|(route, _)| *route == path)
+        .map(|(_, body)| *body)
+}
+/// Official PHP favicon served at /favicon.ico.
+const FAVICON: &[u8] = include_bytes!("web/favicon.ico");
+
 #[derive(Clone)]
 pub struct WorkerView {
     pub pid: i32,
@@ -207,6 +244,7 @@ pub struct Response {
     pub status: u16,
     pub content_type: &'static str,
     pub body: Vec<u8>,
+    cache: &'static str,
 }
 
 impl Response {
@@ -215,6 +253,16 @@ impl Response {
             status,
             content_type,
             body: body.into(),
+            cache: "no-store",
+        }
+    }
+
+    fn font(body: &'static [u8]) -> Response {
+        Response {
+            status: 200,
+            content_type: "font/woff2",
+            body: body.to_vec(),
+            cache: "public, max-age=31536000, immutable",
         }
     }
 
@@ -389,8 +437,12 @@ pub fn route(state: &State, raw_path: &str) -> Response {
     match path {
         "/" | "/index.html" => Response::new(200, "text/html; charset=utf-8", INDEX_HTML),
         "/api/state" => Response::new(200, "application/json; charset=utf-8", state.to_json()),
-        "/favicon.ico" => Response::new(204, "", Vec::new()),
-        _ => Response::new(404, "text/plain; charset=utf-8", "not found\n"),
+        "/api/i18n" => Response::new(200, "application/json; charset=utf-8", i18n_json()),
+        "/favicon.ico" => Response::new(200, "image/x-icon", FAVICON),
+        _ => match font_bytes(path) {
+            Some(body) => Response::font(body),
+            None => Response::new(404, "text/plain; charset=utf-8", "not found\n"),
+        },
     }
 }
 
@@ -454,8 +506,9 @@ fn write_response(stream: &mut TcpStream, response: &Response, head: bool) -> st
     }
     out.extend_from_slice(
         format!(
-            "Content-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n",
-            response.body.len()
+            "Content-Length: {}\r\nCache-Control: {}\r\nConnection: close\r\n",
+            response.body.len(),
+            response.cache
         )
         .as_bytes(),
     );
@@ -490,6 +543,85 @@ fn esc(s: &str) -> String {
         }
     }
     out
+}
+
+fn i18n_json() -> String {
+    let locales: Vec<String> = i18n::catalogue()
+        .iter()
+        .map(|locale| {
+            format!(
+                "{{\"code\":\"{}\",\"name\":\"{}\",\"labels\":{}}}",
+                esc(locale.code),
+                esc(locale.name),
+                labels_json(locale.labels)
+            )
+        })
+        .collect();
+    format!("[{}]", locales.join(","))
+}
+
+/// Only the labels used by the web dashboard, with keys matching the page.
+fn labels_json(l: &i18n::Labels) -> String {
+    let pairs = [
+        ("tab_monitoring", l.tab_monitoring),
+        ("tab_graphs", l.tab_graphs),
+        ("tab_logs", l.tab_logs),
+        ("tab_configs", l.tab_configs),
+        ("pools", l.pools),
+        ("pool", l.pool),
+        ("workers", l.workers),
+        ("running", l.running),
+        ("idle", l.idle),
+        ("backlog", l.backlog),
+        ("mem", l.mem),
+        ("master", l.master),
+        ("type", l.type_label),
+        ("max_child", l.max_child),
+        ("max_req", l.max_req),
+        ("min_spare", l.min_spare),
+        ("max_spare", l.max_spare),
+        ("max_backlog", l.max_backlog),
+        ("no_pool", l.no_pool),
+        ("last_measurements", l.last_measurements),
+        ("g_running", l.g_running),
+        ("g_workers", l.g_workers),
+        ("g_idle", l.g_idle),
+        ("g_backlog", l.g_backlog),
+        ("log_php", l.log_php),
+        ("slow_queries", l.slow_queries),
+        ("access", l.access),
+        ("no_entries", l.no_entries),
+        ("pool_configs", l.pool_configs),
+        ("no_config", l.no_config),
+        ("no_directives", l.no_directives),
+        ("global_directives", l.global_directives),
+        ("master_pid", l.master_pid),
+        ("skip_content", l.skip_content),
+        ("language", l.language),
+        ("web_dashboard", l.web_dashboard),
+        ("theme_dark", l.theme_dark),
+        ("theme_light", l.theme_light),
+        ("connecting", l.connecting),
+        ("disconnected", l.disconnected),
+        ("mock_data", l.mock_data),
+        ("live", l.live),
+        ("updated", l.updated),
+        ("configured_detected", l.configured_detected),
+        ("total_processes", l.total_processes),
+        ("state_r", l.state_r),
+        ("state_s", l.state_s),
+        ("pending_connections", l.pending_connections),
+        ("sum_rss", l.sum_rss),
+        ("footer_tagline", l.footer_tagline),
+        ("collection_error", l.collection_error),
+        ("cannot_reach", l.cannot_reach),
+        ("refresh", l.refresh),
+    ];
+    let items: Vec<String> = pairs
+        .iter()
+        .map(|(key, value)| format!("\"{}\":\"{}\"", key, esc(value)))
+        .collect();
+    format!("{{{}}}", items.join(","))
 }
 
 fn opt_str(value: Option<&str>) -> String {
@@ -642,8 +774,10 @@ mod tests {
     fn route_serves_favicon_and_404() {
         let state = mock_state();
         let icon = route(&state, "/favicon.ico");
-        assert_eq!(icon.status, 204);
-        assert!(icon.body.is_empty());
+        assert_eq!(icon.status, 200);
+        assert_eq!(icon.content_type, "image/x-icon");
+        assert_eq!(&icon.body[..4], b"\x00\x00\x01\x00");
+        assert!(!icon.body.is_empty());
         assert_eq!(route(&state, "/nope").status, 404);
     }
 
@@ -709,6 +843,56 @@ mod tests {
         assert!(response.contains("data-theme"));
         assert!(response.contains("details.workers"));
         assert!(response.contains("openPools"));
+    }
+
+    #[test]
+    fn http_serves_the_i18n_catalogue() {
+        let response = http_get("GET /api/i18n HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(response.contains("Content-Type: application/json; charset=utf-8"));
+        assert!(response.contains("\"code\":\"fr\""));
+        assert!(response.contains("\"name\":\"Français\""));
+        assert!(response.contains("\"tab_monitoring\":\"Monitoring\""));
+        assert!(response.contains("\"skip_content\":\"Aller au contenu\""));
+        assert_eq!(i18n::catalogue().len(), 22);
+        let mut codes: Vec<&str> = i18n::catalogue().iter().map(|l| l.code).collect();
+        codes.sort_unstable();
+        codes.dedup();
+        assert_eq!(codes.len(), 22);
+        for locale in i18n::catalogue() {
+            assert!(
+                !locale.name.is_empty(),
+                "{} has no native name",
+                locale.code
+            );
+            let json = labels_json(locale.labels);
+            assert!(
+                !json.contains("\"\""),
+                "{} has an empty web label",
+                locale.code
+            );
+        }
+    }
+
+    #[test]
+    fn route_serves_the_php_net_fonts() {
+        let state = mock_state();
+        for (path, minimum) in [
+            ("/fonts/FiraSans-Book.woff2", 100_000),
+            ("/fonts/FiraSans-BookItalic.woff2", 100_000),
+            ("/fonts/FiraSans-Medium.woff2", 100_000),
+            ("/fonts/FiraSans-MediumItalic.woff2", 100_000),
+            ("/fonts/FiraMono-Regular.woff2", 50_000),
+            ("/fonts/FiraMono-Bold.woff2", 50_000),
+        ] {
+            let response = route(&state, path);
+            assert_eq!(response.status, 200, "{path}");
+            assert_eq!(response.content_type, "font/woff2", "{path}");
+            assert!(response.body.len() > minimum, "{path}");
+            assert_eq!(&response.body[..4], b"wOF2", "{path}");
+            assert_eq!(response.cache, "public, max-age=31536000, immutable");
+        }
+        assert_eq!(route(&state, "/fonts/unknown.woff2").status, 404);
     }
 
     #[test]

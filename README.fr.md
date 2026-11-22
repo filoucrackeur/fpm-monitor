@@ -39,7 +39,10 @@ et cette documentation est traduite en 22 langues.
 - **Tableau de bord web** (`--watch`) : les mêmes quatre vues dans le navigateur,
   servies sur `http://127.0.0.1:8471` par un serveur HTTP sans dépendance. Le port
   se règle avec `--port` ; les données sont échantillonnées en arrière-plan à
-  `--interval` et la page conserve 60 points d'historique pour ses graphiques.
+  `--interval` et la page conserve 60 points d'historique pour ses graphiques. Un
+  menu de langue propose les 22 locales (par défaut : la langue du navigateur ou
+  du système, avec l'anglais en repli), le choix est mémorisé localement, et un
+  thème clair/sombre suit la préférence du système.
 - Découverte automatique de la configuration (emplacements habituels + directive `include`).
 - Aucun appel réseau : tout est lu directement depuis `/proc` (processus, RSS, état,
   file d'attente d'acceptation des sockets TCP). Sous macOS et BSD, les mêmes données
@@ -227,11 +230,17 @@ fpm-monitor --watch --mock          # données de démo, sans PHP-FPM
 
 Le serveur n'écoute que sur la boucle locale, sans aucune dépendance externe, et
 la page interroge `/api/state` pour les pools, le détail des workers, les
-journaux, les directives de configuration et les 60 derniers échantillons. Les
-données sont collectées en arrière-plan à `--interval` (1 s par défaut), donc un
-scan lent ne bloque jamais une requête. Les quatre onglets sont
-**Surveillance**, **Graphiques**, **Journaux** et **Configurations** ; `1`–`4`
-et `←`/`→` sélectionnent les onglets et sous-onglets.
+journaux, les directives de configuration et les 60 derniers échantillons. La
+route `/api/i18n` fournit le catalogue de libellés des 22 locales. Les données
+sont collectées en arrière-plan à `--interval` (1 s par défaut), donc un scan
+lent ne bloque jamais une requête. Les quatre onglets sont **Surveillance**,
+**Graphiques**, **Journaux** et **Configurations** ; `1`–`4` et `←`/`→`
+sélectionnent les onglets et sous-onglets. Le menu de langue suit la préférence
+du navigateur ou du système à la première visite (repli : anglais), mémorise le
+choix dans `localStorage` et bascule le document en droite-à-gauche pour l'arabe.
+Les polices Fira Sans et Fira Mono de php.net sont embarquées dans le binaire et
+servies localement : la typographie est identique à celle de php.net, sans aucune
+requête sortante.
 
 `--port` accepte `1`–`65535` (`--port=9000` fonctionne aussi) ; toute autre
 valeur quitte avec le code `2`. Le serveur n'émet jamais de requête sortante.

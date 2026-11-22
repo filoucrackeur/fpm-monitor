@@ -39,7 +39,9 @@ into 22 languages.
 - **Web dashboard** (`--watch`): the same four views in the browser, served on
   `http://127.0.0.1:8471` by a dependency-free HTTP server. The port is set with
   `--port`; data is sampled in the background at `--interval` and the page keeps
-  60 points of history for its charts.
+  60 points of history for its charts. A language menu offers the 22 locales
+  (default: the browser/OS language, falling back to English), the choice is
+  remembered locally, and a light/dark theme follows the system preference.
 - Automatic configuration discovery (usual locations + `include` directive).
 - No network calls: everything is read directly from `/proc` (processes, RSS,
   state, TCP socket accept queue). On macOS and BSD, the same data is read from
@@ -223,15 +225,21 @@ fpm-monitor --watch --mock          # demo data, no PHP-FPM required
 ```
 
 The server listens on loopback only and uses no third-party crate: it is a small
-`std::net::TcpListener` with three routes (`/`, `/api/state`, `/favicon.ico`).
-`/api/state` returns the pools, worker details, logs, configuration directives
-and the last 60 samples as JSON. Data is collected in the background at
-`--interval` (default 1 s), so a slow scan never blocks a request.
+`std::net::TcpListener` serving the page, the API (`/api/state`, `/api/i18n`),
+the favicon and the bundled Fira fonts (`/fonts/*`). `/api/state` returns the
+pools, worker details, logs, configuration directives and the last 60 samples as
+JSON; `/api/i18n` serves the labels for the 22 locales. Data is collected in the
+background at `--interval` (default 1 s), so a slow scan never blocks a request.
 
 The page has four tabs — **Monitoring**, **Graphs**, **Logs** and
 **Configurations** — with `1`–`4` and `←`/`→` as shortcuts, per-pool charts
 with the same thresholds as the TUI, and the latest log lines. It refreshes
-itself automatically and shows a banner if collection fails.
+itself automatically and shows a banner if collection fails. The language menu
+follows the browser/OS preference on first visit (English fallback), remembers
+the user choice in `localStorage`, and switches the document to right-to-left
+for Arabic. The php.net Fira Sans and Fira Mono webfonts are embedded in the
+binary and served locally, so the typography matches php.net without any
+outgoing request.
 
 `--port` accepts `1`–`65535` (`--port=9000` also works); anything else exits
 with code `2`. The server never makes an outgoing request.
