@@ -236,6 +236,13 @@ CI kör testsviten på Linux, macOS och Windows, på MSRV (Rust 1.78), publicera
 täckningsmärket, korskompilerar de 18 utgåvemålen och kör binärerna för
 främmande arkitekturer under QEMU.
 
+## Bidra
+
+Bidrag är välkomna! Läs [CONTRIBUTING.md](CONTRIBUTING.md) innan du öppnar en
+issue eller en pull request, följ vår [uppförandekod](CODE_OF_CONDUCT.md) och se
+[SUPPORT.md](SUPPORT.md) för frågor om användning. Rapportera säkerhetsproblem
+privat enligt beskrivningen i [SECURITY.md](SECURITY.md).
+
 ## Licens
 
 [MIT](LICENSE)

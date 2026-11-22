@@ -239,6 +239,14 @@ Die CI führt die Testsuite unter Linux, macOS und Windows auf der MSRV (Rust 1.
 aus, veröffentlicht das Coverage-Badge, kompiliert die 18 Release-Ziele
 cross-platform und führt die Binärdateien fremder Architekturen unter QEMU aus.
 
+## Mitwirken
+
+Beiträge sind willkommen! Lies [CONTRIBUTING.md](CONTRIBUTING.md), bevor du ein
+Issue oder einen Pull Request öffnest, beachte unseren
+[Verhaltenskodex](CODE_OF_CONDUCT.md) und lies bei Nutzungsfragen
+[SUPPORT.md](SUPPORT.md). Sicherheitsprobleme meldest du bitte vertraulich, wie in
+[SECURITY.md](SECURITY.md) beschrieben.
+
 ## Lizenz
 
 [MIT](LICENSE)

@@ -237,6 +237,14 @@ La CI exécute la suite de tests sous Linux, macOS et Windows, sur la MSRV (Rust
 publie le badge de couverture, compile en croisé les 18 cibles de release et exécute
 les binaires d'architectures étrangères sous QEMU.
 
+## Contribuer
+
+Les contributions sont les bienvenues ! Lisez [CONTRIBUTING.md](CONTRIBUTING.md)
+avant d'ouvrir une issue ou une pull request, respectez notre
+[Code de conduite](CODE_OF_CONDUCT.md), et consultez [SUPPORT.md](SUPPORT.md)
+pour les questions d'utilisation. Signalez les problèmes de sécurité de manière
+privée, comme décrit dans [SECURITY.md](SECURITY.md).
+
 ## Licence
 
 [MIT](LICENSE)

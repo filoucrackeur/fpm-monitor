@@ -242,6 +242,13 @@ CI ajaa testisarjan Linuxilla, macOS:llä ja Windowsilla MSRV-versiolla (Rust
 1.78), julkaisee kattavuusmerkin, ristikääntää 18 julkaisukohdetta ja suorittaa
 vieraan arkkitehtuurin binäärit QEMU:n alla.
 
+## Osallistuminen
+
+Osallistuminen on tervetullutta! Lue [CONTRIBUTING.md](CONTRIBUTING.md) ennen
+issuen tai pull requestin avaamista, noudata [toimintaohjeistustamme](CODE_OF_CONDUCT.md)
+ja katso käyttökysymyksiä varten [SUPPORT.md](SUPPORT.md). Ilmoita
+tietoturvaongelmista yksityisesti [SECURITY.md](SECURITY.md):ssä kuvatulla tavalla.
+
 ## Lisenssi
 
 [MIT](LICENSE)

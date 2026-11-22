@@ -1,0 +1,79 @@
+name: Documentation or translation
+description: Report an error, an omission, or an awkward translation
+title: "docs: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for a README, `--help`, TUI, or web interface wording
+        issue. For a missing feature, use the feature request template instead.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and discussions.
+          required: true
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Français
+        - 简体中文
+        - العربية
+        - Español
+        - Italiano
+        - 日本語
+        - Deutsch
+        - Русский
+        - हिन्दी
+        - Bahasa Indonesia
+        - 한국어
+        - Norsk
+        - Svenska
+        - Suomi
+        - Dansk
+        - Ελληνικά
+        - Türkçe
+        - Polski
+        - Українська
+        - ไทย
+        - Tiếng Việt
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: The file, section, option, or screen concerned.
+      placeholder: "README.fr.md, Web dashboard section"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current text
+      description: Quote the text that is wrong or unclear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested text
+      description: Your proposed wording, or a description of what should change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, links, or any detail that helps explain the issue.

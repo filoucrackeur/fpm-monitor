@@ -239,6 +239,13 @@ CI menjalankan rangkaian uji di Linux, macOS, dan Windows, pada MSRV (Rust 1.78)
 menerbitkan lencana cakupan, mengompilasi silang 18 target rilis, dan menjalankan
 biner arsitektur asing di bawah QEMU.
 
+## Berkontribusi
+
+Kontribusi sangat kami hargai! Baca [CONTRIBUTING.md](CONTRIBUTING.md) sebelum
+membuka issue atau pull request, patuhi [Kode Etik](CODE_OF_CONDUCT.md) kami, dan
+lihat [SUPPORT.md](SUPPORT.md) untuk pertanyaan penggunaan. Laporkan masalah
+keamanan secara privat seperti dijelaskan di [SECURITY.md](SECURITY.md).
+
 ## Lisensi
 
 [MIT](LICENSE)

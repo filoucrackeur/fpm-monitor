@@ -235,6 +235,13 @@ CI는 Linux, macOS, Windows에서 테스트 스위트를 실행하고, MSRV(Rust
 검증하며, 커버리지 배지를 게시하고, 18개 릴리스 대상을 교차 컴파일하며,
 QEMU에서 외래 아키텍처 바이너리를 실행합니다.
 
+## 기여
+
+기여를 환영합니다! issue 또는 pull request를 열기 전에
+[CONTRIBUTING.md](CONTRIBUTING.md)를 읽고 [행동 강령](CODE_OF_CONDUCT.md)을 따라
+주세요. 사용 관련 질문은 [SUPPORT.md](SUPPORT.md)를 참고하세요. 보안 문제는
+[SECURITY.md](SECURITY.md)에 설명된 대로 비공개로 신고해 주세요.
+
 ## 라이선스
 
 [MIT](LICENSE)

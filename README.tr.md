@@ -236,6 +236,14 @@ CI, test paketini Linux, macOS ve Windows üzerinde çalıştırır, MSRV'yi (Ru
 doğrular, kapsam rozetini yayımlar, 18 sürüm hedefini çapraz derler ve yabancı
 mimari ikililerini QEMU altında çalıştırır.
 
+## Katkıda bulunma
+
+Katkılar memnuniyetle karşılanır! Bir issue veya pull request açmadan önce
+[CONTRIBUTING.md](CONTRIBUTING.md) dosyasını okuyun, [Davranış Kuralları](CODE_OF_CONDUCT.md)
+kurallarına uyun ve kullanım soruları için [SUPPORT.md](SUPPORT.md) dosyasına bakın.
+Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında açıklandığı şekilde özel
+olarak bildirin.
+
 ## Lisans
 
 [MIT](LICENSE)

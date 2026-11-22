@@ -245,6 +245,14 @@ La CI ejecuta la batería de pruebas en Linux, macOS y Windows, sobre la MSRV
 objetivos de publicación y ejecuta los binarios de arquitecturas extranjeras
 bajo QEMU.
 
+## Contribuir
+
+¡Las contribuciones son bienvenidas! Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes
+de abrir una issue o un pull request, respeta nuestro
+[Código de conducta](CODE_OF_CONDUCT.md) y consulta [SUPPORT.md](SUPPORT.md) para
+dudas de uso. Informa de los problemas de seguridad de forma privada como se
+describe en [SECURITY.md](SECURITY.md).
+
 ## Licencia
 
 [MIT](LICENSE)

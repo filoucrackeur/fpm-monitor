@@ -234,6 +234,13 @@ CI は Linux、macOS、Windows でテストスイートを実行し、MSRV（Rus
 カバレッジバッジを公開し、18 のリリースターゲットをクロスコンパイルし、異なる
 アーキテクチャのバイナリを QEMU 上で実行します。
 
+## コントリビューション
+
+コントリビューションを歓迎します！issue や pull request を作成する前に
+[CONTRIBUTING.md](CONTRIBUTING.md) をお読みいただき、[行動規範](CODE_OF_CONDUCT.md)
+に従ってください。使い方の質問は [SUPPORT.md](SUPPORT.md) を参照してください。
+セキュリティ上の問題は [SECURITY.md](SECURITY.md) の手順に従って非公開で報告してください。
+
 ## ライセンス
 
 [MIT](LICENSE)

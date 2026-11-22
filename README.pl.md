@@ -239,6 +239,14 @@ CI uruchamia zestaw testów na Linuksie, macOS i Windows, na MSRV (Rust 1.78),
 publikuje odznakę pokrycia, kompiluje krzyżowo 18 celów wydania i uruchamia
 binaria obcych architektur pod QEMU.
 
+## Współtworzenie
+
+Wkład jest mile widziany! Przeczytaj [CONTRIBUTING.md](CONTRIBUTING.md) przed
+otwarciem issue lub pull requesta, przestrzegaj naszego
+[Kodeksu postępowania](CODE_OF_CONDUCT.md), a w razie pytań o użytkowanie zajrzyj
+do [SUPPORT.md](SUPPORT.md). Problemy z bezpieczeństwem zgłaszaj prywatnie,
+zgodnie z opisem w [SECURITY.md](SECURITY.md).
+
 ## Licencja
 
 [MIT](LICENSE)
