@@ -59,9 +59,10 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainer, Philippe Court, at
-**philippe.court@gmail.com** with the subject `[fpm-monitor] Code of Conduct`.
-If the report concerns the maintainer, please use
+reported privately to the project maintainer through
+[GitHub's private reporting form](https://github.com/filoucrackeur/fpm-monitor/security/advisories/new).
+Put `Code of Conduct` in the title; only the maintainer can see the report. If
+the report concerns the maintainer, please use
 [GitHub's private report abuse form](https://github.com/contact/report-abuse)
 instead. All complaints will be reviewed and investigated promptly and fairly.
 

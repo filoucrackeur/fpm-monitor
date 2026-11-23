@@ -20,9 +20,8 @@ Use GitHub's private vulnerability reporting:
 2. Describe the issue and include a minimal reproduction.
 3. Submit the report. Only the maintainer can see it.
 
-If private reporting is unavailable, email **philippe.court@gmail.com** with the
-subject `[fpm-monitor] Security`. Encrypt sensitive details if you prefer, and
-tell us how we can reply securely.
+If you cannot use GitHub's private reporting, open a minimal public issue asking
+for a private channel. Do not include vulnerability details in that issue.
 
 Please include:
 
