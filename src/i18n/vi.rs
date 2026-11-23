@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "không thể đọc /proc (cần Linux): {}",
     unknown_option: "tùy chọn không xác định: {}",
     run_help: "chạy với --help",
+    invalid_port: "cổng không hợp lệ: {} (mong đợi 1-65535)",
+    web_serving: "giao diện web đang lắng nghe tại http://127.0.0.1:{} (Ctrl-C để thoát)",
+    web_error: "không thể khởi động giao diện web: {}",
+    skip_content: "Chuyển đến nội dung",
+    language: "Ngôn ngữ",
+    web_dashboard: "bảng điều khiển web",
+    theme_dark: "Chế độ tối",
+    theme_light: "Chế độ sáng",
+    connecting: "đang kết nối…",
+    disconnected: "mất kết nối",
+    mock_data: "dữ liệu mô phỏng",
+    live: "trực tiếp",
+    updated: "cập nhật",
+    pool: "Pool",
+    type_label: "Loại",
+    max_child: "Tối đa tiến trình con",
+    max_req: "Tối đa yêu cầu",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "đã cấu hình + phát hiện",
+    total_processes: "tổng số tiến trình",
+    state_r: "trạng thái R",
+    state_s: "trạng thái S",
+    pending_connections: "kết nối đang chờ",
+    sum_rss: "tổng RSS của worker",
+    global_directives: "Chỉ thị toàn cục",
+    footer_tagline: "đọc bảng tiến trình cục bộ, không truy cập mạng.",
+    collection_error: "Lỗi thu thập:",
+    cannot_reach: "Không thể kết nối tới fpm-monitor:",
+    refresh: "làm mới",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ Tùy chọn:
       --lang <LANG>      Ngôn ngữ giao diện: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Hiển thị dữ liệu demo (kiểm thử cục bộ)
+      --watch            Khởi động giao diện web thay vì chế độ CLI
+      --port <PORT>      Cổng của giao diện web (mặc định 8471)
   -h, --help             Hiển thị trợ giúp này
 
 Việc phát hiện diễn ra tự động (vị trí thông thường + chỉ thị include).

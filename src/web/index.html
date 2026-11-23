@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<script>
+  (function () {
+    var theme = null;
+    try {
+      var forced = new URLSearchParams(window.location.search).get("theme");
+      if (forced === "light" || forced === "dark") {
+        theme = forced;
+      } else {
+        var stored = localStorage.getItem("fpm-monitor.theme");
+        if (stored === "light" || stored === "dark") {
+          theme = stored;
+        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          theme = "dark";
+        }
+      }
+    } catch (e) {}
+    document.documentElement.dataset.theme = theme || "light";
+
+    // The full catalogue arrives with /api/i18n; resolve the document language
+    // early so assistive tech and RTL layouts are correct before first paint.
+    var codes = ["en", "fr", "zh", "ar", "es", "it", "ja", "de", "ru", "hi",
+      "id", "ko", "no", "sv", "fi", "da", "el", "tr", "pl", "uk", "th", "vi"];
+    function resolve(value) {
+      if (!value) return null;
+      var code = String(value).toLowerCase();
+      if (code === "nb" || code === "nn") code = "no";
+      var base = code.split("-")[0];
+      if (codes.indexOf(code) >= 0) return code;
+      return codes.indexOf(base) >= 0 ? base : null;
+    }
+    var lang = null;
+    try {
+      lang = resolve(new URLSearchParams(window.location.search).get("lang"))
+        || resolve(localStorage.getItem("fpm-monitor.lang"));
+    } catch (e) {}
+    if (!lang) {
+      var preferred = (navigator.languages && navigator.languages.length)
+        ? navigator.languages : [navigator.language];
+      for (var i = 0; i < preferred.length && !lang; i++) lang = resolve(preferred[i]);
+    }
+    lang = lang || "en";
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  })();
+</script>
+<title>fpm-monitor · web dashboard</title>
+<style>
+  /* Self-hosted Fira Sans / Fira Mono: the exact php.net webfonts. */
+  @font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-Book.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-BookItalic.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-Medium.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-MediumItalic.woff2") format("woff2");
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fira Mono";
+    src: url("/fonts/FiraMono-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Fira Mono";
+    src: url("/fonts/FiraMono-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  :root {
+    /* Design tokens: php.net official charte graphique */
+    color-scheme: light;
+    --font-sans: "Fira Sans", "Source Sans Pro", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans Arabic", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: "Fira Mono", "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    --bg: #333;
+    --bg-text: #ccc;
+    --surface: #f2f2f2;
+    --surface-text: #333;
+    --surface-muted: #666;
+    --surface-head: #c4c9df;
+    --blue: #4f5b93;
+    --blue-mid: #7a86b8;
+    --blue-light: #e2e4ef;
+    --magenta: #793862;
+    --magenta-mid: #ae508d;
+    --magenta-light: #cf82b1;
+    --brand-accent: #f7c8e0;
+    --link: #369;
+    --border: #d9d9d9;
+
+    --panel: #ffffff;
+    --panel-2: #e6e6e6;
+    --text: #333;
+    --muted: #666;
+    --accent: #4f5b93;
+    --accent-2: #ae508d;
+    --radius: 8px;
+    --focus: #4f5b93;
+
+    --grid: #d9d9d9;
+    --row-odd: #ffffff;
+    --row-even: #e6e6e6;
+    --row-hover: rgba(79, 91, 147, 0.06);
+    --code-bg: #ffffff;
+    --code-shadow: rgba(0, 0, 0, 0.15);
+
+    --amber: #fbbf24;
+    --ok: #0f6b33;
+    --warn: #92400e;
+    --bad: #a4161a;
+    --ok-bg: rgba(15, 107, 51, 0.10);
+    --ok-line: rgba(15, 107, 51, 0.35);
+    --warn-bg: rgba(146, 64, 14, 0.10);
+    --warn-line: rgba(146, 64, 14, 0.35);
+    --bad-bg: rgba(164, 22, 26, 0.10);
+    --bad-line: rgba(164, 22, 26, 0.35);
+  }
+
+  /* Dark mode: same php.net identity, inverted surfaces. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1117;
+    --bg-text: #b8bfce;
+    --surface: #171a23;
+    --surface-text: #e4e7ee;
+    --surface-muted: #9aa1b2;
+    --surface-head: #262b3a;
+    --blue: #9aa6dd;
+    --blue-mid: #b4bfe8;
+    --blue-light: #2b3145;
+    --magenta: #d18ab5;
+    --magenta-mid: #d89bc2;
+    --magenta-light: #e3aad0;
+    --brand-accent: #f7c8e0;
+    --link: #9db4ff;
+    --border: #343a4c;
+
+    --panel: #1e2230;
+    --panel-2: #272c3d;
+    --text: #e4e7ee;
+    --muted: #9aa1b2;
+    --accent: #4f5b93;
+    --accent-2: #ae508d;
+    --focus: #9db4ff;
+
+    --grid: #343a4c;
+    --row-odd: #1e2230;
+    --row-even: #232838;
+    --row-hover: rgba(255, 255, 255, 0.045);
+    --code-bg: #141721;
+    --code-shadow: rgba(0, 0, 0, 0.55);
+
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --ok-bg: rgba(74, 222, 128, 0.12);
+    --ok-line: rgba(74, 222, 128, 0.35);
+    --warn-bg: rgba(251, 191, 36, 0.12);
+    --warn-line: rgba(251, 191, 36, 0.35);
+    --bad-bg: rgba(248, 113, 113, 0.12);
+    --bad-line: rgba(248, 113, 113, 0.35);
+  }
+  :root[data-theme="dark"] body { background-image: none; }
+  :root[data-theme="dark"] header { background-color: #39406b; }
+  :root[data-theme="dark"] .type.static { border-color: rgba(154, 166, 221, 0.45); background: rgba(154, 166, 221, 0.12); }
+  :root[data-theme="dark"] .type.dynamic { border-color: rgba(209, 138, 181, 0.45); background: rgba(209, 138, 181, 0.12); }
+  :root[data-theme="dark"] .type.ondemand { border-color: rgba(180, 191, 232, 0.45); background: rgba(180, 191, 232, 0.10); }
+
+  * { box-sizing: border-box; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath style='stroke:%23000;stroke-width:.5;stroke-opacity:.25' d='M 0,0 4,4 M 0,4 4,0'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    color: var(--bg-text);
+    font: 16px/1.5 var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  body > header, body > main, body > footer { width: 100%; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover, a:focus { color: var(--magenta-mid); }
+  button, select { font: inherit; }
+  [hidden] { display: none !important; }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  header :focus-visible { outline-color: #fff; }
+
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0);
+    white-space: nowrap; border: 0;
+  }
+  .skip-link {
+    position: fixed;
+    inset-inline-start: 12px;
+    top: -100px;
+    z-index: 100;
+    padding: 10px 14px;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: #fff;
+    color: #333;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  .skip-link:focus {
+    top: 0;
+    color: #333;
+  }
+
+  header {
+    display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap;
+    padding: 10px 28px;
+    max-width: 1320px; margin: 0 auto;
+    min-height: 64px;
+    background-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  }
+  header nav {
+    display: flex; gap: 4px; margin-inline-start: 8px; padding: 0;
+    max-width: 100%; border-bottom: 0;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  header nav::-webkit-scrollbar { display: none; }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand h1 { margin: 0; font-size: 1.75rem; font-weight: 500; letter-spacing: -0.02em; color: #fff; white-space: nowrap; }
+  .brand h1 span { color: var(--brand-accent); }
+  .header-tools {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-inline-start: auto;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px; padding: 5px 11px; font-size: 12px; color: #fff;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex: 0 0 auto; }
+  .badge.live .dot { background: #34d399; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.25); }
+  .badge.down .dot { background: #f87171; box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.25); }
+  .lang-field { display: inline-flex; align-items: center; }
+  .lang-select {
+    appearance: none;
+    min-height: 44px;
+    max-width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    padding: 0 38px 0 14px;
+    background-color: rgba(255, 255, 255, 0.08);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .lang-select:hover { background-color: rgba(255, 255, 255, 0.16); }
+  .lang-select option { color: #333; background: #fff; }
+  [dir="rtl"] .lang-select {
+    padding: 0 14px 0 38px;
+    background-position: left 14px center;
+  }
+  .theme-toggle {
+    appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px; padding: 0 14px; font-size: 12px;
+    color: #fff; cursor: pointer; white-space: nowrap;
+  }
+  .theme-toggle:hover { background: rgba(255, 255, 255, 0.16); }
+  .theme-track {
+    position: relative; flex: 0 0 auto;
+    width: 30px; height: 18px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.32);
+    transition: background-color 0.15s ease;
+  }
+  .theme-knob {
+    position: absolute; top: 3px; inset-inline-start: 3px;
+    width: 12px; height: 12px; border-radius: 50%; background: #fff;
+    transition: transform 0.15s ease;
+  }
+  .theme-toggle[aria-checked="true"] .theme-track { background: #34d399; }
+  .theme-toggle[aria-checked="true"] .theme-knob { transform: translateX(12px); }
+  [dir="rtl"] .theme-toggle[aria-checked="true"] .theme-knob { transform: translateX(-12px); }
+  nav button {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    color: #efedfd; font-weight: 600; font-size: 15px;
+    min-height: 44px;
+    padding: 8px 14px; border-radius: 8px; border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  nav button:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+  nav button.active { color: #fff; background: rgba(0, 0, 0, 0.18); border-bottom-color: transparent; }
+  nav button kbd { color: #e8e6ff; font: 11px var(--font-mono); margin-inline-start: 6px; }
+
+  main {
+    max-width: 1320px; margin: 0 auto; padding: 22px 28px 40px;
+    background-color: var(--surface); color: var(--surface-text);
+    min-height: 60vh;
+    flex: 1 0 auto;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; margin-bottom: 16px;
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+  .banner {
+    display: none; margin: 0 0 16px; padding: 12px 14px; border-radius: var(--radius);
+    border: 1px solid var(--bad-line); background: var(--bad-bg); color: var(--bad);
+    font-size: 13px;
+  }
+  .banner.show { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .card .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .09em; }
+  .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .card .s { color: var(--muted); font-size: 12px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: end; padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--surface-text); background: var(--surface-head); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; border-bottom: 1px solid var(--blue-mid); }
+  th:first-child, td:first-child { text-align: start; }
+  tbody tr:nth-child(odd) { background: var(--row-odd); }
+  tbody tr:nth-child(even) { background: var(--row-even); }
+  tbody tr:hover { background: var(--row-hover); }
+  .pool { font-weight: 700; }
+  .type { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); }
+  .type.static { color: var(--blue); border-color: rgba(79, 91, 147, 0.4); background: rgba(79, 91, 147, 0.08); }
+  .type.dynamic { color: var(--magenta); border-color: rgba(121, 56, 98, 0.4); background: rgba(121, 56, 98, 0.08); }
+  .type.ondemand { color: var(--blue); border-color: rgba(122, 134, 184, 0.45); background: rgba(122, 134, 184, 0.1); }
+  .type.unknown { color: var(--muted); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  details.workers { margin-top: 4px; }
+  details.workers summary { cursor: pointer; color: var(--muted); font-size: 12px; padding-block: 6px; }
+  details.workers summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .workers-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .worker { border: 1px solid var(--border); background: var(--panel-2); border-radius: 8px; padding: 4px 8px; font: 11px var(--font-mono); color: var(--muted); }
+  .worker b { color: var(--surface-text); font-weight: 600; }
+  .subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .subtabs button {
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+    min-height: 44px; padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  }
+  .subtabs button:hover { color: var(--surface-text); }
+  .subtabs button.active { color: #fff; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .graphs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .graph { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .graph .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .graph .title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .graph .now { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .graph .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .graph .legend i { display: inline-block; width: 14px; height: 0; border-top: 2px dashed currentColor; vertical-align: middle; margin-inline-end: 4px; }
+  .graph svg { display: block; width: 100%; height: 116px; margin-top: 8px; }
+  .logs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .log { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .log .head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .log .head b { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .log .head span { color: var(--muted); font: 11px var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log pre { margin: 0; padding: 12px 14px; min-height: 120px; max-height: 300px; overflow: auto; font: 11.5px/1.6 var(--font-mono); color: var(--surface-text); background: var(--code-bg); box-shadow: inset 0 0 0 1px var(--code-shadow); border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+  .log pre.empty { color: var(--muted); font-style: italic; background: transparent; box-shadow: none; }
+  .directives { width: 100%; }
+  .directives td { text-align: start; }
+  .directives td:first-child { width: 1%; white-space: nowrap; padding-inline-end: 28px; color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
+  .directives td:last-child { color: var(--surface-text); font-family: var(--font-mono); font-size: 12px; word-break: break-all; white-space: normal; }
+  .empty-state { color: var(--muted); padding: 18px 0; }
+  footer {
+    max-width: 1320px; margin: 0 auto;
+    padding: 16px 28px 22px;
+    background: var(--surface); color: var(--muted);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap;
+  }
+  footer p { margin: 0; }
+  .footer-brand strong { color: var(--surface-text); }
+  .footer-meta { font-variant-numeric: tabular-nums; }
+  .hide { display: none !important; }
+
+  @media (max-width: 820px) {
+    header { padding: 10px 14px; gap: 8px 10px; }
+    header nav { order: 3; flex: 1 0 100%; margin-inline-start: 0; }
+    .header-tools { gap: 6px; }
+    main, footer { padding-left: 14px; padding-right: 14px; }
+  }
+  @media (max-width: 640px) {
+    .card .v { font-size: 21px; }
+    nav button kbd { display: none; }
+    .badge { font-size: 11px; }
+  }
+  @media (max-width: 600px) {
+    header nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      overflow-x: visible;
+    }
+    nav button { padding: 8px 10px; white-space: normal; text-align: center; }
+  }
+  @media (max-width: 480px) {
+    .header-tools { width: 100%; }
+    .lang-select, .theme-toggle { flex: 1 1 auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  }
+  @media (forced-colors: active) {
+    .lang-select { appearance: auto; background-image: none; padding: 0 14px; color: ButtonText; background-color: ButtonFace; }
+    .theme-toggle, nav button, .subtabs button { border: 1px solid ButtonText; }
+    .theme-track { border: 1px solid ButtonText; }
+    .type { border-color: currentColor; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main" data-i18n="skip_content">Skip to content</a>
+
+<header>
+  <div class="brand">
+    <h1>fpm<span>-</span>monitor</h1>
+  </div>
+  <nav id="tabs" role="tablist" aria-label="fpm-monitor">
+    <button id="tab-monitoring" type="button" role="tab" aria-selected="true" aria-controls="panel-monitoring" aria-keyshortcuts="1" data-tab="monitoring" class="active" tabindex="0"><span data-i18n="tab_monitoring">Monitoring</span><kbd aria-hidden="true">1</kbd></button>
+    <button id="tab-graphs" type="button" role="tab" aria-selected="false" aria-controls="panel-graphs" aria-keyshortcuts="2" data-tab="graphs" tabindex="-1"><span data-i18n="tab_graphs">Graphs</span><kbd aria-hidden="true">2</kbd></button>
+    <button id="tab-logs" type="button" role="tab" aria-selected="false" aria-controls="panel-logs" aria-keyshortcuts="3" data-tab="logs" tabindex="-1"><span data-i18n="tab_logs">Logs</span><kbd aria-hidden="true">3</kbd></button>
+    <button id="tab-configs" type="button" role="tab" aria-selected="false" aria-controls="panel-configs" aria-keyshortcuts="4" data-tab="configs" tabindex="-1"><span data-i18n="tab_configs">Configurations</span><kbd aria-hidden="true">4</kbd></button>
+  </nav>
+  <div class="header-tools">
+    <span id="mode" class="badge" role="status" aria-live="polite" aria-atomic="true"><span class="dot" aria-hidden="true"></span><span id="modeText">connecting…</span></span>
+    <span class="badge"><span class="dot" aria-hidden="true" style="background:var(--blue-mid)"></span><span class="visually-hidden" data-i18n="updated">updated</span><span id="updated">-</span></span>
+    <div class="lang-field">
+      <label class="visually-hidden" for="language" data-i18n="language">Language</label>
+      <select id="language" class="lang-select">
+        <option value="en">English</option>
+      </select>
+    </div>
+    <button id="theme" class="theme-toggle" type="button" role="switch" aria-checked="false" title="Dark mode">
+      <span class="theme-track" aria-hidden="true"><span class="theme-knob"></span></span>
+      <span id="themeText" data-i18n="theme_dark">Dark mode</span>
+    </button>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <div id="error" class="banner" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <section id="panel-monitoring" role="tabpanel" aria-labelledby="tab-monitoring" data-panel="monitoring" tabindex="0">
+    <div class="cards" id="cards"></div>
+    <div class="panel">
+      <h2 data-i18n="pools">Pools</h2>
+      <div class="table-wrap">
+        <table>
+          <caption class="visually-hidden" data-i18n="pools">Pools</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="pool">Pool</th>
+              <th scope="col" data-i18n="type">Type</th>
+              <th scope="col" data-i18n="workers">Workers</th>
+              <th scope="col" data-i18n="running">Running</th>
+              <th scope="col" data-i18n="idle">Idle</th>
+              <th scope="col" data-i18n="backlog">Backlog</th>
+              <th scope="col" data-i18n="max_child">Max child</th>
+              <th scope="col" data-i18n="max_req">Max req</th>
+              <th scope="col" data-i18n="mem">Mem</th>
+            </tr>
+          </thead>
+          <tbody id="poolRows"></tbody>
+        </table>
+      </div>
+      <div id="noPools" class="empty-state hide" data-i18n="no_pool">No pool detected.</div>
+    </div>
+  </section>
+
+  <section id="panel-graphs" role="tabpanel" aria-labelledby="tab-graphs" data-panel="graphs" tabindex="0" hidden>
+    <h2 class="visually-hidden" data-i18n="tab_graphs">Graphs</h2>
+    <div class="subtabs" id="graphPools" role="group" aria-label="Pools"></div>
+    <div class="graphs" id="graphGrid"></div>
+  </section>
+
+  <section id="panel-logs" role="tabpanel" aria-labelledby="tab-logs" data-panel="logs" tabindex="0" hidden>
+    <h2 class="visually-hidden" data-i18n="tab_logs">Logs</h2>
+    <div class="subtabs" id="logPools" role="group" aria-label="Pools"></div>
+    <div class="logs" id="logGrid"></div>
+  </section>
+
+  <section id="panel-configs" role="tabpanel" aria-labelledby="tab-configs" data-panel="configs" tabindex="0" hidden>
+    <div class="subtabs" id="cfgPools" role="group" aria-label="Pools"></div>
+    <div class="panel">
+      <h2 id="cfgTitle" data-i18n="global_directives">Global directives</h2>
+      <div id="cfgBody"></div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer">
+  <p class="footer-brand"><strong>fpm-monitor</strong> · <span data-i18n="footer_tagline">reads the local process table, no network access.</span></p>
+  <p class="footer-meta" id="footerMeta"></p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  const THEME_KEY = "fpm-monitor.theme";
+  const OPEN_POOLS_KEY = "fpm-monitor.openPools";
+  const LANG_KEY = "fpm-monitor.lang";
+
+  const FALLBACK_LABELS = {
+    tab_monitoring: "Monitoring",
+    tab_graphs: "Graphs",
+    tab_logs: "Logs",
+    tab_configs: "Configurations",
+    pools: "Pools",
+    pool: "Pool",
+    workers: "Workers",
+    running: "Running",
+    idle: "Idle",
+    backlog: "Backlog",
+    mem: "Mem",
+    master: "Master",
+    type: "Type",
+    max_child: "Max child",
+    max_req: "Max req",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    no_pool: "No pool detected.",
+    last_measurements: "last {} measurements",
+    g_running: "running",
+    g_workers: "workers",
+    g_idle: "idle",
+    g_backlog: "backlog",
+    log_php: "PHP log",
+    slow_queries: "Slow queries",
+    access: "Access",
+    no_entries: "(no entries)",
+    pool_configs: "Pool configurations",
+    no_config: "No configuration found.",
+    no_directives: "(no directives read)",
+    global_directives: "Global directives",
+    master_pid: "Master PID",
+    skip_content: "Skip to content",
+    language: "Language",
+    web_dashboard: "web dashboard",
+    theme_dark: "Dark mode",
+    theme_light: "Light mode",
+    connecting: "connecting…",
+    disconnected: "disconnected",
+    mock_data: "mock data",
+    live: "live",
+    updated: "updated",
+    configured_detected: "configured + detected",
+    total_processes: "total processes",
+    state_r: "state R",
+    state_s: "state S",
+    pending_connections: "pending connections",
+    sum_rss: "sum of worker RSS",
+    footer_tagline: "reads the local process table, no network access.",
+    collection_error: "Collection error:",
+    cannot_reach: "Cannot reach fpm-monitor:",
+    refresh: "refresh"
+  };
+
+  const ui = {
+    data: null, tab: "monitoring", graph: 0, log: 0, cfg: 0, timer: null,
+    openPools: new Set(),
+    locales: [],
+    lang: "en",
+    labels: FALLBACK_LABELS
+  };
+  const $ = (id) => document.getElementById(id);
+
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (e) { /* private mode */ }
+  }
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function t(key, ...args) {
+    let value = (ui.labels && ui.labels[key]) || FALLBACK_LABELS[key] || key;
+    args.forEach((arg) => { value = value.replace("{}", String(arg)); });
+    return value;
+  }
+
+  // ---------- Theme ----------
+
+  function currentTheme() {
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  }
+
+  function applyTheme(theme, persist) {
+    const dark = theme === "dark";
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    const label = t("theme_dark");
+    $("themeText").textContent = label;
+    $("theme").setAttribute("aria-checked", String(dark));
+    $("theme").title = t(dark ? "theme_light" : "theme_dark");
+    if (persist) storageSet(THEME_KEY, dark ? "dark" : "light");
+  }
+
+  // ---------- Language ----------
+
+  function availableCode(value) {
+    if (!value) return null;
+    let code = String(value).toLowerCase();
+    if (code === "nb" || code === "nn") code = "no";
+    const base = code.split("-")[0];
+    const codes = ui.locales.map((locale) => locale.code);
+    if (codes.indexOf(code) >= 0) return code;
+    if (codes.indexOf(base) >= 0) return base;
+    return null;
+  }
+
+  function detectLanguage() {
+    const forced = availableCode(new URLSearchParams(window.location.search).get("lang"));
+    if (forced) return forced;
+    const stored = availableCode(storageGet(LANG_KEY));
+    if (stored) return stored;
+    const preferred = (navigator.languages && navigator.languages.length)
+      ? navigator.languages
+      : [navigator.language || ""];
+    for (const candidate of preferred) {
+      const code = availableCode(candidate);
+      if (code) return code;
+    }
+    return "en";
+  }
+
+  function populateLanguages() {
+    const select = $("language");
+    select.textContent = "";
+    ui.locales.forEach((locale) => {
+      const option = document.createElement("option");
+      option.value = locale.code;
+      option.textContent = locale.name;
+      option.lang = locale.code;
+      select.appendChild(option);
+    });
+    if (!select.options.length) {
+      const option = document.createElement("option");
+      option.value = "en";
+      option.textContent = "English";
+      option.lang = "en";
+      select.appendChild(option);
+    }
+  }
+
+  function applyLanguage(code, persist) {
+    const locale = ui.locales.find((item) => item.code === code)
+      || ui.locales.find((item) => item.code === "en")
+      || { code: "en", labels: FALLBACK_LABELS };
+    ui.lang = locale.code;
+    ui.labels = locale.labels || FALLBACK_LABELS;
+    document.documentElement.lang = locale.code;
+    document.documentElement.dir = locale.code === "ar" ? "rtl" : "ltr";
+    document.title = "fpm-monitor · " + t("web_dashboard");
+    $("language").value = locale.code;
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = t(node.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+      node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+      node.title = t(node.dataset.i18nTitle);
+    });
+    applyTheme(currentTheme(), false);
+    if (!ui.data) $("modeText").textContent = t("connecting");
+    if (persist) storageSet(LANG_KEY, locale.code);
+    render();
+  }
+
+  async function loadI18n() {
+    try {
+      const response = await fetch("/api/i18n", { cache: "no-store" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const locales = await response.json();
+      if (Array.isArray(locales) && locales.length) ui.locales = locales;
+    } catch (e) { /* keep the English fallback */ }
+    populateLanguages();
+    applyLanguage(detectLanguage(), false);
+  }
+
+  // ---------- Open pools (kept across refreshes) ----------
+
+  function loadOpenPools() {
+    try {
+      const saved = JSON.parse(storageGet(OPEN_POOLS_KEY) || "[]");
+      if (Array.isArray(saved)) saved.forEach((name) => ui.openPools.add(String(name)));
+    } catch (e) { /* ignore malformed state */ }
+  }
+
+  function saveOpenPools() {
+    storageSet(OPEN_POOLS_KEY, JSON.stringify(Array.from(ui.openPools)));
+  }
+
+  function rememberOpenPool(name, open) {
+    const changed = ui.openPools.has(name) !== open;
+    if (open) ui.openPools.add(name);
+    else ui.openPools.delete(name);
+    if (changed) saveOpenPools();
+  }
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function setStatus(kind, text) {
+    const mode = $("mode");
+    mode.className = "badge " + (kind || "");
+    const label = $("modeText");
+    if (label.textContent !== text) label.textContent = text;
+  }
+
+  function fmtMem(kb) {
+    if (kb === null || kb === undefined || kb < 0) return "-";
+    if (kb >= 1048576) return (kb / 1048576).toFixed(1) + " GB";
+    if (kb >= 1024) return (kb / 1024).toFixed(1) + " MB";
+    return kb + " KB";
+  }
+
+  function fmtTime(epoch) {
+    if (!epoch) return "-";
+    return new Date(epoch * 1000).toLocaleTimeString(ui.lang);
+  }
+
+  function opt(v) { return v === null || v === undefined ? "-" : String(v); }
+
+  function ratioClass(value, limit) {
+    if (!limit || limit <= 0) return "";
+    if (value >= limit) return "bad";
+    if (value >= limit * 0.8) return "warn";
+    return "ok";
+  }
+
+  function currentPool(key) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (!pools.length) return null;
+    if (ui[key] >= pools.length) ui[key] = 0;
+    return pools[ui[key]];
+  }
+
+  function subtabs(container, names, active, onPick) {
+    const hadFocus = container.contains(document.activeElement);
+    container.textContent = "";
+    container.setAttribute("aria-label", t("pools"));
+    names.forEach((name, i) => {
+      const button = el("button", i === active ? "active" : "", name);
+      button.type = "button";
+      button.setAttribute("aria-pressed", i === active ? "true" : "false");
+      button.addEventListener("click", () => onPick(i));
+      container.appendChild(button);
+    });
+    if (hadFocus && container.children[active]) container.children[active].focus({ preventScroll: true });
+  }
+
+  // ---------- Focus kept across live re-renders ----------
+
+  function focusSnapshot() {
+    const active = document.activeElement;
+    if (!active) return null;
+    if (active.matches && active.matches("details.workers > summary")) {
+      return { pool: active.parentElement.dataset.pool };
+    }
+    if (active.matches && active.matches("#logGrid pre")) {
+      const pres = Array.from(document.querySelectorAll("#logGrid pre"));
+      return { log: pres.indexOf(active), top: active.scrollTop, left: active.scrollLeft };
+    }
+    return null;
+  }
+
+  function restoreFocus(snapshot) {
+    if (!snapshot) return;
+    if (snapshot.pool !== undefined) {
+      const box = Array.from(document.querySelectorAll("details.workers"))
+        .find((node) => node.dataset.pool === snapshot.pool);
+      const summary = box && box.querySelector("summary");
+      if (summary) summary.focus({ preventScroll: true });
+    } else if (snapshot.log !== undefined) {
+      const pres = document.querySelectorAll("#logGrid pre");
+      const pre = pres[snapshot.log];
+      if (pre) {
+        pre.focus({ preventScroll: true });
+        pre.scrollTop = snapshot.top;
+        pre.scrollLeft = snapshot.left;
+      }
+    }
+  }
+
+  // ---------- Monitoring ----------
+
+  function renderCards(pools) {
+    const total = (key) => pools.reduce((acc, pool) => acc + (pool[key] || 0), 0);
+    const memory = pools.reduce((acc, pool) => acc + (pool.memory_kb || 0), 0);
+    const backlog = pools.reduce((acc, pool) => acc + (pool.backlog || 0), 0);
+    const items = [
+      ["pools", pools.length, "configured_detected"],
+      ["workers", total("workers"), "total_processes"],
+      ["running", total("running"), "state_r"],
+      ["idle", total("idle"), "state_s"],
+      ["backlog", backlog, "pending_connections"],
+      ["mem", fmtMem(memory), "sum_rss"]
+    ];
+    const box = $("cards");
+    box.textContent = "";
+    items.forEach(([key, value, hint]) => {
+      const card = el("div", "card");
+      card.appendChild(el("div", "k", t(key)));
+      card.appendChild(el("div", "v", value));
+      card.appendChild(el("div", "s", t(hint)));
+      box.appendChild(card);
+    });
+  }
+
+  function renderPools() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const body = $("poolRows");
+
+    // Remember which worker lists are open before rebuilding the table,
+    // so the periodic refresh does not collapse them under the user.
+    body.querySelectorAll("details.workers").forEach((node) => {
+      const name = node.dataset.pool;
+      if (!name) return;
+      rememberOpenPool(name, node.open);
+    });
+
+    body.textContent = "";
+    $("noPools").classList.toggle("hide", pools.length > 0);
+
+    pools.forEach((pool) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "pool", pool.name));
+
+      const type = el("td");
+      const badge = el("span", "type " + (pool.pm || "unknown"), pool.pm || "?");
+      type.appendChild(badge);
+      tr.appendChild(type);
+
+      tr.appendChild(el("td", "", pool.workers));
+      tr.appendChild(el("td", ratioClass(pool.running, pool.max_children), pool.running));
+      tr.appendChild(el("td", "", pool.idle));
+      tr.appendChild(el("td", pool.backlog ? "warn" : "", pool.backlog === null ? opt(pool.backlog_max) : pool.backlog + " / " + opt(pool.backlog_max)));
+      tr.appendChild(el("td", "", opt(pool.max_children)));
+      tr.appendChild(el("td", "", opt(pool.max_requests)));
+      tr.appendChild(el("td", "", fmtMem(pool.memory_kb)));
+
+      body.appendChild(tr);
+
+      if (pool.worker_list && pool.worker_list.length) {
+        const detail = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 9;
+        const box = el("details", "workers");
+        box.dataset.pool = pool.name;
+        box.open = ui.openPools.has(pool.name);
+        box.addEventListener("toggle", () => rememberOpenPool(pool.name, box.open));
+        const summary = el("summary", "", pool.worker_list.length + " " + t("workers"));
+        summary.setAttribute("aria-label", pool.name + ": " + pool.worker_list.length + " " + t("workers"));
+        box.appendChild(summary);
+        const grid = el("div", "workers-grid");
+        pool.worker_list.forEach((worker) => {
+          const item = el("span", "worker");
+          item.appendChild(el("b", "", worker.pid));
+          item.appendChild(document.createTextNode(" " + worker.state + " · " + fmtMem(worker.rss_kb)));
+          grid.appendChild(item);
+        });
+        box.appendChild(grid);
+        cell.appendChild(box);
+        detail.appendChild(cell);
+        body.appendChild(detail);
+      }
+    });
+  }
+
+  // ---------- Graphs ----------
+
+  const METRICS = [
+    { key: "running", label: "g_running", color: "--blue", threshold: "max_children", tcolor: "--magenta-mid", tlabel: "max_child" },
+    { key: "workers", label: "g_workers", color: "--blue-mid", threshold: "max_children", tcolor: "--magenta-mid", tlabel: "max_child" },
+    { key: "idle", label: "g_idle", color: "--magenta-mid", threshold: "min_spare", tcolor: "--magenta", tlabel: "min_spare" },
+    { key: "backlog", label: "g_backlog", color: "--magenta", threshold: "backlog_max", tcolor: "--blue", tlabel: "max_backlog" }
+  ];
+
+  function spark(values, color, thresholds, label) {
+    const W = 360, H = 116, pad = 8;
+    const nums = values.filter((value) => value !== null && value !== undefined);
+    const maxValue = Math.max(
+      1,
+      ...nums,
+      ...thresholds.filter((item) => item.value !== null && item.value !== undefined).map((item) => item.value)
+    ) * 1.12;
+    const n = values.length;
+    const x = (i) => (n <= 1 ? pad : pad + (i * (W - 2 * pad)) / (n - 1));
+    const y = (value) => H - pad - ((value || 0) / maxValue) * (H - 2 * pad);
+
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", label);
+
+    for (let g = 1; g <= 3; g++) {
+      const line = document.createElementNS(NS, "line");
+      const gy = pad + ((H - 2 * pad) * g) / 4;
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", gy);
+      line.setAttribute("y2", gy);
+      line.setAttribute("stroke", cssVar("--grid"));
+      line.setAttribute("stroke-width", "1");
+      svg.appendChild(line);
+    }
+
+    if (n > 0) {
+      let d = "";
+      let area = "M " + x(0) + " " + (H - pad);
+      values.forEach((value, i) => {
+        const command = i === 0 ? "M" : "L";
+        d += command + " " + x(i).toFixed(1) + " " + y(value).toFixed(1) + " ";
+        area += " L " + x(i).toFixed(1) + " " + y(value).toFixed(1);
+      });
+      area += " L " + x(n - 1).toFixed(1) + " " + (H - pad) + " Z";
+
+      const fill = document.createElementNS(NS, "path");
+      fill.setAttribute("d", area);
+      fill.setAttribute("fill", color);
+      fill.setAttribute("opacity", "0.10");
+      svg.appendChild(fill);
+
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d.trim());
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("stroke-linejoin", "round");
+      path.setAttribute("stroke-linecap", "round");
+      svg.appendChild(path);
+
+      const last = document.createElementNS(NS, "circle");
+      last.setAttribute("cx", x(n - 1));
+      last.setAttribute("cy", y(values[n - 1]));
+      last.setAttribute("r", "3");
+      last.setAttribute("fill", color);
+      svg.appendChild(last);
+    }
+
+    thresholds.forEach((item) => {
+      if (item.value === null || item.value === undefined) return;
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", pad);
+      line.setAttribute("x2", W - pad);
+      line.setAttribute("y1", y(item.value));
+      line.setAttribute("y2", y(item.value));
+      line.setAttribute("stroke", item.color);
+      line.setAttribute("stroke-width", "1.5");
+      line.setAttribute("stroke-dasharray", "5 4");
+      line.setAttribute("opacity", "0.8");
+      svg.appendChild(line);
+    });
+
+    return svg;
+  }
+
+  function renderGraphs() {
+    const pools = (ui.data && ui.data.pools) || [];
+    const history = (ui.data && ui.data.history) || [];
+    if (ui.graph >= pools.length) ui.graph = 0;
+    subtabs($("graphPools"), pools.map((pool) => pool.name), ui.graph, (i) => { ui.graph = i; renderGraphs(); });
+    const grid = $("graphGrid");
+    grid.textContent = "";
+    const pool = currentPool("graph");
+    if (!pool) {
+      grid.appendChild(el("div", "empty-state", t("no_pool")));
+      return;
+    }
+
+    METRICS.forEach((metric) => {
+      const values = history.map((sample) => {
+        const point = (sample.pools || []).find((item) => item.name === pool.name);
+        return point ? point[metric.key] : null;
+      });
+      const thresholds = [];
+      if (metric.key === "idle") {
+        thresholds.push({ value: pool.min_spare, color: cssVar("--magenta-mid"), label: t("min_spare") });
+        thresholds.push({ value: pool.max_spare, color: cssVar("--blue-mid"), label: t("max_spare") });
+      } else {
+        thresholds.push({ value: pool[metric.threshold], color: cssVar(metric.tcolor), label: t(metric.tlabel) });
+      }
+
+      const title = t(metric.label);
+      const card = el("div", "graph");
+      const head = el("div", "head");
+      head.appendChild(el("span", "title", title));
+      head.appendChild(el("span", "now", opt(pool[metric.key])));
+      card.appendChild(head);
+      card.appendChild(spark(
+        values,
+        cssVar(metric.color),
+        thresholds,
+        title + ": " + opt(pool[metric.key]) + " · " + t("last_measurements", history.length)
+      ));
+
+      const legend = el("div", "legend");
+      legend.appendChild(el("span", "", t("last_measurements", history.length)));
+      thresholds.forEach((item) => {
+        if (item.value === null || item.value === undefined) return;
+        const entry = el("span", "");
+        const dash = el("i");
+        dash.style.color = item.color;
+        entry.appendChild(dash);
+        entry.appendChild(document.createTextNode(item.label + " " + item.value));
+        legend.appendChild(entry);
+      });
+      card.appendChild(legend);
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------- Logs ----------
+
+  function logColumn(titleKey, path, lines) {
+    const title = t(titleKey);
+    const box = el("div", "log");
+    const head = el("div", "head");
+    head.appendChild(el("b", "", title));
+    head.appendChild(el("span", "", path || "-"));
+    box.appendChild(head);
+    const pre = el("pre", lines.length ? "" : "empty", lines.length ? lines.join("\n") : t("no_entries"));
+    pre.tabIndex = 0;
+    pre.setAttribute("aria-label", title + ": " + (path || "-"));
+    box.appendChild(pre);
+    return box;
+  }
+
+  function renderLogs() {
+    const logs = (ui.data && ui.data.logs) || [];
+    if (ui.log >= logs.length) ui.log = 0;
+    subtabs($("logPools"), logs.map((log) => log.name), ui.log, (i) => { ui.log = i; renderLogs(); });
+    const grid = $("logGrid");
+    grid.textContent = "";
+    if (!logs.length) {
+      grid.appendChild(el("div", "empty-state", t("no_pool")));
+      return;
+    }
+    const log = logs[ui.log];
+    grid.appendChild(logColumn("log_php", log.php_path, log.php || []));
+    grid.appendChild(logColumn("slow_queries", log.slow_path, log.slow || []));
+    grid.appendChild(logColumn("access", log.access_path, log.access || []));
+  }
+
+  // ---------- Configurations ----------
+
+  function renderConfigs() {
+    const config = (ui.data && ui.data.config) || { globals: [], pools: [] };
+    const pools = config.pools || [];
+    const names = [t("global_directives")].concat(pools.map((pool) => pool.name));
+    if (ui.cfg >= names.length) ui.cfg = 0;
+    subtabs($("cfgPools"), names, ui.cfg, (i) => { ui.cfg = i; renderConfigs(); });
+
+    const body = $("cfgBody");
+    body.textContent = "";
+    let directives;
+    if (ui.cfg === 0) {
+      $("cfgTitle").textContent = t("global_directives");
+      directives = config.globals || [];
+    } else {
+      const pool = pools[ui.cfg - 1];
+      $("cfgTitle").textContent = t("pool") + " " + pool.name;
+      directives = pool.directives || [];
+    }
+
+    if (!directives.length) {
+      body.appendChild(el("div", "empty-state", t("no_directives")));
+      return;
+    }
+    const table = el("table", "directives");
+    table.appendChild(el("caption", "visually-hidden", $("cfgTitle").textContent));
+    const tbody = document.createElement("tbody");
+    directives.forEach(([key, value]) => {
+      const tr = document.createElement("tr");
+      tr.appendChild(el("td", "", key));
+      tr.appendChild(el("td", "", value));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  // ---------- Tabs & polling ----------
+
+  const PANELS = ["monitoring", "graphs", "logs", "configs"];
+
+  function setTab(tab, updateHash) {
+    if (PANELS.indexOf(tab) < 0) return;
+    ui.tab = tab;
+    if (updateHash !== false && window.location.hash !== "#" + tab) {
+      window.history.replaceState(null, "", "#" + tab);
+    }
+    document.querySelectorAll("#tabs button").forEach((button) => {
+      const active = button.dataset.tab === tab;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+    document.querySelectorAll("section[data-panel]").forEach((section) => {
+      section.hidden = section.dataset.panel !== tab;
+    });
+  }
+
+  function cycleSub(dir) {
+    const pools = (ui.data && ui.data.pools) || [];
+    if (ui.tab === "graphs" && pools.length) {
+      ui.graph = (ui.graph + dir + pools.length) % pools.length;
+      renderGraphs();
+    } else if (ui.tab === "logs" && pools.length) {
+      ui.log = (ui.log + dir + pools.length) % pools.length;
+      renderLogs();
+    } else if (ui.tab === "configs") {
+      const total = 1 + ((ui.data && ui.data.config && ui.data.config.pools) || []).length;
+      ui.cfg = (ui.cfg + dir + total) % total;
+      renderConfigs();
+    }
+  }
+
+  function render() {
+    const data = ui.data;
+    if (!data) return;
+    const focus = focusSnapshot();
+    setStatus("live", t(data.mock ? "mock_data" : "live"));
+    $("updated").textContent = fmtTime(data.updated);
+    const banner = $("error");
+    if (data.error) {
+      banner.textContent = t("collection_error") + " " + data.error;
+      banner.classList.add("show");
+    } else {
+      banner.classList.remove("show");
+      banner.textContent = "";
+    }
+
+    const pools = data.pools || [];
+    renderCards(pools);
+    renderPools();
+    renderGraphs();
+    renderLogs();
+    renderConfigs();
+
+    const masters = (data.masters || []).join(", ") || "-";
+    $("footerMeta").textContent =
+      t("refresh") + " " + (data.interval || 1) + "s · " + t("master_pid") + " " + masters;
+    restoreFocus(focus);
+  }
+
+  async function poll() {
+    let delay = 1000;
+    try {
+      const response = await fetch("/api/state", { cache: "no-store" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      ui.data = await response.json();
+      if (ui.data.interval) delay = Math.max(500, ui.data.interval * 1000);
+      render();
+    } catch (err) {
+      setStatus("down", t("disconnected"));
+      const banner = $("error");
+      banner.textContent = t("cannot_reach") + " " + err.message;
+      banner.classList.add("show");
+      delay = 2000;
+    }
+    ui.timer = setTimeout(poll, delay);
+  }
+
+  document.querySelectorAll("#tabs button").forEach((button) => {
+    button.addEventListener("click", () => setTab(button.dataset.tab));
+  });
+
+  $("language").addEventListener("change", (event) => {
+    applyLanguage(event.target.value, true);
+  });
+
+  window.addEventListener("hashchange", () => {
+    setTab(window.location.hash.slice(1), false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const tag = (target && target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (target && target.closest && target.closest("pre")) return;
+
+    if (target && target.closest && target.closest("#tabs")) {
+      const buttons = Array.from(document.querySelectorAll("#tabs button"));
+      const index = buttons.indexOf(document.activeElement);
+      const step = document.documentElement.dir === "rtl" ? -1 : 1;
+      let next = null;
+      if (event.key === "ArrowRight") next = buttons[(index + step + buttons.length) % buttons.length];
+      else if (event.key === "ArrowLeft") next = buttons[(index - step + buttons.length) % buttons.length];
+      else if (event.key === "Home") next = buttons[0];
+      else if (event.key === "End") next = buttons[buttons.length - 1];
+      if (next) {
+        next.focus();
+        setTab(next.dataset.tab);
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.key >= "1" && event.key <= "4") {
+      setTab(PANELS[Number(event.key) - 1]);
+    } else if (event.key === "ArrowRight") {
+      cycleSub(1);
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft") {
+      cycleSub(-1);
+      event.preventDefault();
+    }
+  });
+
+  $("theme").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    applyTheme(next, true);
+    // Charts read their colours from CSS variables at render time.
+    render();
+  });
+
+  async function init() {
+    applyTheme(currentTheme(), false);
+    loadOpenPools();
+    await loadI18n();
+    poll();
+    const initial = window.location.hash.slice(1);
+    setTab(PANELS.indexOf(initial) >= 0 ? initial : "monitoring", false);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

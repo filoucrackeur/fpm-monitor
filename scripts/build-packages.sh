@@ -78,11 +78,28 @@ while read -r target deb rpm; do
       exit 1
     }
     rm -rf "$work/root"
+    extra="$(dpkg-deb -c "$deb_file" | awk '{print $6}' | sed 's|^\.||' \
+      | grep -v '/$' | grep -vx '/usr/local/bin/fpm-monitor' || true)"
+    [ -z "$extra" ] || {
+      echo "$deb_file contains unexpected files:" >&2
+      printf '%s\n' "$extra" >&2
+      exit 1
+    }
   fi
 
   if command -v rpm >/dev/null 2>&1; then
     got="$(rpm -qp --queryformat '%{ARCH}' "$rpm_file" 2>/dev/null)"
     [ "$got" = "$rpm" ] || { echo "$rpm_file: arch $got != $rpm" >&2; exit 1; }
+    # Directories may or may not carry a trailing slash depending on the
+    # rpm version, so allow both spellings for the three parent entries.
+    extra="$(rpm -qlp "$rpm_file" 2>/dev/null \
+      | grep -vxE '/usr/?|/usr/local/?|/usr/local/bin/?' \
+      | grep -vx '/usr/local/bin/fpm-monitor' || true)"
+    [ -z "$extra" ] || {
+      echo "$rpm_file contains unexpected files:" >&2
+      printf '%s\n' "$extra" >&2
+      exit 1
+    }
   fi
 
   echo "package: $deb_file"

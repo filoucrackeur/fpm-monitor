@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "kan inte läsa /proc (Linux krävs): {}",
     unknown_option: "okänt alternativ: {}",
     run_help: "kör med --help",
+    invalid_port: "ogiltig port: {} (förväntat 1-65535)",
+    web_serving: "webbgränssnittet lyssnar på http://127.0.0.1:{} (Ctrl-C för att avsluta)",
+    web_error: "kan inte starta webbgränssnittet: {}",
+    skip_content: "Hoppa till innehåll",
+    language: "Språk",
+    web_dashboard: "webbpanel",
+    theme_dark: "Mörkt läge",
+    theme_light: "Ljust läge",
+    connecting: "ansluter…",
+    disconnected: "frånkopplad",
+    mock_data: "demodata",
+    live: "live",
+    updated: "uppdaterad",
+    pool: "Pool",
+    type_label: "Typ",
+    max_child: "Max barn",
+    max_req: "Max förfrågningar",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "konfigurerade + upptäckta",
+    total_processes: "totalt antal processer",
+    state_r: "tillstånd R",
+    state_s: "tillstånd S",
+    pending_connections: "väntande anslutningar",
+    sum_rss: "summa worker-RSS",
+    global_directives: "Globala direktiv",
+    footer_tagline: "läser den lokala processtabellen, ingen nätverksåtkomst.",
+    collection_error: "Insamlingsfel:",
+    cannot_reach: "Kan inte nå fpm-monitor:",
+    refresh: "uppdatering",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ Alternativ:
       --lang <SPRÅK>     Gränssnittsspråk: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Visa demodata (lokalt test)
+      --watch            Starta webbgränssnittet i stället för CLI-vyn
+      --port <PORT>      Port för webbgränssnittet (standard 8471)
   -h, --help             Visa denna hjälp
 
 Identifieringen är automatisk (vanliga platser + include-direktiv).

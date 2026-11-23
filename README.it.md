@@ -36,6 +36,10 @@ in 22 lingue.
     lente (`slowlog`) e dell'**access log** (`access.log`, codici HTTP colorati),
     in sotto-schede.
   - **Configurazioni**: direttive lette dai file (`global` + pool) in sotto-schede.
+- **Dashboard web** (`--watch`): le stesse quattro viste nel browser, servite su
+  `http://127.0.0.1:8471` da un server HTTP senza dipendenze. La porta si imposta
+  con `--port`; i dati vengono campionati in background a `--interval` e la pagina
+  conserva 60 punti di storico per i grafici.
 - Individuazione automatica della configurazione (posizioni abituali + direttiva `include`).
 - Nessuna chiamata di rete: tutto viene letto direttamente da `/proc` (processi,
   RSS, stato, coda di accept dei socket TCP). Su macOS e BSD, gli stessi dati
@@ -181,6 +185,8 @@ Opzioni:
       --no-color          Disabilita il colore
   -t, --tui               Dashboard interattiva (schede, sotto-schede `←`/`→`)
       --interval <SEC>    Intervallo di aggiornamento della TUI (predefinito 1)
+      --watch             Dashboard web invece della vista CLI
+      --port <PORT>       Porta della dashboard web (8471 predefinita)
       --lang <LANG>       Lingua dell'interfaccia: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (predefinita: en)
@@ -207,6 +213,28 @@ predefinito 1 s); anche se una lettura di `/proc` è lenta, il rendering continu
 | `↑` / `↓`      | Scorri la vista Monitoraggio       |
 | `q`, `Ctrl-C`  | Esci                               |
 
+### Dashboard web
+
+`--watch` serve gli stessi dati come applicazione web a pagina singola invece di
+stampare la tabella CLI:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # porta personalizzata
+fpm-monitor --watch --mock          # dati demo senza PHP-FPM
+```
+
+Il server ascolta solo sull'interfaccia locale, senza dipendenze esterne, e la
+pagina interroga `/api/state` per i pool, i dettagli dei worker, i log, le
+direttive di configurazione e gli ultimi 60 campioni. I dati vengono raccolti in
+background a `--interval` (1 s predefinito), quindi una scansione lenta non
+blocca mai una richiesta. Le quattro schede sono **Monitoraggio**, **Grafici**,
+**Log** e **Configurazioni**; `1`–`4` e `←`/`→` selezionano schede e
+sotto-schede.
+
+`--port` accetta `1`–`65535` (funziona anche `--port=9000`); qualsiasi altro
+valore esce con codice `2`. Il server non effettua mai richieste in uscita.
+
 ## Struttura del progetto
 
 | File              | Ruolo                                                |
@@ -218,6 +246,8 @@ predefinito 1 s); anche se una lettura di `/proc` è lenta, il rendering continu
 | `src/logs.rs`     | Lettura del log PHP e delle query lente              |
 | `src/render.rs`   | Output testuale (tabella CLI)                        |
 | `src/tui.rs`      | Dashboard interattiva (4 schede, grafici)            |
+| `src/web.rs`       | Server web, campionamento in background, snapshot JSON |
+| `src/web/index.html` | Dashboard web a pagina singola incorporata        |
 | `src/i18n.rs`     | Localizzazione (22 lingue, `--lang`)                  |
 | `src/term.rs`     | Rilevamento colore / stili                           |
 | `tests/cli.rs`    | Test CLI end-to-end (`--help`, `--mock`, i18n)       |

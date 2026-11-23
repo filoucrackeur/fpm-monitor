@@ -37,6 +37,10 @@ ile 22 dilde (varsayılan: İngilizce) kullanılabilir ve bu belge 22 dile çevr
     kodları) son satırları, alt sekmelerde.
   - **Yapılandırmalar**: dosyalardan okunan yönergeler (`global` + havuzlar),
     alt sekmelerde.
+- **Web panosu** (`--watch`): aynı dört görünüm tarayıcıda, bağımlılığı olmayan
+  bir HTTP sunucusu tarafından `http://127.0.0.1:8471` adresinde sunulur. Port
+  `--port` ile ayarlanır; veriler `--interval` aralığında arka planda toplanır ve
+  sayfa grafikleri için 60 geçmiş noktası tutar.
 - Otomatik yapılandırma keşfi (olağan konumlar + `include` yönergesi).
 - Ağ çağrısı yok: her şey doğrudan `/proc` üzerinden okunur (süreçler, RSS, durum,
   TCP soketi kabul kuyruğu). macOS ve BSD'de aynı veriler `ps` ve `netstat`
@@ -181,6 +185,8 @@ Options:
       --no-color          Rengi devre dışı bırak
   -t, --tui               Etkileşimli pano (sekmeler, `←`/`→` alt sekmeler)
       --interval <SEC>    TUI yenileme aralığı (varsayılan 1)
+      --watch             CLI görünümü yerine web panosu
+      --port <PORT>       Web panosu portu (varsayılan 8471)
       --lang <LANG>       Arayüz dili: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (varsayılan: en)
@@ -207,6 +213,27 @@ yenilenir; bir `/proc` okuması yavaş olsa bile çizim sürer.
 | `↑` / `↓`      | İzleme görünümünü kaydır           |
 | `q`, `Ctrl-C`  | Çık                                |
 
+### Web panosu
+
+`--watch`, CLI tablosunu yazdırmak yerine aynı verileri tek sayfalık bir web
+uygulaması olarak sunar:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # özel port
+fpm-monitor --watch --mock          # PHP-FPM olmadan demo verileri
+```
+
+Sunucu yalnızca yerel arayüzü dinler, üçüncü taraf bağımlılık kullanmaz; sayfa
+havuzlar, worker ayrıntıları, günlükler, yapılandırma direktifleri ve son 60
+örnek için `/api/state` sorgular. Veriler `--interval` (varsayılan 1 sn)
+aralığında arka planda toplanır, böylece yavaş bir tarama isteği asla engellemez.
+Dört sekme **İzleme**, **Grafikler**, **Günlükler** ve **Yapılandırmalar**'dır;
+`1`–`4` ve `←`/`→` sekmeleri ve alt sekmeleri seçer.
+
+`--port` `1`–`65535` aralığını kabul eder (`--port=9000` de çalışır); başka bir
+değer `2` koduyla çıkar. Sunucu hiçbir zaman giden istek yapmaz.
+
 ## Proje yapısı
 
 | Dosya             | Görev                                               |
@@ -218,6 +245,8 @@ yenilenir; bir `/proc` okuması yavaş olsa bile çizim sürer.
 | `src/logs.rs`     | PHP günlüğü ve yavaş sorguları okuma                |
 | `src/render.rs`   | Metin çıktısı (CLI tablosu)                         |
 | `src/tui.rs`      | Etkileşimli pano (4 sekme, grafikler)               |
+| `src/web.rs`       | Web sunucusu, arka plan örnekleme, JSON anlık görüntüsü |
+| `src/web/index.html` | Gömülü tek sayfalık web panosu                   |
 | `src/i18n.rs`     | Yerelleştirme (22 dil, `--lang`)                     |
 | `src/term.rs`     | Renk algılama / stiller                             |
 | `tests/cli.rs`    | Uçtan uca CLI testleri (`--help`, `--mock`, i18n)   |

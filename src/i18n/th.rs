@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "ไม่สามารถอ่าน /proc ได้ (ต้องใช้ Linux): {}",
     unknown_option: "ตัวเลือกที่ไม่รู้จัก: {}",
     run_help: "เรียกใช้ด้วย --help",
+    invalid_port: "พอร์ตไม่ถูกต้อง: {} (ต้องเป็น 1-65535)",
+    web_serving: "เว็บ UI กำลังฟังที่ http://127.0.0.1:{} (Ctrl-C เพื่อออก)",
+    web_error: "ไม่สามารถเริ่มเว็บ UI: {}",
+    skip_content: "ข้ามไปยังเนื้อหา",
+    language: "ภาษา",
+    web_dashboard: "แดชบอร์ดเว็บ",
+    theme_dark: "โหมดมืด",
+    theme_light: "โหมดสว่าง",
+    connecting: "กำลังเชื่อมต่อ…",
+    disconnected: "ตัดการเชื่อมต่อ",
+    mock_data: "ข้อมูลจำลอง",
+    live: "สด",
+    updated: "อัปเดต",
+    pool: "พูล",
+    type_label: "ประเภท",
+    max_child: "จำนวนลูกสูงสุด",
+    max_req: "จำนวนคำขอสูงสุด",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "กำหนดค่า + ตรวจพบ",
+    total_processes: "โปรเซสทั้งหมด",
+    state_r: "สถานะ R",
+    state_s: "สถานะ S",
+    pending_connections: "การเชื่อมต่อที่รออยู่",
+    sum_rss: "ผลรวม RSS ของเวิร์กเกอร์",
+    global_directives: "ไดเรกทีฟส่วนกลาง",
+    footer_tagline: "อ่านตารางโปรเซสในเครื่อง ไม่มีการเข้าถึงเครือข่าย",
+    collection_error: "ข้อผิดพลาดในการเก็บข้อมูล:",
+    cannot_reach: "ไม่สามารถเชื่อมต่อ fpm-monitor:",
+    refresh: "รีเฟรช",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ fpm-monitor — โปรแกรมตรวจสอบพูล PHP-FPM (พ
       --lang <ภาษา>       ภาษาของอินเทอร์เฟซ: en (US), fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock              แสดงข้อมูลตัวอย่าง (ทดสอบในเครื่อง)
+      --watch            เริ่มเว็บ UI แทนมุมมอง CLI
+      --port <PORT>      พอร์ตของเว็บ UI (ค่าเริ่มต้น 8471)
   -h, --help              แสดงความช่วยเหลือนี้
 
 การตรวจจับเป็นไปโดยอัตโนมัติ (ตำแหน่งปกติ + คำสั่ง include)

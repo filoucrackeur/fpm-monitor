@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "/proc을(를) 읽을 수 없습니다 (Linux 필요): {}",
     unknown_option: "알 수 없는 옵션: {}",
     run_help: "--help로 실행하세요",
+    invalid_port: "잘못된 포트: {} (1-65535 기대)",
+    web_serving: "웹 UI가 http://127.0.0.1:{} 에서 대기 중입니다 (Ctrl-C로 종료)",
+    web_error: "웹 UI를 시작할 수 없습니다: {}",
+    skip_content: "콘텐츠로 건너뛰기",
+    language: "언어",
+    web_dashboard: "웹 대시보드",
+    theme_dark: "어두운 모드",
+    theme_light: "밝은 모드",
+    connecting: "연결 중…",
+    disconnected: "연결 끊김",
+    mock_data: "모의 데이터",
+    live: "실시간",
+    updated: "업데이트",
+    pool: "풀",
+    type_label: "유형",
+    max_child: "최대 자식",
+    max_req: "최대 요청",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "구성됨 + 감지됨",
+    total_processes: "전체 프로세스",
+    state_r: "상태 R",
+    state_s: "상태 S",
+    pending_connections: "대기 중인 연결",
+    sum_rss: "워커 RSS 합계",
+    global_directives: "전역 지시문",
+    footer_tagline: "로컬 프로세스 테이블을 읽으며 네트워크에 접근하지 않습니다.",
+    collection_error: "수집 오류:",
+    cannot_reach: "fpm-monitor에 연결할 수 없습니다:",
+    refresh: "새로 고침",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ fpm-monitor — PHP-FPM 풀 모니터 (fpm-monitor.c의 Rust 포팅)
       --lang <언어>      UI 언어: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             데모 데이터 표시 (로컬 테스트)
+      --watch            CLI 보기 대신 웹 UI를 시작합니다
+      --port <PORT>      웹 UI 포트 (기본값 8471)
   -h, --help             이 도움말 표시
 
 감지는 자동입니다 (일반적인 위치 + include 지시문).

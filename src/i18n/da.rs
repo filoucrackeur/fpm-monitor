@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "kan ikke læse /proc (kræver Linux): {}",
     unknown_option: "ukendt valgmulighed: {}",
     run_help: "kør med --help",
+    invalid_port: "ugyldig port: {} (forventet 1-65535)",
+    web_serving: "webgrænsefladen lytter på http://127.0.0.1:{} (Ctrl-C for at afslutte)",
+    web_error: "kan ikke starte webgrænsefladen: {}",
+    skip_content: "Spring til indhold",
+    language: "Sprog",
+    web_dashboard: "webdashboard",
+    theme_dark: "Mørk tilstand",
+    theme_light: "Lys tilstand",
+    connecting: "forbinder…",
+    disconnected: "afbrudt",
+    mock_data: "demodata",
+    live: "live",
+    updated: "opdateret",
+    pool: "Pool",
+    type_label: "Type",
+    max_child: "Maks. børn",
+    max_req: "Maks. anmodninger",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "konfigureret + registreret",
+    total_processes: "processer i alt",
+    state_r: "tilstand R",
+    state_s: "tilstand S",
+    pending_connections: "ventende forbindelser",
+    sum_rss: "sum af worker-RSS",
+    global_directives: "Globale direktiver",
+    footer_tagline: "læser den lokale procestabel, ingen netværksadgang.",
+    collection_error: "Indsamlingsfejl:",
+    cannot_reach: "Kan ikke nå fpm-monitor:",
+    refresh: "opdatering",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ Muligheder:
       --lang <SPROG>     UI-sprog: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Vis demodata (lokal test)
+      --watch            Start webgrænsefladen i stedet for CLI-visningen
+      --port <PORT>      Port til webgrænsefladen (standard 8471)
   -h, --help             Vis denne hjælp
 
 Registreringen sker automatisk (sædvanlige placeringer + include-direktiv).

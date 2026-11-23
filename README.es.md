@@ -40,6 +40,10 @@ traducida a 22 idiomas.
     los códigos HTTP coloreados), en subpestañas.
   - **Configuración**: directivas leídas de los archivos (`global` + pools) en
     subpestañas.
+- **Panel web** (`--watch`): las mismas cuatro vistas en el navegador, servidas
+  en `http://127.0.0.1:8471` por un servidor HTTP sin dependencias. El puerto se
+  define con `--port`; los datos se muestrean en segundo plano con `--interval` y
+  la página conserva 60 puntos de historial para sus gráficos.
 - Descubrimiento automático de la configuración (ubicaciones habituales +
   directiva `include`).
 - Ninguna llamada de red: todo se lee directamente de `/proc` (procesos, RSS,
@@ -188,6 +192,8 @@ Opciones:
       --no-color          Desactiva el color
   -t, --tui               Panel interactivo (pestañas, subpestañas `←`/`→`)
       --interval <SEC>    Intervalo de actualización del TUI (predeterminado 1)
+      --watch             Panel web en lugar de la vista CLI
+      --port <PORT>       Puerto del panel web (8471 por defecto)
       --lang <LANG>       Idioma de la interfaz: en, fr, zh, ar, es, it, ja, de,
                           ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
                           (predeterminado: en)
@@ -215,6 +221,28 @@ dibujado continúa.
 | `↑` / `↓`      | Desplazar la vista de Monitoreo |
 | `q`, `Ctrl-C`  | Salir                              |
 
+### Panel web
+
+`--watch` sirve los mismos datos como una aplicación web de una sola página en
+lugar de imprimir la tabla CLI:
+
+```sh
+fpm-monitor --watch                 # http://127.0.0.1:8471
+fpm-monitor --watch --port 9000     # puerto personalizado
+fpm-monitor --watch --mock          # datos de demostración sin PHP-FPM
+```
+
+El servidor escucha solo en la interfaz local, sin ninguna dependencia externa, y
+la página consulta `/api/state` para los pools, el detalle de los workers, los
+registros, las directivas de configuración y las últimas 60 muestras. Los datos
+se recopilan en segundo plano con `--interval` (1 s por defecto), así que un
+escaneo lento nunca bloquea una petición. Las cuatro pestañas son
+**Monitorización**, **Gráficos**, **Registros** y **Configuraciones**; `1`–`4` y
+`←`/`→` seleccionan pestañas y subpestañas.
+
+`--port` acepta `1`–`65535` (`--port=9000` también funciona); cualquier otro
+valor sale con el código `2`. El servidor nunca realiza peticiones salientes.
+
 ## Estructura del proyecto
 
 | Archivo           | Función                                             |
@@ -226,6 +254,8 @@ dibujado continúa.
 | `src/logs.rs`     | Lectura del log de PHP y de las consultas lentas    |
 | `src/render.rs`   | Salida de texto (tabla CLI)                         |
 | `src/tui.rs`      | Panel interactivo (4 pestañas, gráficas)            |
+| `src/web.rs`       | Servidor web, muestreo en segundo plano, instantánea JSON |
+| `src/web/index.html` | Panel web de una sola página integrado            |
 | `src/i18n.rs`     | Localización (22 idiomas, `--lang`)                  |
 | `src/term.rs`     | Detección de color / estilos                        |
 | `tests/cli.rs`    | Pruebas de extremo a extremo de la CLI (`--help`, `--mock`, i18n) |

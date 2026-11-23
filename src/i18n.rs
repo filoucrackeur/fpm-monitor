@@ -110,6 +110,129 @@ pub fn l() -> &'static Labels {
     }
 }
 
+/// One selectable locale, with its native name for the web language menu.
+pub struct Locale {
+    pub code: &'static str,
+    pub name: &'static str,
+    pub labels: &'static Labels,
+}
+
+/// Every locale exposed by the web dashboard, English first.
+pub fn catalogue() -> &'static [Locale] {
+    &[
+        Locale {
+            code: "en",
+            name: "English",
+            labels: EN,
+        },
+        Locale {
+            code: "fr",
+            name: "Français",
+            labels: FR,
+        },
+        Locale {
+            code: "zh",
+            name: "中文",
+            labels: ZH,
+        },
+        Locale {
+            code: "ar",
+            name: "العربية",
+            labels: AR,
+        },
+        Locale {
+            code: "es",
+            name: "Español",
+            labels: ES,
+        },
+        Locale {
+            code: "it",
+            name: "Italiano",
+            labels: IT,
+        },
+        Locale {
+            code: "ja",
+            name: "日本語",
+            labels: JA,
+        },
+        Locale {
+            code: "de",
+            name: "Deutsch",
+            labels: DE,
+        },
+        Locale {
+            code: "ru",
+            name: "Русский",
+            labels: ru::LABELS,
+        },
+        Locale {
+            code: "hi",
+            name: "हिन्दी",
+            labels: hi::LABELS,
+        },
+        Locale {
+            code: "id",
+            name: "Bahasa Indonesia",
+            labels: id::LABELS,
+        },
+        Locale {
+            code: "ko",
+            name: "한국어",
+            labels: ko::LABELS,
+        },
+        Locale {
+            code: "no",
+            name: "Norsk",
+            labels: no::LABELS,
+        },
+        Locale {
+            code: "sv",
+            name: "Svenska",
+            labels: sv::LABELS,
+        },
+        Locale {
+            code: "fi",
+            name: "Suomi",
+            labels: fi::LABELS,
+        },
+        Locale {
+            code: "da",
+            name: "Dansk",
+            labels: da::LABELS,
+        },
+        Locale {
+            code: "el",
+            name: "Ελληνικά",
+            labels: el::LABELS,
+        },
+        Locale {
+            code: "tr",
+            name: "Türkçe",
+            labels: tr::LABELS,
+        },
+        Locale {
+            code: "pl",
+            name: "Polski",
+            labels: pl::LABELS,
+        },
+        Locale {
+            code: "uk",
+            name: "Українська",
+            labels: uk::LABELS,
+        },
+        Locale {
+            code: "th",
+            name: "ไทย",
+            labels: th::LABELS,
+        },
+        Locale {
+            code: "vi",
+            name: "Tiếng Việt",
+            labels: vi::LABELS,
+        },
+    ]
+}
+
 pub struct Labels {
     pub tab_monitoring: &'static str,
     pub tab_graphs: &'static str,
@@ -148,6 +271,37 @@ pub struct Labels {
     pub read_proc: &'static str,
     pub unknown_option: &'static str,
     pub run_help: &'static str,
+    pub invalid_port: &'static str,
+    pub web_serving: &'static str,
+    pub web_error: &'static str,
+    pub skip_content: &'static str,
+    pub language: &'static str,
+    pub web_dashboard: &'static str,
+    pub theme_dark: &'static str,
+    pub theme_light: &'static str,
+    pub connecting: &'static str,
+    pub disconnected: &'static str,
+    pub mock_data: &'static str,
+    pub live: &'static str,
+    pub updated: &'static str,
+    pub pool: &'static str,
+    pub type_label: &'static str,
+    pub max_child: &'static str,
+    pub max_req: &'static str,
+    pub min_spare: &'static str,
+    pub max_spare: &'static str,
+    pub max_backlog: &'static str,
+    pub configured_detected: &'static str,
+    pub total_processes: &'static str,
+    pub state_r: &'static str,
+    pub state_s: &'static str,
+    pub pending_connections: &'static str,
+    pub sum_rss: &'static str,
+    pub global_directives: &'static str,
+    pub footer_tagline: &'static str,
+    pub collection_error: &'static str,
+    pub cannot_reach: &'static str,
+    pub refresh: &'static str,
 }
 
 const EN: &Labels = &Labels {
@@ -188,6 +342,37 @@ const EN: &Labels = &Labels {
     read_proc: "unable to read /proc (Linux required): {}",
     unknown_option: "unknown option: {}",
     run_help: "run with --help",
+    invalid_port: "invalid port: {} (expected 1-65535)",
+    web_serving: "web UI listening on http://127.0.0.1:{} (Ctrl-C to quit)",
+    web_error: "unable to start the web UI: {}",
+    skip_content: "Skip to content",
+    language: "Language",
+    web_dashboard: "web dashboard",
+    theme_dark: "Dark mode",
+    theme_light: "Light mode",
+    connecting: "connecting…",
+    disconnected: "disconnected",
+    mock_data: "mock data",
+    live: "live",
+    updated: "updated",
+    pool: "Pool",
+    type_label: "Type",
+    max_child: "Max child",
+    max_req: "Max req",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "configured + detected",
+    total_processes: "total processes",
+    state_r: "state R",
+    state_s: "state S",
+    pending_connections: "pending connections",
+    sum_rss: "sum of worker RSS",
+    global_directives: "Global directives",
+    footer_tagline: "reads the local process table, no network access.",
+    collection_error: "Collection error:",
+    cannot_reach: "Cannot reach fpm-monitor:",
+    refresh: "refresh",
 };
 
 const FR: &Labels = &Labels {
@@ -228,6 +413,37 @@ const FR: &Labels = &Labels {
     read_proc: "impossible de lire /proc (Linux requis) : {}",
     unknown_option: "option inconnue : {}",
     run_help: "lancer avec --help",
+    invalid_port: "port invalide : {} (attendu 1-65535)",
+    web_serving: "interface web à l'écoute sur http://127.0.0.1:{} (Ctrl-C pour quitter)",
+    web_error: "impossible de démarrer l'interface web : {}",
+    skip_content: "Aller au contenu",
+    language: "Langue",
+    web_dashboard: "tableau de bord web",
+    theme_dark: "Mode sombre",
+    theme_light: "Mode clair",
+    connecting: "connexion…",
+    disconnected: "déconnecté",
+    mock_data: "données de démo",
+    live: "en direct",
+    updated: "mis à jour",
+    pool: "Pool",
+    type_label: "Type",
+    max_child: "Max enfants",
+    max_req: "Max requêtes",
+    min_spare: "Min. inactifs",
+    max_spare: "Max. inactifs",
+    max_backlog: "Max. d'attente",
+    configured_detected: "configurés + détectés",
+    total_processes: "processus au total",
+    state_r: "état R",
+    state_s: "état S",
+    pending_connections: "connexions en attente",
+    sum_rss: "somme RSS des workers",
+    global_directives: "Directives globales",
+    footer_tagline: "lit la table des processus locale, aucune requête réseau.",
+    collection_error: "Erreur de collecte :",
+    cannot_reach: "Impossible de joindre fpm-monitor :",
+    refresh: "rafraîchissement",
 };
 
 const ZH: &Labels = &Labels {
@@ -268,6 +484,37 @@ const ZH: &Labels = &Labels {
     read_proc: "无法读取 /proc（需要 Linux）：{}",
     unknown_option: "未知选项：{}",
     run_help: "使用 --help 运行",
+    invalid_port: "无效端口：{}（应为 1-65535）",
+    web_serving: "Web 界面正在监听 http://127.0.0.1:{}（Ctrl-C 退出）",
+    web_error: "无法启动 Web 界面：{}",
+    skip_content: "跳到内容",
+    language: "语言",
+    web_dashboard: "Web 仪表板",
+    theme_dark: "深色模式",
+    theme_light: "浅色模式",
+    connecting: "连接中…",
+    disconnected: "已断开",
+    mock_data: "模拟数据",
+    live: "实时",
+    updated: "更新于",
+    pool: "池",
+    type_label: "类型",
+    max_child: "最大子进程",
+    max_req: "最大请求",
+    min_spare: "最小空闲",
+    max_spare: "最大空闲",
+    max_backlog: "最大积压",
+    configured_detected: "已配置 + 已检测",
+    total_processes: "进程总数",
+    state_r: "状态 R",
+    state_s: "状态 S",
+    pending_connections: "待处理连接",
+    sum_rss: "工作进程 RSS 总和",
+    global_directives: "全局指令",
+    footer_tagline: "读取本地进程表，无网络访问。",
+    collection_error: "采集错误：",
+    cannot_reach: "无法连接到 fpm-monitor：",
+    refresh: "刷新",
 };
 
 const AR: &Labels = &Labels {
@@ -308,6 +555,37 @@ const AR: &Labels = &Labels {
     read_proc: "تعذّر قراءة /proc (يتطلب لينكس): {}",
     unknown_option: "خيار غير معروف: {}",
     run_help: "شغّل مع --help",
+    invalid_port: "منفذ غير صالح: {} (المتوقع 1-65535)",
+    web_serving: "واجهة الويب تستمع على http://127.0.0.1:{} (Ctrl-C للخروج)",
+    web_error: "تعذّر تشغيل واجهة الويب: {}",
+    skip_content: "تخطَّ إلى المحتوى",
+    language: "اللغة",
+    web_dashboard: "لوحة المعلومات على الويب",
+    theme_dark: "الوضع الداكن",
+    theme_light: "الوضع الفاتح",
+    connecting: "جارٍ الاتصال…",
+    disconnected: "غير متصل",
+    mock_data: "بيانات تجريبية",
+    live: "مباشر",
+    updated: "آخر تحديث",
+    pool: "المجموعة",
+    type_label: "النوع",
+    max_child: "أقصى عدد أبناء",
+    max_req: "أقصى طلبات",
+    min_spare: "الحد الأدنى للانتظار",
+    max_spare: "الحد الأقصى",
+    max_backlog: "الحد الأقصى للتراكم",
+    configured_detected: "مُهيأة + مكتشفة",
+    total_processes: "إجمالي العمليات",
+    state_r: "الحالة R",
+    state_s: "الحالة S",
+    pending_connections: "اتصالات معلّقة",
+    sum_rss: "مجموع RSS للعمال",
+    global_directives: "التوجيهات العامة",
+    footer_tagline: "يقرأ جدول العمليات المحلي، دون أي وصول إلى الشبكة.",
+    collection_error: "خطأ في الجمع:",
+    cannot_reach: "تعذّر الوصول إلى fpm-monitor:",
+    refresh: "التحديث",
 };
 
 const ES: &Labels = &Labels {
@@ -348,6 +626,37 @@ const ES: &Labels = &Labels {
     read_proc: "no se puede leer /proc (requiere Linux): {}",
     unknown_option: "opción desconocida: {}",
     run_help: "ejecuta con --help",
+    invalid_port: "puerto no válido: {} (se espera 1-65535)",
+    web_serving: "interfaz web escuchando en http://127.0.0.1:{} (Ctrl-C para salir)",
+    web_error: "no se puede iniciar la interfaz web: {}",
+    skip_content: "Saltar al contenido",
+    language: "Idioma",
+    web_dashboard: "panel web",
+    theme_dark: "Modo oscuro",
+    theme_light: "Modo claro",
+    connecting: "conectando…",
+    disconnected: "desconectado",
+    mock_data: "datos de demostración",
+    live: "en vivo",
+    updated: "actualizado",
+    pool: "Pool",
+    type_label: "Tipo",
+    max_child: "Máx. hijos",
+    max_req: "Máx. peticiones",
+    min_spare: "Mín. inactivo",
+    max_spare: "Máx. inactivo",
+    max_backlog: "Máx. cola",
+    configured_detected: "configurados + detectados",
+    total_processes: "procesos totales",
+    state_r: "estado R",
+    state_s: "estado S",
+    pending_connections: "conexiones pendientes",
+    sum_rss: "suma de RSS de workers",
+    global_directives: "Directivas globales",
+    footer_tagline: "lee la tabla de procesos local, sin acceso a la red.",
+    collection_error: "Error de recopilación:",
+    cannot_reach: "No se puede contactar con fpm-monitor:",
+    refresh: "actualización",
 };
 
 const IT: &Labels = &Labels {
@@ -388,6 +697,37 @@ const IT: &Labels = &Labels {
     read_proc: "impossibile leggere /proc (richiede Linux): {}",
     unknown_option: "opzione sconosciuta: {}",
     run_help: "esegui con --help",
+    invalid_port: "porta non valida: {} (previsto 1-65535)",
+    web_serving: "interfaccia web in ascolto su http://127.0.0.1:{} (Ctrl-C per uscire)",
+    web_error: "impossibile avviare l'interfaccia web: {}",
+    skip_content: "Vai al contenuto",
+    language: "Lingua",
+    web_dashboard: "dashboard web",
+    theme_dark: "Modalità scura",
+    theme_light: "Modalità chiara",
+    connecting: "connessione…",
+    disconnected: "disconnesso",
+    mock_data: "dati dimostrativi",
+    live: "in diretta",
+    updated: "aggiornato",
+    pool: "Pool",
+    type_label: "Tipo",
+    max_child: "Max figli",
+    max_req: "Max richieste",
+    min_spare: "Min. inattivo",
+    max_spare: "Max. inattivo",
+    max_backlog: "Max. coda",
+    configured_detected: "configurati + rilevati",
+    total_processes: "processi totali",
+    state_r: "stato R",
+    state_s: "stato S",
+    pending_connections: "connessioni in attesa",
+    sum_rss: "somma RSS dei worker",
+    global_directives: "Direttive globali",
+    footer_tagline: "legge la tabella dei processi locale, nessun accesso alla rete.",
+    collection_error: "Errore di raccolta:",
+    cannot_reach: "Impossibile raggiungere fpm-monitor:",
+    refresh: "aggiornamento",
 };
 
 const JA: &Labels = &Labels {
@@ -428,6 +768,37 @@ const JA: &Labels = &Labels {
     read_proc: "/proc を読み取れません（Linux が必要）：{}",
     unknown_option: "不明なオプション：{}",
     run_help: "--help で実行",
+    invalid_port: "無効なポート: {}（1〜65535 の範囲）",
+    web_serving: "Web UI は http://127.0.0.1:{} で待機中（Ctrl-C で終了）",
+    web_error: "Web UI を起動できません：{}",
+    skip_content: "コンテンツへスキップ",
+    language: "言語",
+    web_dashboard: "Web ダッシュボード",
+    theme_dark: "ダークモード",
+    theme_light: "ライトモード",
+    connecting: "接続中…",
+    disconnected: "切断されました",
+    mock_data: "モックデータ",
+    live: "ライブ",
+    updated: "更新",
+    pool: "プール",
+    type_label: "種類",
+    max_child: "最大子プロセス",
+    max_req: "最大リクエスト",
+    min_spare: "最小アイドル",
+    max_spare: "最大アイドル",
+    max_backlog: "最大バックログ",
+    configured_detected: "設定済み + 検出済み",
+    total_processes: "プロセス合計",
+    state_r: "状態 R",
+    state_s: "状態 S",
+    pending_connections: "保留中の接続",
+    sum_rss: "ワーカー RSS 合計",
+    global_directives: "グローバルディレクティブ",
+    footer_tagline: "ローカルのプロセステーブルを読み取ります。ネットワークアクセスはありません。",
+    collection_error: "収集エラー:",
+    cannot_reach: "fpm-monitor に接続できません:",
+    refresh: "更新",
 };
 
 const DE: &Labels = &Labels {
@@ -468,6 +839,37 @@ const DE: &Labels = &Labels {
     read_proc: "/proc kann nicht gelesen werden (Linux erforderlich): {}",
     unknown_option: "unbekannte Option: {}",
     run_help: "mit --help ausführen",
+    invalid_port: "ungültiger Port: {} (erwartet 1-65535)",
+    web_serving: "Weboberfläche lauscht auf http://127.0.0.1:{} (Ctrl-C zum Beenden)",
+    web_error: "Weboberfläche konnte nicht gestartet werden: {}",
+    skip_content: "Zum Inhalt springen",
+    language: "Sprache",
+    web_dashboard: "Web-Dashboard",
+    theme_dark: "Dunkelmodus",
+    theme_light: "Hellmodus",
+    connecting: "Verbinden…",
+    disconnected: "getrennt",
+    mock_data: "Demodaten",
+    live: "live",
+    updated: "aktualisiert",
+    pool: "Pool",
+    type_label: "Typ",
+    max_child: "Max. Kinder",
+    max_req: "Max. Anfragen",
+    min_spare: "Min. Leerlauf",
+    max_spare: "Max. Leerlauf",
+    max_backlog: "Max. Rückstand",
+    configured_detected: "konfiguriert + erkannt",
+    total_processes: "Prozesse insgesamt",
+    state_r: "Status R",
+    state_s: "Status S",
+    pending_connections: "ausstehende Verbindungen",
+    sum_rss: "Summe der Worker-RSS",
+    global_directives: "Globale Direktiven",
+    footer_tagline: "liest die lokale Prozesstabelle, kein Netzwerkzugriff.",
+    collection_error: "Erfassungsfehler:",
+    cannot_reach: "fpm-monitor ist nicht erreichbar:",
+    refresh: "Aktualisierung",
 };
 
 /// Aide `--help` localisée.
@@ -491,6 +893,8 @@ Options:
       --lang <LANG>      UI language: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Show demo data (local test)
+      --watch            Start the web UI instead of the CLI view
+      --port <PORT>      Web UI port (default 8471)
   -h, --help             Show this help
 
 Detection is automatic (usual locations + include directive).
@@ -514,6 +918,8 @@ Options:
       --lang <LANG>      Langue de l'interface : en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Affiche des données de démonstration (test local)
+      --watch            Démarre l'interface web au lieu de la vue CLI
+      --port <PORT>      Port de l'interface web (défaut 8471)
   -h, --help             Affiche cette aide
 
 La détection est automatique (emplacements usuels + directive include).
@@ -536,6 +942,8 @@ fpm-monitor — PHP-FPM 进程池监视器（fpm-monitor.c 的 Rust 移植版）
       --lang <语言>      界面语言：en (US)、fr、zh、ar、es、it、ja、de、
                          ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock             显示演示数据（本地测试）
+      --watch            启动 Web 界面，而不是 CLI 视图
+      --port <PORT>      Web 界面端口（默认 8471）
   -h, --help             显示此帮助
 
 自动检测（常用位置 + include 指令）。
@@ -559,6 +967,8 @@ fpm-monitor — مراقب تجمعات PHP-FPM (منفذ بلغة Rust من fpm
       --lang <اللغة>     لغة الواجهة: en (US)، fr، zh، ar، es، it، ja، de،
                          ru، hi، id، ko، no، sv، fi، da، el، tr، pl، uk، th، vi
       --mock             عرض بيانات تجريبية (اختبار محلي)
+      --watch            تشغيل واجهة الويب بدلاً من عرض CLI
+      --port <PORT>      منفذ واجهة الويب (الافتراضي 8471)
   -h, --help             عرض هذه المساعدة
 
 الاكتشاف تلقائي (الأماكن المعتادة + توجيه include).
@@ -582,6 +992,8 @@ Opciones:
       --lang <LANG>      Idioma: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Mostrar datos de demostración (prueba local)
+      --watch            Inicia la interfaz web en lugar de la vista CLI
+      --port <PORT>      Puerto de la interfaz web (por defecto 8471)
   -h, --help             Muestra esta ayuda
 
 La detección es automática (ubicaciones usuales + directiva include).
@@ -605,6 +1017,8 @@ Opzioni:
       --lang <LINGUA>      Lingua interfaccia: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock               Mostra dati dimostrativi (test locale)
+      --watch            Avvia l'interfaccia web invece della vista CLI
+      --port <PORT>      Porta dell'interfaccia web (predefinita 8471)
   -h, --help               Mostra questo aiuto
 
 La rilevazione è automatica (posizioni usuali + direttiva include).
@@ -628,6 +1042,8 @@ fpm-monitor — PHP-FPM プールモニター（fpm-monitor.c の Rust 移植版
       --lang <言語>      UI 言語: en (US)、fr、zh、ar、es、it、ja、de、
                          ru、hi、id、ko、no、sv、fi、da、el、tr、pl、uk、th、vi
       --mock            デモデータを表示（ローカルテスト）
+      --watch            CLI ビューの代わりに Web UI を起動します
+      --port <PORT>      Web UI のポート（デフォルト 8471）
   -h, --help            このヘルプを表示
 
 検出は自動です（一般的な場所 + include ディレクティブ）。
@@ -651,6 +1067,8 @@ Optionen:
       --lang <SPRACHE>   UI-Sprache: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             Demodaten anzeigen (lokaler Test)
+      --watch            Startet die Weboberfläche statt der CLI-Ansicht
+      --port <PORT>      Port der Weboberfläche (Standard 8471)
   -h, --help             Diese Hilfe anzeigen
 
 Die Erkennung ist automatisch (übliche Orte + include-Direktive).

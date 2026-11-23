@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "nie można odczytać /proc (wymagany Linux): {}",
     unknown_option: "nieznana opcja: {}",
     run_help: "uruchom z --help",
+    invalid_port: "nieprawidłowy port: {} (oczekiwano 1-65535)",
+    web_serving: "interfejs webowy nasłuchuje na http://127.0.0.1:{} (Ctrl-C, aby wyjść)",
+    web_error: "nie można uruchomić interfejsu webowego: {}",
+    skip_content: "Przejdź do treści",
+    language: "Język",
+    web_dashboard: "panel internetowy",
+    theme_dark: "Tryb ciemny",
+    theme_light: "Tryb jasny",
+    connecting: "łączenie…",
+    disconnected: "rozłączono",
+    mock_data: "dane demonstracyjne",
+    live: "na żywo",
+    updated: "zaktualizowano",
+    pool: "Pula",
+    type_label: "Typ",
+    max_child: "Maks. procesów potomnych",
+    max_req: "Maks. żądań",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "skonfigurowane + wykryte",
+    total_processes: "procesy łącznie",
+    state_r: "stan R",
+    state_s: "stan S",
+    pending_connections: "oczekujące połączenia",
+    sum_rss: "suma RSS workerów",
+    global_directives: "Globalne dyrektywy",
+    footer_tagline: "odczytuje lokalną tabelę procesów, bez dostępu do sieci.",
+    collection_error: "Błąd zbierania:",
+    cannot_reach: "Nie można połączyć się z fpm-monitor:",
+    refresh: "odświeżanie",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ Opcje:
       --lang <JĘZYK>     język interfejsu: en (US), fr, zh, ar, es, it, ja, de,
                          ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock             pokaż dane demonstracyjne (test lokalny)
+      --watch            uruchom interfejs webowy zamiast widoku CLI
+      --port <PORT>      port interfejsu webowego (domyślnie 8471)
   -h, --help             pokaż tę pomoc
 
 Wykrywanie jest automatyczne (typowe lokalizacje + dyrektywa include).

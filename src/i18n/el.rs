@@ -38,6 +38,37 @@ pub(super) const LABELS: &Labels = &Labels {
     read_proc: "αδυναμία ανάγνωσης /proc (απαιτείται Linux): {}",
     unknown_option: "άγνωστη επιλογή: {}",
     run_help: "εκτελέστε με --help",
+    invalid_port: "μη έγκυρη θύρα: {} (αναμένεται 1-65535)",
+    web_serving: "η διεπαφή web ακούει στο http://127.0.0.1:{} (Ctrl-C για έξοδο)",
+    web_error: "δεν ήταν δυνατή η εκκίνηση της διεπαφής web: {}",
+    skip_content: "Μετάβαση στο περιεχόμενο",
+    language: "Γλώσσα",
+    web_dashboard: "διαδικτυακός πίνακας",
+    theme_dark: "Σκοτεινή λειτουργία",
+    theme_light: "Φωτεινή λειτουργία",
+    connecting: "σύνδεση…",
+    disconnected: "αποσυνδεδεμένο",
+    mock_data: "δεδομένα επίδειξης",
+    live: "ζωντανά",
+    updated: "ενημερώθηκε",
+    pool: "Pool",
+    type_label: "Τύπος",
+    max_child: "Μέγ. θυγατρικά",
+    max_req: "Μέγ. αιτήματα",
+    min_spare: "min spare",
+    max_spare: "max spare",
+    max_backlog: "max backlog",
+    configured_detected: "ρυθμισμένα + εντοπισμένα",
+    total_processes: "σύνολο διεργασιών",
+    state_r: "κατάσταση R",
+    state_s: "κατάσταση S",
+    pending_connections: "εκκρεμείς συνδέσεις",
+    sum_rss: "άθροισμα RSS workers",
+    global_directives: "Καθολικές οδηγίες",
+    footer_tagline: "διαβάζει τον τοπικό πίνακα διεργασιών, χωρίς πρόσβαση δικτύου.",
+    collection_error: "Σφάλμα συλλογής:",
+    cannot_reach: "Δεν είναι δυνατή η σύνδεση με το fpm-monitor:",
+    refresh: "ανανέωση",
 };
 
 pub(super) const USAGE: &str = "\
@@ -57,6 +88,8 @@ fpm-monitor — παρακολούθηση δεξαμενών PHP-FPM (μετα�
       --lang <ΓΛΩΣΣΑ>       Γλώσσα διεπαφής: en (US), fr, zh, ar, es, it, ja, de,
                             ru, hi, id, ko, no, sv, fi, da, el, tr, pl, uk, th, vi
       --mock                Εμφάνιση δεδομένων επίδειξης (τοπική δοκιμή)
+      --watch            Εκκίνηση της διεπαφής web αντί της προβολής CLI
+      --port <PORT>      Θύρα της διεπαφής web (προεπιλογή 8471)
   -h, --help                Εμφάνιση αυτής της βοήθειας
 
 Η ανίχνευση είναι αυτόματη (συνήθεις τοποθεσίες + οδηγία include).
