@@ -50,9 +50,9 @@
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   })();
 </script>
-<title>fpm-monitor — web dashboard</title>
+<title>fpm-monitor · web dashboard</title>
 <style>
-  /* Self-hosted Fira Sans / Fira Mono — the exact php.net webfonts. */
+  /* Self-hosted Fira Sans / Fira Mono: the exact php.net webfonts. */
   @font-face {
     font-family: "Fira Sans";
     src: url("/fonts/FiraSans-Book.woff2") format("woff2");
@@ -96,7 +96,7 @@
     font-display: swap;
   }
   :root {
-    /* Design tokens — php.net official charte graphique */
+    /* Design tokens: php.net official charte graphique */
     color-scheme: light;
     --font-sans: "Fira Sans", "Source Sans Pro", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans Arabic", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: "Fira Mono", "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -469,7 +469,7 @@
   </nav>
   <div class="header-tools">
     <span id="mode" class="badge" role="status" aria-live="polite" aria-atomic="true"><span class="dot" aria-hidden="true"></span><span id="modeText">connecting…</span></span>
-    <span class="badge"><span class="dot" aria-hidden="true" style="background:var(--blue-mid)"></span><span class="visually-hidden" data-i18n="updated">updated</span><span id="updated">—</span></span>
+    <span class="badge"><span class="dot" aria-hidden="true" style="background:var(--blue-mid)"></span><span class="visually-hidden" data-i18n="updated">updated</span><span id="updated">-</span></span>
     <div class="lang-field">
       <label class="visually-hidden" for="language" data-i18n="language">Language</label>
       <select id="language" class="lang-select">
@@ -701,7 +701,7 @@
     ui.labels = locale.labels || FALLBACK_LABELS;
     document.documentElement.lang = locale.code;
     document.documentElement.dir = locale.code === "ar" ? "rtl" : "ltr";
-    document.title = "fpm-monitor — " + t("web_dashboard");
+    document.title = "fpm-monitor · " + t("web_dashboard");
     $("language").value = locale.code;
     document.querySelectorAll("[data-i18n]").forEach((node) => {
       node.textContent = t(node.dataset.i18n);
@@ -764,18 +764,18 @@
   }
 
   function fmtMem(kb) {
-    if (kb === null || kb === undefined || kb < 0) return "—";
+    if (kb === null || kb === undefined || kb < 0) return "-";
     if (kb >= 1048576) return (kb / 1048576).toFixed(1) + " GB";
     if (kb >= 1024) return (kb / 1024).toFixed(1) + " MB";
     return kb + " KB";
   }
 
   function fmtTime(epoch) {
-    if (!epoch) return "—";
+    if (!epoch) return "-";
     return new Date(epoch * 1000).toLocaleTimeString(ui.lang);
   }
 
-  function opt(v) { return v === null || v === undefined ? "—" : String(v); }
+  function opt(v) { return v === null || v === undefined ? "-" : String(v); }
 
   function ratioClass(value, limit) {
     if (!limit || limit <= 0) return "";
@@ -906,7 +906,7 @@
         box.open = ui.openPools.has(pool.name);
         box.addEventListener("toggle", () => rememberOpenPool(pool.name, box.open));
         const summary = el("summary", "", pool.worker_list.length + " " + t("workers"));
-        summary.setAttribute("aria-label", pool.name + " — " + pool.worker_list.length + " " + t("workers"));
+        summary.setAttribute("aria-label", pool.name + ": " + pool.worker_list.length + " " + t("workers"));
         box.appendChild(summary);
         const grid = el("div", "workers-grid");
         pool.worker_list.forEach((worker) => {
@@ -1049,7 +1049,7 @@
         values,
         cssVar(metric.color),
         thresholds,
-        title + ": " + opt(pool[metric.key]) + " — " + t("last_measurements", history.length)
+        title + ": " + opt(pool[metric.key]) + " · " + t("last_measurements", history.length)
       ));
 
       const legend = el("div", "legend");
@@ -1075,11 +1075,11 @@
     const box = el("div", "log");
     const head = el("div", "head");
     head.appendChild(el("b", "", title));
-    head.appendChild(el("span", "", path || "—"));
+    head.appendChild(el("span", "", path || "-"));
     box.appendChild(head);
     const pre = el("pre", lines.length ? "" : "empty", lines.length ? lines.join("\n") : t("no_entries"));
     pre.tabIndex = 0;
-    pre.setAttribute("aria-label", title + " — " + (path || "—"));
+    pre.setAttribute("aria-label", title + ": " + (path || "-"));
     box.appendChild(pre);
     return box;
   }
@@ -1196,7 +1196,7 @@
     renderLogs();
     renderConfigs();
 
-    const masters = (data.masters || []).join(", ") || "—";
+    const masters = (data.masters || []).join(", ") || "-";
     $("footerMeta").textContent =
       t("refresh") + " " + (data.interval || 1) + "s · " + t("master_pid") + " " + masters;
     restoreFocus(focus);
