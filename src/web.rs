@@ -382,7 +382,8 @@ impl AccessTracker {
             .get(name)
             .filter(|(seen, _)| seen == path)
             .map(|(_, size)| *size);
-        self.files.insert(name.to_string(), (path.to_string(), size));
+        self.files
+            .insert(name.to_string(), (path.to_string(), size));
         match previous {
             // Rotation, troncature ou changement de log : on ne compte rien
             // pour éviter d'inventer du trafic.

@@ -46,12 +46,7 @@ pub fn collect(mock: bool) -> Info {
     for candidate in CANDIDATES {
         match run(candidate) {
             Ok(raw) => match html_body(&raw) {
-                Some(html) => {
-                    return Info {
-                        html,
-                        error: None,
-                    }
-                }
+                Some(html) => return Info { html, error: None },
                 None => errors.push(format!("{candidate}: no HTML in output")),
             },
             Err(e) => errors.push(format!("{candidate}: {e}")),
