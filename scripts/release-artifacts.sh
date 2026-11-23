@@ -46,6 +46,12 @@ for src in "$BIN_DIR"/fpm-monitor-*; do
     cp "$src" "$tmp/$pkg/fpm-monitor.exe"
     cp "$ROOT_DIR/LICENSE" "$ROOT_DIR/README.md" "$tmp/$pkg/"
     (cd "$tmp" && zip -q -r "$OUT_DIR/$pkg.zip" "$pkg")
+    listing="$(unzip -Z1 "$OUT_DIR/$pkg.zip" | sed -e "s|^$pkg/||" -e "s|^$pkg$||" | grep -v '^$' | LC_ALL=C sort)"
+    [ "$listing" = "$(printf 'LICENSE\nREADME.md\nfpm-monitor.exe')" ] || {
+      echo "$pkg.zip contains unexpected files:" >&2
+      printf '%s\n' "$listing" >&2
+      exit 1
+    }
     echo "archive: $OUT_DIR/$pkg.zip"
   else
     pkg="fpm-monitor-${VERSION}-${target}"
@@ -54,6 +60,12 @@ for src in "$BIN_DIR"/fpm-monitor-*; do
     chmod 0755 "$tmp/$pkg/fpm-monitor"
     cp "$ROOT_DIR/LICENSE" "$ROOT_DIR/README.md" "$tmp/$pkg/"
     tar -czf "$OUT_DIR/$pkg.tar.gz" -C "$tmp" "$pkg"
+    listing="$(tar -tzf "$OUT_DIR/$pkg.tar.gz" | sed -e "s|^$pkg/||" -e "s|^$pkg$||" | grep -v '^$' | LC_ALL=C sort)"
+    [ "$listing" = "$(printf 'LICENSE\nREADME.md\nfpm-monitor')" ] || {
+      echo "$pkg.tar.gz contains unexpected files:" >&2
+      printf '%s\n' "$listing" >&2
+      exit 1
+    }
     echo "archive: $OUT_DIR/$pkg.tar.gz"
   fi
 

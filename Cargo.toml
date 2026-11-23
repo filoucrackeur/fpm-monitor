@@ -11,6 +11,8 @@ homepage = "https://github.com/filoucrackeur/fpm-monitor"
 readme = "README.md"
 keywords = ["php-fpm", "monitoring", "tui", "process", "observability"]
 categories = ["command-line-utilities", "development-tools::profiling", "system"]
+# Test-only files must never end up in a published source package.
+exclude = ["/hello.php", "/tests"]
 
 [[bin]]
 name = "fpm-monitor"
