@@ -2,6 +2,7 @@ mod config;
 mod data;
 mod i18n;
 mod logs;
+mod phpinfo;
 mod proc;
 mod render;
 mod term;

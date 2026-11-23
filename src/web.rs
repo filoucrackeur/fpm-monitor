@@ -4,7 +4,9 @@
 //! Everything is standard library only. The server binds to loopback, serves
 //! three routes and never makes an outgoing request.
 
-use std::io::{BufRead, BufReader, Write};
+use std::collections::HashMap;
+use std::fs;
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -12,7 +14,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::config::Config;
 use crate::data::{self, Row};
-use crate::{i18n, logs, proc};
+use crate::{i18n, logs, phpinfo, proc};
 
 /// Number of history points kept for the charts.
 pub const HISTORY_LEN: usize = 60;
@@ -57,6 +59,8 @@ fn font_bytes(path: &str) -> Option<&'static [u8]> {
 }
 /// Official PHP favicon served at /favicon.ico.
 const FAVICON: &[u8] = include_bytes!("web/favicon.ico");
+/// Logo PHP tel qu'inclus dans la sortie de `phpinfo()` (image data URI).
+const PHP_LOGO: &[u8] = include_bytes!("web/php-logo.png");
 
 #[derive(Clone)]
 pub struct WorkerView {
@@ -80,6 +84,8 @@ pub struct PoolView {
     pub max_spare: Option<u32>,
     pub memory_kb: i64,
     pub worker_list: Vec<WorkerView>,
+    /// Requêtes terminées depuis le précédent échantillon (accès log).
+    pub requests: u32,
 }
 
 #[derive(Clone)]
@@ -112,6 +118,7 @@ pub struct HistPool {
     pub running: usize,
     pub idle: usize,
     pub backlog: Option<u32>,
+    pub requests: u32,
 }
 
 #[derive(Clone)]
@@ -125,26 +132,34 @@ pub struct State {
     pub interval: u64,
     pub updated: u64,
     pub error: Option<String>,
+    pub requests: u32,
+    pub total_requests: u64,
     pub masters: Vec<i32>,
     pub pools: Vec<PoolView>,
     pub logs: Vec<LogView>,
     pub config: ConfigView,
     pub history: Vec<Sample>,
+    /// `php -i` n'est collecté qu'au démarrage et sur demande (bouton refresh).
+    pub phpinfo: Mutex<phpinfo::Info>,
 }
 
 impl State {
     fn new(collected: Collected, interval: u64, mock: bool) -> State {
         let now = now_secs();
+        let requests: u32 = collected.requests.values().copied().sum();
         let mut state = State {
             mock,
             interval,
             updated: now,
             error: collected.error,
+            requests,
+            total_requests: requests as u64,
             masters: collected.masters,
             pools: collected.pools,
             logs: collected.logs,
             config: collected.config,
             history: Vec::new(),
+            phpinfo: Mutex::new(phpinfo::Info::default()),
         };
         state.record(now);
         state
@@ -163,6 +178,7 @@ impl State {
                 running: p.running,
                 idle: p.idle,
                 backlog: p.backlog,
+                requests: p.requests,
             })
             .collect();
         self.history.push(Sample { time: now, pools });
@@ -173,8 +189,11 @@ impl State {
 
     fn apply(&mut self, collected: Collected) {
         let now = now_secs();
+        let requests: u32 = collected.requests.values().copied().sum();
         self.updated = now;
         self.error = collected.error;
+        self.requests = requests;
+        self.total_requests = self.total_requests.saturating_add(requests as u64);
         self.config = collected.config;
         if self.error.is_none() {
             self.masters = collected.masters;
@@ -209,12 +228,13 @@ impl State {
                     .iter()
                     .map(|p| {
                         format!(
-                            "{{\"name\":\"{}\",\"workers\":{},\"running\":{},\"idle\":{},\"backlog\":{}}}",
+                            "{{\"name\":\"{}\",\"workers\":{},\"running\":{},\"idle\":{},\"backlog\":{},\"requests\":{}}}",
                             esc(&p.name),
                             p.workers,
                             p.running,
                             p.idle,
-                            opt_u32(p.backlog)
+                            opt_u32(p.backlog),
+                            p.requests
                         )
                     })
                     .collect();
@@ -223,13 +243,16 @@ impl State {
             .collect();
         let masters: Vec<String> = self.masters.iter().map(|m| m.to_string()).collect();
         format!(
-            "{{\"mock\":{},\"interval\":{},\"updated\":{},\"error\":{},\"masters\":[{}],\
+            "{{\"mock\":{},\"interval\":{},\"updated\":{},\"error\":{},\
+             \"requests\":{},\"total_requests\":{},\"masters\":[{}],\
              \"pools\":[{}],\"logs\":[{}],\
              \"config\":{{\"globals\":{},\"pools\":[{}]}},\"history\":[{}]}}",
             self.mock,
             self.interval,
             self.updated,
             opt_str(self.error.as_deref()),
+            self.requests,
+            self.total_requests,
             masters.join(","),
             pools.join(","),
             logs.join(","),
@@ -266,6 +289,15 @@ impl Response {
         }
     }
 
+    fn image(body: &'static [u8]) -> Response {
+        Response {
+            status: 200,
+            content_type: "image/png",
+            body: body.to_vec(),
+            cache: "public, max-age=31536000, immutable",
+        }
+    }
+
     fn reason(&self) -> &'static str {
         match self.status {
             200 => "OK",
@@ -293,8 +325,12 @@ pub fn run(cfg: Config, interval: Duration, port: u16, mock: bool) -> std::io::R
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     let secs = interval.as_secs().max(1);
     println!("{}", i18n::l().web_serving.replace("{}", &port.to_string()));
-    let state = Arc::new(Mutex::new(State::new(collect(&cfg, mock), secs, mock)));
-    spawn_sampler(cfg, interval, mock, Arc::clone(&state));
+    let mut tracker = AccessTracker::default();
+    let initial = collect_with(&cfg, mock, &mut tracker);
+    let snapshot = State::new(initial, secs, mock);
+    *snapshot.phpinfo.lock().unwrap_or_else(|e| e.into_inner()) = phpinfo::collect(mock);
+    let state = Arc::new(Mutex::new(snapshot));
+    spawn_sampler(cfg, interval, mock, Arc::clone(&state), tracker);
     for stream in listener.incoming().flatten() {
         let state = Arc::clone(&state);
         thread::spawn(move || handle_conn(stream, state));
@@ -302,32 +338,127 @@ pub fn run(cfg: Config, interval: Duration, port: u16, mock: bool) -> std::io::R
     Ok(())
 }
 
-fn spawn_sampler(cfg: Config, interval: Duration, mock: bool, state: Arc<Mutex<State>>) {
+fn spawn_sampler(
+    cfg: Config,
+    interval: Duration,
+    mock: bool,
+    state: Arc<Mutex<State>>,
+    mut tracker: AccessTracker,
+) {
     thread::spawn(move || loop {
         thread::sleep(interval);
-        let collected = collect(&cfg, mock);
+        let collected = collect_with(&cfg, mock, &mut tracker);
         let mut guard = state.lock().unwrap_or_else(|e| e.into_inner());
         guard.apply(collected);
     });
 }
 
+/// Suit la taille des access logs pour compter les requêtes terminées
+/// entre deux échantillons, sans lire tout le fichier à chaque tour.
+#[derive(Default)]
+struct AccessTracker {
+    /// pool -> (chemin du log, taille lue au tour précédent)
+    files: HashMap<String, (String, u64)>,
+}
+
+impl AccessTracker {
+    fn appended(&mut self, name: &str, path: Option<&str>) -> u32 {
+        let path = match path {
+            Some(path) if !path.is_empty() => path,
+            _ => {
+                self.files.remove(name);
+                return 0;
+            }
+        };
+        let size = match fs::metadata(path) {
+            Ok(meta) => meta.len(),
+            Err(_) => {
+                self.files.remove(name);
+                return 0;
+            }
+        };
+        let previous = self
+            .files
+            .get(name)
+            .filter(|(seen, _)| seen == path)
+            .map(|(_, size)| *size);
+        self.files.insert(name.to_string(), (path.to_string(), size));
+        match previous {
+            // Rotation, troncature ou changement de log : on ne compte rien
+            // pour éviter d'inventer du trafic.
+            Some(old) if old <= size => count_newlines(path, old, size),
+            _ => 0,
+        }
+    }
+}
+
+fn count_newlines(path: &str, from: u64, to: u64) -> u32 {
+    if to <= from {
+        return 0;
+    }
+    let mut file = match fs::File::open(path) {
+        Ok(file) => file,
+        Err(_) => return 0,
+    };
+    if file.seek(SeekFrom::Start(from)).is_err() {
+        return 0;
+    }
+    let mut buf = [0u8; 8192];
+    let mut remaining = to - from;
+    let mut count = 0u32;
+    while remaining > 0 {
+        let want = remaining.min(buf.len() as u64) as usize;
+        let read = match file.read(&mut buf[..want]) {
+            Ok(0) | Err(_) => break,
+            Ok(n) => n,
+        };
+        count += buf[..read].iter().filter(|&&b| b == b'\n').count() as u32;
+        remaining -= read as u64;
+    }
+    count
+}
+
 struct Collected {
     error: Option<String>,
+    requests: HashMap<String, u32>,
     masters: Vec<i32>,
     pools: Vec<PoolView>,
     logs: Vec<LogView>,
     config: ConfigView,
 }
 
+#[cfg(test)]
 fn collect(cfg: &Config, mock: bool) -> Collected {
+    let mut tracker = AccessTracker::default();
+    collect_with(cfg, mock, &mut tracker)
+}
+
+/// Compte les requêtes via les lignes ajoutées aux access logs depuis le
+/// précédent échantillon. En mode démo, un trafic simulé est généré.
+fn collect_with(cfg: &Config, mock: bool, tracker: &mut AccessTracker) -> Collected {
     if mock {
         let rows = data::mock_rows(cfg);
         let mut names: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
         names.sort();
+        let tick = now_secs();
+        let requests = names
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                let n = tick
+                    .wrapping_mul(7)
+                    .wrapping_add(i as u64 * 13)
+                    .wrapping_div(11)
+                    % 23;
+                (name.clone(), 2 + n as u32)
+            })
+            .collect();
+        let pools = pool_views(&rows, &requests);
         return Collected {
             error: None,
+            requests,
             masters: vec![4242],
-            pools: pool_views(&rows),
+            pools,
             logs: logs::mock(&names).iter().map(LogView::from).collect(),
             config: config_view(cfg),
         };
@@ -338,6 +469,7 @@ fn collect(cfg: &Config, mock: bool) -> Collected {
         Err(e) => {
             return Collected {
                 error: Some(e.to_string()),
+                requests: HashMap::new(),
                 masters: Vec::new(),
                 pools: Vec::new(),
                 logs: Vec::new(),
@@ -348,14 +480,23 @@ fn collect(cfg: &Config, mock: bool) -> Collected {
     let masters = scan.masters.clone();
     let rows = data::build_rows(scan, cfg);
     let names: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
+    let pool_logs = logs::collect(cfg, &names, 100);
+    let requests = pool_logs
+        .iter()
+        .map(|log| {
+            (
+                log.name.clone(),
+                tracker.appended(&log.name, log.access_log.as_deref()),
+            )
+        })
+        .collect();
+    let pools = pool_views(&rows, &requests);
     Collected {
         error: None,
+        requests,
         masters,
-        pools: pool_views(&rows),
-        logs: logs::collect(cfg, &names, 100)
-            .iter()
-            .map(LogView::from)
-            .collect(),
+        pools,
+        logs: pool_logs.iter().map(LogView::from).collect(),
         config: config_view(cfg),
     }
 }
@@ -374,7 +515,7 @@ impl From<&logs::PoolLogs> for LogView {
     }
 }
 
-fn pool_views(rows: &[Row]) -> Vec<PoolView> {
+fn pool_views(rows: &[Row], requests: &HashMap<String, u32>) -> Vec<PoolView> {
     rows.iter()
         .map(|r| {
             let memory_kb = r
@@ -410,6 +551,7 @@ fn pool_views(rows: &[Row]) -> Vec<PoolView> {
                 max_spare: r.cfg.as_ref().and_then(|c| c.max_spare_servers),
                 memory_kb,
                 worker_list,
+                requests: requests.get(&r.name).copied().unwrap_or(0),
             }
         })
         .collect()
@@ -433,12 +575,28 @@ fn config_view(cfg: &Config) -> ConfigView {
 
 /// Routes a request path. Query strings are ignored.
 pub fn route(state: &State, raw_path: &str) -> Response {
-    let path = raw_path.split('?').next().unwrap_or("");
+    let (path, query) = raw_path.split_once('?').unwrap_or((raw_path, ""));
     match path {
         "/" | "/index.html" => Response::new(200, "text/html; charset=utf-8", INDEX_HTML),
         "/api/state" => Response::new(200, "application/json; charset=utf-8", state.to_json()),
         "/api/i18n" => Response::new(200, "application/json; charset=utf-8", i18n_json()),
+        "/api/phpinfo" => {
+            if query.split('&').any(|part| part == "refresh=1") {
+                let fresh = phpinfo::collect(state.mock);
+                *state.phpinfo.lock().unwrap_or_else(|e| e.into_inner()) = fresh;
+            }
+            let guard = state.phpinfo.lock().unwrap_or_else(|e| e.into_inner());
+            match &guard.error {
+                Some(error) => Response::new(
+                    200,
+                    "text/plain; charset=utf-8",
+                    format!("Unable to read phpinfo(): {error}\n"),
+                ),
+                None => Response::new(200, "text/html; charset=utf-8", guard.html.clone()),
+            }
+        }
         "/favicon.ico" => Response::new(200, "image/x-icon", FAVICON),
+        "/php-logo.png" => Response::image(PHP_LOGO),
         _ => match font_bytes(path) {
             Some(body) => Response::font(body),
             None => Response::new(404, "text/plain; charset=utf-8", "not found\n"),
@@ -597,6 +755,7 @@ fn labels_json(l: &i18n::Labels) -> String {
         ("global_directives", l.global_directives),
         ("master_pid", l.master_pid),
         ("skip_content", l.skip_content),
+        ("menu", l.menu),
         ("language", l.language),
         ("web_dashboard", l.web_dashboard),
         ("theme_dark", l.theme_dark),
@@ -613,6 +772,15 @@ fn labels_json(l: &i18n::Labels) -> String {
         ("pending_connections", l.pending_connections),
         ("sum_rss", l.sum_rss),
         ("footer_tagline", l.footer_tagline),
+        ("requests", l.requests),
+        ("total_requests", l.total_requests),
+        ("copy", l.copy),
+        ("copied", l.copied),
+        ("min", l.min),
+        ("max", l.max),
+        ("avg", l.avg),
+        ("axis_x", l.axis_x),
+        ("axis_y", l.axis_y),
         ("collection_error", l.collection_error),
         ("cannot_reach", l.cannot_reach),
         ("refresh", l.refresh),
@@ -667,7 +835,7 @@ fn pool_json(p: &PoolView) -> String {
     format!(
         "{{\"name\":\"{}\",\"pm\":{},\"workers\":{},\"running\":{},\"idle\":{},\
          \"backlog\":{},\"backlog_max\":{},\"max_children\":{},\"max_requests\":{},\
-         \"min_spare\":{},\"max_spare\":{},\"memory_kb\":{},\"worker_list\":[{}]}}",
+         \"min_spare\":{},\"max_spare\":{},\"memory_kb\":{},\"requests\":{},\"worker_list\":[{}]}}",
         esc(&p.name),
         opt_str(p.pm.as_deref()),
         p.workers,
@@ -680,6 +848,7 @@ fn pool_json(p: &PoolView) -> String {
         opt_u32(p.min_spare),
         opt_u32(p.max_spare),
         p.memory_kb,
+        p.requests,
         workers.join(",")
     )
 }
@@ -706,7 +875,9 @@ mod tests {
     use std::net::TcpListener;
 
     fn mock_state() -> State {
-        State::new(collect(&data::mock_config(), true), 1, true)
+        let state = State::new(collect(&data::mock_config(), true), 1, true);
+        *state.phpinfo.lock().unwrap_or_else(|e| e.into_inner()) = phpinfo::collect(true);
+        state
     }
 
     fn http_get(request: &str) -> String {
@@ -813,6 +984,7 @@ mod tests {
         let before = state.history.len();
         state.apply(Collected {
             error: Some("boom".to_string()),
+            requests: HashMap::new(),
             masters: Vec::new(),
             pools: Vec::new(),
             logs: Vec::new(),
@@ -839,6 +1011,7 @@ mod tests {
         assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
         assert!(response.contains("Content-Type: text/html; charset=utf-8"));
         assert!(response.contains("fpm-monitor"));
+        assert!(response.contains("class=\"brand-logo\""));
         assert!(response.contains("id=\"theme\""));
         assert!(response.contains("data-theme"));
         assert!(response.contains("details.workers"));
@@ -872,6 +1045,29 @@ mod tests {
                 locale.code
             );
         }
+    }
+
+    #[test]
+    fn route_serves_the_official_php_logo() {
+        let state = mock_state();
+        let response = route(&state, "/php-logo.png");
+        assert_eq!(response.status, 200);
+        assert_eq!(response.content_type, "image/png");
+        assert_eq!(&response.body[..4], b"\x89PNG");
+        assert_eq!(response.cache, "public, max-age=31536000, immutable");
+    }
+
+    #[test]
+    fn route_serves_raw_phpinfo_html() {
+        let state = mock_state();
+        let response = route(&state, "/api/phpinfo");
+        assert_eq!(response.status, 200);
+        assert_eq!(response.content_type, "text/html; charset=utf-8");
+        let body = String::from_utf8(response.body).unwrap();
+        assert!(body.starts_with("<!DOCTYPE html>"));
+        assert!(body.contains("phpinfo()"));
+        assert!(!body.contains("X-Powered-By"));
+        assert_eq!(route(&state, "/api/phpinfo?refresh=1").status, 200);
     }
 
     #[test]
