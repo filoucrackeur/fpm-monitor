@@ -260,6 +260,14 @@ CI chạy bộ kiểm thử trên Linux, macOS và Windows, trên MSRV (Rust 1.7
 huy hiệu độ phủ, biên dịch chéo 18 mục tiêu phát hành và thực thi các tệp nhị phân
 cho kiến trúc khác dưới QEMU.
 
+## Đóng góp
+
+Rất hoan nghênh các đóng góp! Hãy đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi
+mở issue hoặc pull request, tuân thủ [Quy tắc ứng xử](CODE_OF_CONDUCT.md) của
+chúng tôi và xem [SUPPORT.md](SUPPORT.md) cho các câu hỏi về cách sử dụng. Vui
+lòng báo cáo các vấn đề bảo mật một cách riêng tư theo hướng dẫn trong
+[SECURITY.md](SECURITY.md).
+
 ## Giấy phép
 
 [MIT](LICENSE)

@@ -249,6 +249,10 @@ cargo fmt --check    # 格式化
 CI 在 Linux、macOS 和 Windows 上、于 MSRV（Rust 1.78）下运行测试套件，
 发布覆盖率徽章，交叉编译 18 个发布目标，并在 QEMU 下执行外部架构的二进制文件。
 
+## 贡献
+
+欢迎贡献！在提交 issue 或 pull request 之前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，遵守我们的[行为准则](CODE_OF_CONDUCT.md)，如有使用问题请参阅 [SUPPORT.md](SUPPORT.md)。请按照 [SECURITY.md](SECURITY.md) 中的说明私下报告安全问题。
+
 ## 许可证
 
 [MIT](LICENSE)

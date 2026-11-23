@@ -275,6 +275,13 @@ CI runs the test suite on Linux, macOS and Windows, on the MSRV (Rust 1.78),
 publishes the coverage badge, cross-compiles the 18 release targets and executes
 the foreign-architecture binaries under QEMU.
 
+## Contributing
+
+Contributions are welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening
+an issue or a pull request, follow our [Code of Conduct](CODE_OF_CONDUCT.md), and
+use [SUPPORT.md](SUPPORT.md) for usage questions. Please report security issues
+privately as described in [SECURITY.md](SECURITY.md).
+
 ## License
 
 [MIT](LICENSE)

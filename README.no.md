@@ -266,6 +266,13 @@ CI kjører testpakken på Linux, macOS og Windows, på MSRV (Rust 1.78), publise
 dekningsmerket, krysskompilerer de 18 utgivelsesmålene og kjører binærfiler for
 fremmede arkitekturer under QEMU.
 
+## Bidra
+
+Bidrag er velkomne! Les [CONTRIBUTING.md](CONTRIBUTING.md) før du åpner en issue
+eller en pull request, følg [retningslinjene for oppførsel](CODE_OF_CONDUCT.md),
+og se [SUPPORT.md](SUPPORT.md) for spørsmål om bruk. Rapporter sikkerhetsproblemer
+privat som beskrevet i [SECURITY.md](SECURITY.md).
+
 ## Lisens
 
 [MIT](LICENSE)
