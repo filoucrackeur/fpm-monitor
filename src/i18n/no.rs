@@ -101,6 +101,7 @@ Alternativer:
       --watch            Start nettgrensesnittet i stedet for CLI-visningen
       --port <PORT>      Port for nettgrensesnittet (standard 8471)
   -h, --help             Vis denne hjelpen
+  -V, --version          Show the version
 
 Gjenkjenning skjer automatisk (vanlige plasseringer + include-direktiv).
 ";

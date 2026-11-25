@@ -578,7 +578,11 @@ fn config_view(cfg: &Config) -> ConfigView {
 pub fn route(state: &State, raw_path: &str) -> Response {
     let (path, query) = raw_path.split_once('?').unwrap_or((raw_path, ""));
     match path {
-        "/" | "/index.html" => Response::new(200, "text/html; charset=utf-8", INDEX_HTML),
+        "/" | "/index.html" => Response::new(
+            200,
+            "text/html; charset=utf-8",
+            INDEX_HTML.replace("__APP_VERSION__", env!("CARGO_PKG_VERSION")),
+        ),
         "/api/state" => Response::new(200, "application/json; charset=utf-8", state.to_json()),
         "/api/i18n" => Response::new(200, "application/json; charset=utf-8", i18n_json()),
         "/api/phpinfo" => {
@@ -924,7 +928,11 @@ mod tests {
         let page = route(&state, "/");
         assert_eq!(page.status, 200);
         assert_eq!(page.content_type, "text/html; charset=utf-8");
-        assert!(String::from_utf8_lossy(&page.body).contains("fpm-monitor"));
+        let html = String::from_utf8_lossy(&page.body);
+        assert!(html.contains("fpm-monitor"));
+        let version = format!("v{}", env!("CARGO_PKG_VERSION"));
+        assert!(html.contains(&version), "footer version missing from page");
+        assert!(!html.contains("__APP_VERSION__"));
 
         let api = route(&state, "/api/state");
         assert_eq!(api.status, 200);

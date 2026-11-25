@@ -101,6 +101,7 @@ Opsi:
       --watch            Mulai antarmuka web alih-alih tampilan CLI
       --port <PORT>      Port antarmuka web (default 8471)
   -h, --help             Tampilkan bantuan ini
+  -V, --version          Show the version
 
 Deteksi bersifat otomatis (lokasi umum + direktif include).
 ";

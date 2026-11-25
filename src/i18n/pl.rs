@@ -101,6 +101,7 @@ Opcje:
       --watch            uruchom interfejs webowy zamiast widoku CLI
       --port <PORT>      port interfejsu webowego (domyślnie 8471)
   -h, --help             pokaż tę pomoc
+  -V, --version          Show the version
 
 Wykrywanie jest automatyczne (typowe lokalizacje + dyrektywa include).
 ";

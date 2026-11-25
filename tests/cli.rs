@@ -31,6 +31,18 @@ fn help_english() {
     assert!(text.contains("--port"));
     assert!(text.contains("--lang"));
     assert!(text.contains("--mock"));
+    assert!(text.contains("--version"));
+}
+
+#[test]
+fn version_flag_prints_the_current_version() {
+    let expected = format!("fpm-monitor {}\n", env!("CARGO_PKG_VERSION"));
+    for flag in ["--version", "-V"] {
+        let out = run(&[flag]);
+        assert!(out.status.success(), "{flag} failed");
+        assert_eq!(stdout(&out), expected, "{flag} output");
+        assert!(stderr(&out).is_empty(), "{flag} wrote to stderr");
+    }
 }
 
 #[test]

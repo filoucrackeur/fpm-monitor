@@ -101,6 +101,7 @@ fpm-monitor — PHP-FPM पूल मॉनिटर (fpm-monitor.c का Rust 
       --watch            CLI दृश्य के बजाय वेब UI शुरू करें
       --port <PORT>      वेब UI पोर्ट (डिफ़ॉल्ट 8471)
   -h, --help             यह सहायता दिखाएँ
+  -V, --version          Show the version
 
 पहचान स्वचालित है (सामान्य स्थान + include निर्देश)।
 ";

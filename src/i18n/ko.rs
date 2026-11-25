@@ -101,6 +101,7 @@ fpm-monitor — PHP-FPM 풀 모니터 (fpm-monitor.c의 Rust 포팅)
       --watch            CLI 보기 대신 웹 UI를 시작합니다
       --port <PORT>      웹 UI 포트 (기본값 8471)
   -h, --help             이 도움말 표시
+  -V, --version          Show the version
 
 감지는 자동입니다 (일반적인 위치 + include 지시문).
 ";

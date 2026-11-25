@@ -101,6 +101,7 @@ Tùy chọn:
       --watch            Khởi động giao diện web thay vì chế độ CLI
       --port <PORT>      Cổng của giao diện web (mặc định 8471)
   -h, --help             Hiển thị trợ giúp này
+  -V, --version          Show the version
 
 Việc phát hiện diễn ra tự động (vị trí thông thường + chỉ thị include).
 ";

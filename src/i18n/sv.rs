@@ -101,6 +101,7 @@ Alternativ:
       --watch            Starta webbgränssnittet i stället för CLI-vyn
       --port <PORT>      Port för webbgränssnittet (standard 8471)
   -h, --help             Visa denna hjälp
+  -V, --version          Show the version
 
 Identifieringen är automatisk (vanliga platser + include-direktiv).
 ";

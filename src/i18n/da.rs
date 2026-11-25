@@ -101,6 +101,7 @@ Muligheder:
       --watch            Start webgrænsefladen i stedet for CLI-visningen
       --port <PORT>      Port til webgrænsefladen (standard 8471)
   -h, --help             Vis denne hjælp
+  -V, --version          Show the version
 
 Registreringen sker automatisk (sædvanlige placeringer + include-direktiv).
 ";

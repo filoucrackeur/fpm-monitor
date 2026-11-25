@@ -101,6 +101,7 @@ Valitsimet:
       --watch            Käynnistä verkkokäyttöliittymä CLI-näkymän sijaan
       --port <PORT>      Verkkokäyttöliittymän portti (oletus 8471)
   -h, --help             Näytä tämä ohje
+  -V, --version          Show the version
 
 Tunnistus on automaattinen (tavalliset sijainnit + include-direktiivi).
 ";

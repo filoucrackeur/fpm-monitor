@@ -473,6 +473,7 @@
   }
   footer p { margin: 0; }
   .footer-brand strong { color: var(--surface-text); }
+  .app-version { color: var(--accent); font: 11px var(--font-mono); }
   .footer-meta { font-variant-numeric: tabular-nums; }
   /* Les contrôles déplacés dans le footer utilisent les couleurs de la page. */
   .footer-tools .badge,
@@ -624,7 +625,7 @@
 </main>
 
 <footer id="footer">
-  <p class="footer-brand"><strong>fpm-monitor</strong> · <span data-i18n="footer_tagline">reads the local process table, no network access.</span></p>
+  <p class="footer-brand"><strong>fpm-monitor</strong> <span class="app-version">v__APP_VERSION__</span> · <span data-i18n="footer_tagline">reads the local process table, no network access.</span></p>
   <p class="footer-meta" id="footerMeta"></p>
   <div class="footer-tools">
     <span class="badge"><span class="dot" aria-hidden="true" style="background:var(--blue-mid)"></span><span class="visually-hidden" data-i18n="updated">updated</span><span id="updated">-</span></span>

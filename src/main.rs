@@ -84,6 +84,10 @@ fn main() {
                 i += 1;
             }
             s if s.starts_with("--lang=") => {}
+            "-V" | "--version" => {
+                println!("fpm-monitor {}", env!("CARGO_PKG_VERSION"));
+                exit(0);
+            }
             "-h" | "--help" => {
                 print!("{}", i18n::usage());
                 exit(0);

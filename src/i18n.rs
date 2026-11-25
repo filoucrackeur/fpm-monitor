@@ -986,6 +986,7 @@ Options:
       --watch            Start the web UI instead of the CLI view
       --port <PORT>      Web UI port (default 8471)
   -h, --help             Show this help
+  -V, --version          Show the version
 
 Detection is automatic (usual locations + include directive).
 "
@@ -1011,6 +1012,7 @@ Options:
       --watch            Démarre l'interface web au lieu de la vue CLI
       --port <PORT>      Port de l'interface web (défaut 8471)
   -h, --help             Affiche cette aide
+  -V, --version          Show the version
 
 La détection est automatique (emplacements usuels + directive include).
 "
@@ -1035,6 +1037,7 @@ fpm-monitor — PHP-FPM 进程池监视器（fpm-monitor.c 的 Rust 移植版）
       --watch            启动 Web 界面，而不是 CLI 视图
       --port <PORT>      Web 界面端口（默认 8471）
   -h, --help             显示此帮助
+  -V, --version          Show the version
 
 自动检测（常用位置 + include 指令）。
 "
@@ -1060,6 +1063,7 @@ fpm-monitor — مراقب تجمعات PHP-FPM (منفذ بلغة Rust من fpm
       --watch            تشغيل واجهة الويب بدلاً من عرض CLI
       --port <PORT>      منفذ واجهة الويب (الافتراضي 8471)
   -h, --help             عرض هذه المساعدة
+  -V, --version          Show the version
 
 الاكتشاف تلقائي (الأماكن المعتادة + توجيه include).
 "
@@ -1085,6 +1089,7 @@ Opciones:
       --watch            Inicia la interfaz web en lugar de la vista CLI
       --port <PORT>      Puerto de la interfaz web (por defecto 8471)
   -h, --help             Muestra esta ayuda
+  -V, --version          Show the version
 
 La detección es automática (ubicaciones usuales + directiva include).
 "
@@ -1110,6 +1115,7 @@ Opzioni:
       --watch            Avvia l'interfaccia web invece della vista CLI
       --port <PORT>      Porta dell'interfaccia web (predefinita 8471)
   -h, --help               Mostra questo aiuto
+  -V, --version          Show the version
 
 La rilevazione è automatica (posizioni usuali + direttiva include).
 "
@@ -1135,6 +1141,7 @@ fpm-monitor — PHP-FPM プールモニター（fpm-monitor.c の Rust 移植版
       --watch            CLI ビューの代わりに Web UI を起動します
       --port <PORT>      Web UI のポート（デフォルト 8471）
   -h, --help            このヘルプを表示
+  -V, --version          Show the version
 
 検出は自動です（一般的な場所 + include ディレクティブ）。
 "
@@ -1160,6 +1167,7 @@ Optionen:
       --watch            Startet die Weboberfläche statt der CLI-Ansicht
       --port <PORT>      Port der Weboberfläche (Standard 8471)
   -h, --help             Diese Hilfe anzeigen
+  -V, --version          Show the version
 
 Die Erkennung ist automatisch (übliche Orte + include-Direktive).
 "

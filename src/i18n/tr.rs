@@ -101,6 +101,7 @@ Seçenekler:
       --watch            CLI görünümü yerine web arayüzünü başlat
       --port <PORT>      Web arayüzü portu (varsayılan 8471)
   -h, --help             bu yardımı göster
+  -V, --version          Show the version
 
 Algılama otomatiktir (olağan konumlar + include yönergesi).
 ";
