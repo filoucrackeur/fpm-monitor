@@ -15,6 +15,8 @@ const CANDIDATES: &[&str] = &[
     "/opt/homebrew/bin/php-cgi",
     "/usr/local/bin/php-cgi",
     "/usr/bin/php-cgi",
+    "/usr/bin/php-cgi8.6",
+    "/usr/bin/php-cgi8.5",
     "/usr/bin/php-cgi8.4",
     "/usr/bin/php-cgi8.3",
     "/usr/bin/php-cgi8.2",
@@ -127,6 +129,16 @@ fn run(binary: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn candidate_list_covers_supported_php_branches() {
+        for version in ["8.2", "8.3", "8.4", "8.5", "8.6"] {
+            assert!(
+                CANDIDATES.contains(&format!("/usr/bin/php-cgi{version}").as_str()),
+                "missing php-cgi{version}"
+            );
+        }
+    }
 
     #[test]
     fn mock_has_html() {
