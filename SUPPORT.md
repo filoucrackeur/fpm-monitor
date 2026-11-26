@@ -39,6 +39,13 @@ fpm-monitor --mock -t
 fpm-monitor --mock --watch
 ```
 
+## Report an accessibility issue
+
+Read [ACCESSIBILITY.md](ACCESSIBILITY.md) for the currently supported behavior,
+then open an issue with the **Accessibility issue** template. Include the
+version, operating system, browser or assistive technology, and the smallest
+sequence of steps that shows the barrier.
+
 ## Request a feature
 
 Open an issue with the **Feature request** template. Explain the problem you are

@@ -1,0 +1,115 @@
+name: Accessibility issue
+description: Report a barrier in the CLI, TUI, or web dashboard
+title: "a11y: "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make fpm-monitor usable by everyone. Please search
+        the existing issues first. For a security problem, follow SECURITY.md
+        instead of opening a public issue.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and discussions.
+          required: true
+        - label: I checked ACCESSIBILITY.md and this is not a known limitation.
+          required: true
+        - label: This is not a security issue.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web dashboard
+        - Terminal dashboard (TUI)
+        - CLI output
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: barrier
+    attributes:
+      label: Type of barrier
+      options:
+        - Keyboard or focus
+        - Screen reader or accessible name
+        - Contrast or color
+        - Text size, zoom, or reflow
+        - Motion or animation
+        - Language or right-to-left layout
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release tag, or the output of `git rev-parse --short HEAD`.
+      placeholder: "v1.6.0 or e13c61f"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - FreeBSD / OpenBSD / NetBSD / DragonFly
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: input
+    id: assistive_tech
+    attributes:
+      label: Browser and assistive technology
+      description: Browser, screen reader, magnifier, theme, and zoom level, if relevant.
+      placeholder: "Chrome 131 + NVDA 2024.4, dark theme, 200% zoom"
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: The smallest reliable sequence. `--mock` is ideal for interface issues.
+      placeholder: |
+        1. Run `fpm-monitor --mock --watch`
+        2. Open http://127.0.0.1:8471/#logs
+        3. Tab to ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include the exact wording or output if possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, recordings, links, or any detail that helps explain the barrier.
+      render: text

@@ -12,7 +12,7 @@ follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
 - Report a reproducible bug with the bug report issue template.
 - Suggest a feature or an improvement with the feature request template.
 - Improve the documentation or one of the 22 translations.
-- Fix a bug, improve portability, performance, accessibility, or test coverage.
+- Fix a bug, improve portability, performance, [accessibility](ACCESSIBILITY.md), or test coverage.
 - Test a release on a platform or architecture we do not have easy access to.
 - Triage issues, review pull requests, or answer questions in Discussions.
 
