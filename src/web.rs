@@ -73,6 +73,8 @@ pub struct WorkerView {
 pub struct PoolView {
     pub name: String,
     pub pm: Option<String>,
+    /// Valeur de la directive `listen` (socket Unix ou adresse TCP).
+    pub listen: Option<String>,
     pub workers: usize,
     pub running: usize,
     pub idle: usize,
@@ -541,6 +543,7 @@ fn pool_views(rows: &[Row], requests: &HashMap<String, u32>) -> Vec<PoolView> {
             PoolView {
                 name: r.name.clone(),
                 pm: r.cfg.as_ref().and_then(|c| c.pm.clone()),
+                listen: r.cfg.as_ref().and_then(|c| c.listen.clone()),
                 workers: r.workers,
                 running: r.running,
                 idle: r.idle,
@@ -739,6 +742,15 @@ fn labels_json(l: &i18n::Labels) -> String {
         ("mem", l.mem),
         ("master", l.master),
         ("type", l.type_label),
+        ("listen_unix", l.listen_unix),
+        ("listen_tcp", l.listen_tcp),
+        ("severity_other", l.severity_other),
+        ("severity", l.severity),
+        ("severity_notice", l.severity_notice),
+        ("severity_warning", l.severity_warning),
+        ("severity_error", l.severity_error),
+        ("log_type", l.log_type),
+        ("pool_choice", l.pool_choice),
         ("max_child", l.max_child),
         ("max_req", l.max_req),
         ("min_spare", l.min_spare),
@@ -838,11 +850,12 @@ fn pool_json(p: &PoolView) -> String {
         })
         .collect();
     format!(
-        "{{\"name\":\"{}\",\"pm\":{},\"workers\":{},\"running\":{},\"idle\":{},\
+        "{{\"name\":\"{}\",\"pm\":{},\"listen\":{},\"workers\":{},\"running\":{},\"idle\":{},\
          \"backlog\":{},\"backlog_max\":{},\"max_children\":{},\"max_requests\":{},\
          \"min_spare\":{},\"max_spare\":{},\"memory_kb\":{},\"requests\":{},\"worker_list\":[{}]}}",
         esc(&p.name),
         opt_str(p.pm.as_deref()),
+        opt_str(p.listen.as_deref()),
         p.workers,
         p.running,
         p.idle,
@@ -940,6 +953,7 @@ mod tests {
         let json = String::from_utf8_lossy(&api.body);
         assert!(json.starts_with('{'));
         assert!(json.contains("\"pools\""));
+        assert!(json.contains("\"listen\":\"9000\""));
     }
 
     #[test]
@@ -1036,6 +1050,7 @@ mod tests {
         assert!(response.contains("\"name\":\"Français\""));
         assert!(response.contains("\"tab_monitoring\":\"Monitoring\""));
         assert!(response.contains("\"skip_content\":\"Aller au contenu\""));
+        assert!(response.contains("\"listen_unix\":\"Socket Unix\""));
         assert_eq!(i18n::catalogue().len(), 22);
         let mut codes: Vec<&str> = i18n::catalogue().iter().map(|l| l.code).collect();
         codes.sort_unstable();

@@ -386,6 +386,10 @@
   tbody tr:nth-child(even) { background: var(--row-even); }
   tbody tr:hover { background: var(--row-hover); }
   .pool { font-weight: 700; }
+  .listen-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-inline-end: 6px; vertical-align: -2px; }
+  .listen-icon svg { width: 14px; height: 14px; display: block; }
+  .listen-icon.unix { color: var(--magenta-mid); }
+  .listen-icon.tcp { color: var(--blue-mid); }
   .type { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); }
   .type.static { color: var(--blue); border-color: rgba(79, 91, 147, 0.4); background: rgba(79, 91, 147, 0.08); }
   .type.dynamic { color: var(--magenta); border-color: rgba(121, 56, 98, 0.4); background: rgba(121, 56, 98, 0.08); }
@@ -440,23 +444,71 @@
     display: flex; justify-content: space-between; gap: 4px;
     font: 10px/1 var(--font-mono); color: var(--muted); white-space: nowrap;
   }
+  .log-controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 12px; }
+  .log-control { display: flex; flex-direction: column; gap: 5px; min-width: 190px; flex: 0 1 260px; }
+  .log-control label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .log-select {
+    min-height: 32px; padding: 4px 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); color: var(--surface-text); font-size: 12px; cursor: pointer;
+  }
+  .log-select:hover { border-color: var(--blue-mid); }
+  .log-select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .logs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .log { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .log { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: visible; }
   .log .head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 12px; align-items: center; }
   .log .head-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex: 1 1 auto; }
   .log .head b { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
   .log .head span { color: var(--muted); font: 11px var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .copy-btn {
     appearance: none; flex: 0 0 auto;
-    min-height: 30px; padding: 3px 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; padding: 0;
     border: 1px solid var(--border); border-radius: 999px;
     background: var(--panel-2); color: var(--muted);
-    font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    cursor: pointer;
   }
+  .copy-btn svg { width: 15px; height: 15px; display: block; }
   .copy-btn:hover { color: var(--surface-text); border-color: var(--blue-mid); }
   .copy-btn.copied { color: var(--ok); border-color: var(--ok-line); background: var(--ok-bg); }
+  .multiselect { position: relative; flex: 0 0 auto; }
+  .multi-toggle {
+    appearance: none; display: block; min-height: 30px; max-width: 190px;
+    padding: 0 30px 0 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    border: 1px solid var(--border); border-radius: 999px;
+    background-color: var(--panel-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 11px center;
+    color: var(--surface-text); font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .multi-toggle:hover { border-color: var(--blue-mid); }
+  .multi-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  :root[data-theme="dark"] .multi-toggle {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23ddd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  }
+  [dir="rtl"] .multi-toggle { padding: 0 11px 0 30px; background-position: left 11px center; }
+  .multi-menu {
+    position: absolute; z-index: 30; inset-block-start: calc(100% + 6px); inset-inline-end: 0;
+    min-width: 148px; padding: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: 0 8px 24px var(--code-shadow);
+  }
+  .multi-menu[hidden] { display: none; }
+  .multi-option { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 5px; font-size: 11px; cursor: pointer; }
+  .multi-option:hover { background: var(--panel-2); }
+  .multi-option input { accent-color: var(--accent); margin: 0; }
   .log pre { margin: 0; padding: 12px 14px; min-height: 220px; max-height: 50vh; overflow: auto; font: 11.5px/1.6 var(--font-mono); color: var(--surface-text); background: var(--code-bg); box-shadow: inset 0 0 0 1px var(--code-shadow); border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
   .log pre.empty { color: var(--muted); font-style: italic; background: transparent; box-shadow: none; }
+  /* Couleurs PHP : Notice bleu, Warning orange, Error rouge. */
+  .log .line-notice { color: var(--blue-mid); }
+  .log .line-warning { color: var(--warn); }
+  .log .line-error { color: var(--bad); }
+  /* Codes HTTP : 1xx gris, 2xx vert, 3xx bleu, 4xx orange, 5xx rouge. */
+  .log .status-1xx { color: var(--muted); }
+  .log .status-2xx { color: var(--ok); }
+  .log .status-3xx { color: var(--blue-mid); }
+  .log .status-4xx { color: var(--warn); }
+  .log .status-5xx { color: var(--bad); }
   .directives { width: 100%; }
   .directives td { text-align: start; }
   .directives td:first-child { width: 1%; white-space: nowrap; padding-inline-end: 28px; color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
@@ -604,8 +656,16 @@
 
   <section id="panel-logs" role="tabpanel" aria-labelledby="tab-logs" data-panel="logs" tabindex="0" hidden>
     <h2 class="visually-hidden" data-i18n="tab_logs">Logs</h2>
-    <div class="subtabs" id="logPools" role="group" aria-label="Pools"></div>
-    <div class="subtabs" id="logTypes" role="group" aria-label="Log types"></div>
+    <div class="log-controls">
+      <div class="log-control">
+        <label id="logPoolLabel" data-i18n="pool">Pool</label>
+        <select id="logPoolSelect" class="log-select" data-i18n-aria-label="pool_choice" aria-labelledby="logPoolLabel"></select>
+      </div>
+      <div class="log-control">
+        <label id="logTypeLabel" data-i18n="log_type">Type de log</label>
+        <select id="logTypeSelect" class="log-select" data-i18n-aria-label="log_type" aria-labelledby="logTypeLabel"></select>
+      </div>
+    </div>
     <div class="logs" id="logGrid"></div>
   </section>
 
@@ -664,6 +724,13 @@
     mem: "Mem",
     master: "Master",
     type: "Type",
+    listen_unix: "Unix socket",
+    listen_tcp: "TCP network",
+    severity: "Severity",
+    severity_notice: "Notice",
+    severity_warning: "Warning",
+    severity_error: "Error",
+    severity_other: "Other",
     max_child: "Max child",
     max_req: "Max req",
     min_spare: "min spare",
@@ -675,6 +742,8 @@
     g_workers: "workers",
     g_idle: "idle",
     g_backlog: "backlog",
+    log_type: "Log type",
+    pool_choice: "Pool selection",
     log_php: "PHP log",
     slow_queries: "Slow queries",
     access: "Access",
@@ -717,7 +786,9 @@
   };
 
   const ui = {
-    data: null, tab: "monitoring", graph: 0, log: 0, logType: 0, cfg: 0, timer: null,
+    data: null, tab: "monitoring", graph: 0, log: 0, logType: 0,
+    logFilters: ["notice", "warning", "error", "other"], filterOpen: false,
+    cfg: 0, timer: null,
     openPools: new Set(),
     locales: [],
     lang: "en",
@@ -922,6 +993,12 @@
       const pres = Array.from(document.querySelectorAll("#logGrid pre"));
       return { log: pres.indexOf(active), top: active.scrollTop, left: active.scrollLeft };
     }
+    if (active.matches && active.matches("#logGrid select")) {
+      return {
+        logControl: active.dataset.control || "",
+        values: Array.from(active.selectedOptions).map((option) => option.value)
+      };
+    }
     return null;
   }
 
@@ -939,6 +1016,14 @@
         pre.focus({ preventScroll: true });
         pre.scrollTop = pre.scrollHeight;
         pre.scrollLeft = snapshot.left;
+      }
+    } else if (snapshot.logControl !== undefined) {
+      const node = document.querySelector('#logGrid select[data-control="' + snapshot.logControl + '"]');
+      if (node) {
+        Array.from(node.options).forEach((option) => {
+          option.selected = snapshot.values.indexOf(option.value) >= 0;
+        });
+        node.focus({ preventScroll: true });
       }
     }
   }
@@ -999,6 +1084,30 @@
     });
   }
 
+  // Petites icônes de type d'écoute : prise (socket Unix) ou globe (TCP).
+  const ICON_UNIX = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5.5 1.5v3M10.5 1.5v3M3.5 4.5h9v2a4.5 4.5 0 0 1-9 0v-2ZM8 11v3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_TCP = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.8 8h12.4M8 1.8c1.8 1.8 2.7 3.9 2.7 6.2S9.8 12.4 8 14.2C6.2 12.4 5.3 10.3 5.3 8S6.2 3.6 8 1.8Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function listenKind(value) {
+    if (!value) return null;
+    const listen = String(value).trim();
+    if (!listen) return null;
+    if (listen.startsWith("/") || listen.startsWith("@") || listen.startsWith("unix:")) return "unix";
+    return "tcp";
+  }
+
+  function listenIcon(pool) {
+    const kind = listenKind(pool.listen);
+    if (!kind) return null;
+    const label = t(kind === "unix" ? "listen_unix" : "listen_tcp");
+    const icon = el("span", "listen-icon " + kind);
+    icon.title = label + " · " + pool.listen;
+    icon.setAttribute("role", "img");
+    icon.setAttribute("aria-label", label + ": " + pool.listen);
+    icon.innerHTML = kind === "unix" ? ICON_UNIX : ICON_TCP;
+    return icon;
+  }
+
   function renderPools() {
     const pools = (ui.data && ui.data.pools) || [];
     const body = $("poolRows");
@@ -1016,7 +1125,11 @@
 
     pools.forEach((pool) => {
       const tr = document.createElement("tr");
-      tr.appendChild(el("td", "pool", pool.name));
+      const nameCell = el("td", "pool");
+      const icon = listenIcon(pool);
+      if (icon) nameCell.appendChild(icon);
+      nameCell.appendChild(document.createTextNode(pool.name));
+      tr.appendChild(nameCell);
 
       const type = el("td");
       const badge = el("span", "type " + (pool.pm || "unknown"), pool.pm || "?");
@@ -1296,7 +1409,23 @@
     { label: "access", lines: "access", path: "access_path" }
   ];
 
-  async function copyText(text, button) {
+  const SEVERITIES = [
+    ["notice", "severity_notice"],
+    ["warning", "severity_warning"],
+    ["error", "severity_error"],
+    ["other", "severity_other"]
+  ];
+
+  const ICON_COPY = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4.6" y="3.4" width="7.8" height="10.2" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6.3 3.4v-.8c0-.6.5-1.1 1.1-1.1h1.2c.6 0 1.1.5 1.1 1.1v.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6.7 7h3.6M6.7 9.3h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  const ICON_COPIED = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m3.5 8.4 3 3 6-6.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  async function copyText(text, button, label) {
+    const restore = () => {
+      button.innerHTML = ICON_COPY;
+      button.title = t("copy");
+      button.setAttribute("aria-label", t("copy") + ": " + label);
+      button.classList.remove("copied");
+    };
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
@@ -1311,60 +1440,247 @@
         area.remove();
         if (!ok) throw new Error("copy failed");
       }
-      button.textContent = t("copied");
+      button.innerHTML = ICON_COPIED;
+      button.title = t("copied");
+      button.setAttribute("aria-label", t("copied") + ": " + label);
       button.classList.add("copied");
       setTimeout(() => {
         if (!button.isConnected) return;
-        button.textContent = t("copy");
-        button.classList.remove("copied");
+        restore();
       }, 1500);
     } catch (e) {
-      button.textContent = t("copy");
+      restore();
     }
   }
 
-  function logColumn(kind, log) {
+  function phpSeverity(line) {
+    // PHP-FPM écrit « [date] NOTICE: … », PHP « [date] PHP Notice: … ».
+    const match = line.match(/(?:^|\]\s*)(?:PHP\s+)?(Notice|Warning|Fatal error|Parse error|Recoverable fatal error|Error)\b/i);
+    if (!match) return "";
+    const severity = match[1].toLowerCase();
+    if (severity === "notice") return "notice";
+    if (severity === "warning") return "warning";
+    return "error";
+  }
+
+  function phpLineClass(line) {
+    const severity = phpSeverity(line);
+    return severity ? "line-" + severity : "";
+  }
+
+  function accessLineClass(line) {
+    // Le statut suit la requête entre guillemets dans les formats Apache,
+    // Nginx et le format d'accès par défaut de PHP-FPM.
+    const match = line.match(/"\s+([1-5]\d{2})\b/);
+    return match ? "status-" + match[1].charAt(0) + "xx" : "";
+  }
+
+  function logLineClass(line, kind) {
+    if (kind === "php") return phpLineClass(line);
+    if (kind === "access") return accessLineClass(line);
+    return "";
+  }
+
+  // Un fichier peut être partagé par plusieurs pools (error_log global).
+  // On masque les lignes explicitement attribuées à un autre pool, tout en
+  // conservant les lignes globales sans marqueur.
+  function filterLogByPool(lines, poolName) {
+    if (!poolName) return lines;
+    return lines.filter((line) => {
+      const match = line.match(/\[pool\s+([^\]]+)\]/i);
+      return !match || match[1].trim() === poolName;
+    });
+  }
+
+  function filterLogLines(lines, kind, poolName) {
+    let out = lines;
+    if (kind === "php") {
+      out = out.filter((line) => ui.logFilters.indexOf(phpSeverity(line) || "other") >= 0);
+    }
+    return filterLogByPool(out, poolName);
+  }
+
+  function appendLogLines(pre, lines, kind) {
+    lines.forEach((line, index) => {
+      if (index) pre.appendChild(document.createTextNode("\n"));
+      const cls = logLineClass(line, kind);
+      if (cls) pre.appendChild(el("span", cls, line));
+      else pre.appendChild(document.createTextNode(line));
+    });
+  }
+
+  function replaceLogLines(pre, lines, kind) {
+    pre.textContent = "";
+    pre.classList.toggle("empty", !lines.length);
+    if (lines.length) appendLogLines(pre, lines, kind);
+    else pre.textContent = t("no_entries");
+  }
+
+  function severitySummary() {
+    if (ui.logFilters.length === SEVERITIES.length) return t("severity");
+    if (!ui.logFilters.length) return "–";
+    return SEVERITIES
+      .filter(([value]) => ui.logFilters.indexOf(value) >= 0)
+      .map(([, labelKey]) => t(labelKey))
+      .join(", ");
+  }
+
+  // Le changement de sélection ne reconstruit pas l'en-tête : le menu reste
+  // ouvert et le focus sur la case à cocher sont préservés.
+  function applyFilterChange() {
+    const box = $("logGrid").querySelector(".log");
+    const logs = (ui.data && ui.data.logs) || [];
+    const log = logs[ui.log];
+    if (!box || !log) return;
+    const kind = LOG_TYPES[ui.logType];
+    const source = { name: log.name, path: log[kind.path], lines: log[kind.lines] || [] };
+    const pre = box.querySelector("pre");
+    replaceLogLines(pre, filterLogLines(source.lines, kind.lines, source.name), kind.lines);
+    pre.scrollTop = pre.scrollHeight;
+    const toggle = box.querySelector(".multi-toggle");
+    if (toggle) toggle.textContent = severitySummary();
+  }
+
+  function logColumn(kind, source, key) {
     const title = t(kind.label);
-    const path = log[kind.path] || "-";
-    const lines = log[kind.lines] || [];
+    const path = source.path || "-";
+    const lines = filterLogLines(source.lines, kind.lines, source.name);
     const box = el("div", "log");
+    box.dataset.key = key;
     const head = el("div", "head");
     const info = el("div", "head-title");
     info.appendChild(el("b", "", title));
     info.appendChild(el("span", "", path));
     head.appendChild(info);
 
-    const copy = el("button", "copy-btn", t("copy"));
+    if (kind.lines === "php") {
+      // Liste déroulante à choix multiple, repliée sur une seule ligne.
+      const wrap = el("div", "multiselect");
+      const toggle = el("button", "multi-toggle", severitySummary());
+      toggle.type = "button";
+      toggle.dataset.control = "severity";
+      toggle.title = t("severity");
+      toggle.setAttribute("aria-label", t("severity"));
+      toggle.setAttribute("aria-haspopup", "true");
+      toggle.setAttribute("aria-expanded", String(ui.filterOpen));
+
+      const menu = el("div", "multi-menu");
+      menu.hidden = !ui.filterOpen;
+      SEVERITIES.forEach(([value, labelKey]) => {
+        const option = el("label", "multi-option");
+        const check = el("input");
+        check.type = "checkbox";
+        check.value = value;
+        check.checked = ui.logFilters.indexOf(value) >= 0;
+        check.addEventListener("change", () => {
+          const checked = Array.from(menu.querySelectorAll("input:checked"))
+            .map((input) => input.value);
+          ui.logFilters = SEVERITIES
+            .map(([item]) => item)
+            .filter((item) => checked.indexOf(item) >= 0);
+          applyFilterChange();
+        });
+        option.appendChild(check);
+        option.appendChild(el("span", "", t(labelKey)));
+        menu.appendChild(option);
+      });
+
+      toggle.addEventListener("click", () => {
+        ui.filterOpen = !ui.filterOpen;
+        menu.hidden = !ui.filterOpen;
+        toggle.setAttribute("aria-expanded", String(ui.filterOpen));
+      });
+      wrap.appendChild(toggle);
+      wrap.appendChild(menu);
+      head.appendChild(wrap);
+    }
+
+    const copy = el("button", "copy-btn");
+    copy.innerHTML = ICON_COPY;
     copy.type = "button";
     copy.title = t("copy");
     copy.setAttribute("aria-label", t("copy") + ": " + title);
     head.appendChild(copy);
     box.appendChild(head);
 
-    const pre = el("pre", lines.length ? "" : "empty", lines.length ? lines.join("\n") : t("no_entries"));
+    const pre = el("pre", lines.length ? "" : "empty");
     pre.tabIndex = 0;
     pre.setAttribute("aria-label", title + ": " + path);
-    copy.addEventListener("click", () => copyText(pre.textContent, copy));
+    replaceLogLines(pre, lines, kind.lines);
+    copy.addEventListener("click", () => copyText(pre.textContent, copy, title));
     box.appendChild(pre);
     return box;
+  }
+
+  // Les listes déroulantes restent dans le DOM : seules leurs options changent.
+  // Le rafraîchissement périodique ne peut donc pas fermer une liste ouverte.
+  function updateSelect(select, options, current) {
+    const signature = options.map((o) => o.value + "\u0001" + o.label).join("\u0002");
+    if (select.dataset.signature !== signature) {
+      select.textContent = "";
+      options.forEach((o) => {
+        const option = el("option", "", o.label);
+        option.value = String(o.value);
+        select.appendChild(option);
+      });
+      select.dataset.signature = signature;
+    }
+    select.value = String(current);
+  }
+
+  // Un pool n'a pas forcément les trois fichiers configurés : la liste de
+  // niveau 2 est reconstruite à partir du pool courant.
+  function poolLogTypes(log) {
+    const all = LOG_TYPES.map((kind, index) => ({ kind, index }));
+    const available = all.filter(({ kind }) => log && log[kind.path]);
+    return available.length ? available : all;
+  }
+
+  function selectLogType(index) {
+    const logs = (ui.data && ui.data.logs) || [];
+    const log = logs[ui.log];
+    const types = poolLogTypes(log);
+    ui.logType = types.some((item) => item.index === index)
+      ? index
+      : types[0].index;
+    renderLogs();
   }
 
   function renderLogs() {
     const logs = (ui.data && ui.data.logs) || [];
     if (ui.log >= logs.length) ui.log = 0;
-    if (ui.logType >= LOG_TYPES.length) ui.logType = 0;
-    subtabs($("logPools"), logs.map((log) => log.name), ui.log, (i) => { ui.log = i; renderLogs(); });
-    subtabs($("logTypes"), LOG_TYPES.map((kind) => t(kind.label)), ui.logType,
-      (i) => { ui.logType = i; renderLogs(); }, "tab_logs");
+    updateSelect($("logPoolSelect"), logs.map((log, i) => ({ value: i, label: log.name })), ui.log);
+
     const grid = $("logGrid");
-    grid.textContent = "";
     if (!logs.length) {
+      updateSelect($("logTypeSelect"), [], 0);
+      grid.textContent = "";
       grid.appendChild(el("div", "empty-state", t("no_pool")));
       return;
     }
-    // Un seul terminal pleine largeur pour le type de log sélectionné.
-    grid.appendChild(logColumn(LOG_TYPES[ui.logType], logs[ui.log]));
-    // Suivi live : le terminal reste collé à la dernière ligne.
+
+    const log = logs[ui.log];
+    const types = poolLogTypes(log);
+    if (!types.some((item) => item.index === ui.logType)) ui.logType = types[0].index;
+    updateSelect($("logTypeSelect"),
+      types.map(({ kind, index }) => ({ value: index, label: t(kind.label) })), ui.logType);
+
+    const kind = LOG_TYPES[ui.logType];
+    const source = { name: log.name, path: log[kind.path], lines: log[kind.lines] || [] };
+    const key = ui.lang + ":" + ui.log + ":" + ui.logType;
+    const existing = grid.querySelector(".log");
+
+    // Même sélection : on ne remplace que les lignes, jamais l'en-tête.
+    // Le filtre et le focus survissent au rafraîchissement automatique.
+    if (existing && existing.dataset.key === key) {
+      const pre = existing.querySelector("pre");
+      replaceLogLines(pre, filterLogLines(source.lines, kind.lines, source.name), kind.lines);
+      pre.scrollTop = pre.scrollHeight;
+      return;
+    }
+
+    grid.textContent = "";
+    grid.appendChild(logColumn(kind, source, key));
     grid.querySelectorAll("pre").forEach((pre) => { pre.scrollTop = pre.scrollHeight; });
   }
 
@@ -1449,7 +1765,7 @@
       renderGraphs();
     } else if (ui.tab === "logs" && pools.length) {
       const active = document.activeElement;
-      if (active && active.closest && active.closest("#logTypes")) {
+      if (active && active.id === "logTypeSelect") {
         ui.logType = (ui.logType + dir + LOG_TYPES.length) % LOG_TYPES.length;
       } else {
         ui.log = (ui.log + dir + pools.length) % pools.length;
@@ -1522,6 +1838,12 @@
 
   document.addEventListener("click", (event) => {
     if (!headerBar.contains(event.target)) closeMenu(false);
+    if (event.target.closest && event.target.closest(".multiselect")) return;
+    document.querySelectorAll(".multi-menu").forEach((menu) => { menu.hidden = true; });
+    document.querySelectorAll(".multi-toggle").forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", "false");
+    });
+    ui.filterOpen = false;
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1532,6 +1854,15 @@
 
   $("language").addEventListener("change", (event) => {
     applyLanguage(event.target.value, true);
+  });
+
+  $("logPoolSelect").addEventListener("change", (event) => {
+    ui.log = Number(event.target.value);
+    selectLogType(ui.logType);
+  });
+  $("logTypeSelect").addEventListener("change", (event) => {
+    ui.logType = Number(event.target.value);
+    renderLogs();
   });
 
   window.addEventListener("hashchange", () => {
