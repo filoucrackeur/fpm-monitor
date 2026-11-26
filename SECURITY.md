@@ -82,8 +82,11 @@ Out of scope:
 - When started by a non-root user, fpm-monitor restricts itself to the pools
   whose `user` directive matches that account (a numeric UID is also accepted).
   A pool without a `user` directive is treated as belonging to the launcher.
-  Root sees every pool. Master PIDs are hidden for non-root users because they
-  cannot be safely mapped to a single pool.
+  Environment placeholders in `user` (`${NAME}` or `${NAME:-default}`) are
+  expanded with the monitor's environment; start it with the same variables as
+  the FPM master when that directive uses them. Root sees every pool. Master
+  PIDs are hidden for non-root users because they cannot be safely mapped to a
+  single pool.
 - External commands (`id`, `php-cgi`, `ps`, `netstat`) inherit the launcher's
   identity. To run them as a pool user, start fpm-monitor as that user. Root is
   intentionally unrestricted.

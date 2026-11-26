@@ -114,7 +114,7 @@ fn parse_includes(conf: &Path, files: &mut Vec<PathBuf>, visited: &mut HashSet<P
             continue;
         };
         if key == "include" {
-            expand_glob(unquote(val), files, visited);
+            expand_glob(&expand_value(val), files, visited);
         }
     }
 }
@@ -190,34 +190,33 @@ fn parse_file(path: &Path, config: &mut Config) {
             }
             continue;
         }
-        let Some((key, val)) = split_kv(t) else {
+        let Some((key, raw_val)) = split_kv(t) else {
             continue;
         };
+        let val = expand_value(raw_val);
         let n = val.parse::<u32>().ok();
         match section.as_deref() {
             Some(name) => {
                 if let Some(p) = config.pools.get_mut(name) {
-                    p.raw.push((key.to_string(), unquote(val).to_string()));
+                    p.raw.push((key.to_string(), val.clone()));
                 }
             }
-            None => config
-                .globals
-                .push((key.to_string(), unquote(val).to_string())),
+            None => config.globals.push((key.to_string(), val.clone())),
         }
         match key {
             "user" => {
                 if let Some(p) = current_pool(config, &section) {
-                    p.user = Some(unquote(val).to_string());
+                    p.user = Some(val.clone());
                 }
             }
             "pm" => {
                 if let Some(p) = current_pool(config, &section) {
-                    p.pm = Some(unquote(val).to_string());
+                    p.pm = Some(val.clone());
                 }
             }
             "listen" => {
                 if let Some(p) = current_pool(config, &section) {
-                    p.listen = Some(unquote(val).to_string());
+                    p.listen = Some(val.clone());
                 }
             }
             "listen.backlog" => {
@@ -254,12 +253,12 @@ fn parse_file(path: &Path, config: &mut Config) {
             }
             "slowlog" => {
                 if let Some(p) = current_pool(config, &section) {
-                    p.slowlog = Some(unquote(val).to_string());
+                    p.slowlog = Some(val.clone());
                 }
             }
             "access.log" => {
                 if let Some(p) = current_pool(config, &section) {
-                    p.access_log = Some(unquote(val).to_string());
+                    p.access_log = Some(val.clone());
                 }
             }
             _ => {}
@@ -298,6 +297,46 @@ fn unquote(s: &str) -> &str {
     } else {
         t
     }
+}
+
+/// Unquotes a value and expands PHP-FPM environment placeholders.
+///
+/// PHP-FPM accepts `${NAME}` and, since 8.3, `${NAME:-default}`. An unset or
+/// empty variable uses the default, or an empty string when no default is set.
+fn expand_value(s: &str) -> String {
+    expand_env(unquote(s))
+}
+
+fn expand_env(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut rest = s;
+    while let Some(start) = rest.find("${") {
+        out.push_str(&rest[..start]);
+        let tail = &rest[start + 2..];
+        let Some(end) = tail.find('}') else {
+            out.push_str(&rest[start..]);
+            return out;
+        };
+        let expr = &tail[..end];
+        let (name, default) = match expr.split_once(":-") {
+            Some((name, default)) => (name, Some(default)),
+            None => (expr, None),
+        };
+        if name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            // Not a variable PHP-FPM would expand: keep the text as-is.
+            out.push_str("${");
+            out.push_str(expr);
+            out.push('}');
+        } else {
+            match std::env::var(name) {
+                Ok(value) if !value.is_empty() => out.push_str(&value),
+                _ => out.push_str(default.unwrap_or("")),
+            }
+        }
+        rest = &tail[end + 1..];
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Minimal glob matcher (supports `*` and `?`)
@@ -423,6 +462,66 @@ mod tests {
     }
 
     #[test]
+    fn expands_environment_placeholders() {
+        std::env::set_var("FPM_MONITOR_TEST_POOL", "app");
+        std::env::set_var("FPM_MONITOR_TEST_EMPTY", "");
+        assert_eq!(
+            expand_env("/run/php-${FPM_MONITOR_TEST_POOL}.sock"),
+            "/run/php-app.sock"
+        );
+        assert_eq!(expand_env("${FPM_MONITOR_TEST_POOL:-www-data}"), "app");
+        std::env::remove_var("FPM_MONITOR_TEST_POOL");
+        assert_eq!(expand_env("${FPM_MONITOR_TEST_POOL:-www-data}"), "www-data");
+        assert_eq!(
+            expand_env("${FPM_MONITOR_TEST_EMPTY:-fallback}"),
+            "fallback"
+        );
+        assert_eq!(expand_env("${FPM_MONITOR_TEST_UNSET}"), "");
+        assert_eq!(expand_env("${BAD-NAME}"), "${BAD-NAME}");
+        assert_eq!(expand_env("${UNCLOSED"), "${UNCLOSED");
+        assert_eq!(expand_env("plain $value"), "plain $value");
+        std::env::remove_var("FPM_MONITOR_TEST_EMPTY");
+    }
+
+    #[test]
+    fn expands_environment_in_pool_config() {
+        std::env::set_var("FPM_MONITOR_TEST_USER", "app");
+        std::env::set_var("FPM_MONITOR_TEST_SUFFIX", "slow");
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("fpm-monitor-test-env-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("www.conf");
+        fs::write(
+            &file,
+            "[www]\n\
+             user = ${FPM_MONITOR_TEST_USER:-www-data}\n\
+             listen = \"/run/php-${FPM_MONITOR_TEST_USER}.sock\"\n\
+             pm.max_children = ${FPM_MONITOR_TEST_CHILDREN:-9}\n\
+             slowlog = /var/log/php-${FPM_MONITOR_TEST_SUFFIX}.log\n",
+        )
+        .unwrap();
+        std::env::remove_var("FPM_MONITOR_TEST_CHILDREN");
+
+        let config = load(&[file]);
+        let p = config.pools.get("www").unwrap();
+        assert_eq!(p.user.as_deref(), Some("app"));
+        assert_eq!(p.listen.as_deref(), Some("/run/php-app.sock"));
+        assert_eq!(p.max_children, Some(9));
+        assert_eq!(p.slowlog.as_deref(), Some("/var/log/php-slow.log"));
+        assert_eq!(
+            p.raw
+                .iter()
+                .find(|(key, _)| key == "user")
+                .map(|(_, value)| value.as_str()),
+            Some("app")
+        );
+
+        std::env::remove_var("FPM_MONITOR_TEST_USER");
+        std::env::remove_var("FPM_MONITOR_TEST_SUFFIX");
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn quoted_values_and_duplicate_sections() {
         let mut dir = std::env::temp_dir();
         dir.push(format!("fpm-monitor-test-quoted-{}", std::process::id()));
@@ -472,6 +571,33 @@ mod tests {
         assert_eq!(config.pools["www"].max_children, Some(5));
         assert!(!config.pools.contains_key("ignored"));
 
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn expands_environment_in_include_path() {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!(
+            "fpm-monitor-test-include-env-{}",
+            std::process::id()
+        ));
+        let pools = dir.join("pool.d");
+        fs::create_dir_all(&pools).unwrap();
+        std::env::set_var(
+            "FPM_MONITOR_TEST_INCLUDE_DIR",
+            dir.to_string_lossy().as_ref(),
+        );
+        fs::write(
+            dir.join("php-fpm.conf"),
+            "[global]\ninclude = ${FPM_MONITOR_TEST_INCLUDE_DIR}/pool.d/*.conf\n",
+        )
+        .unwrap();
+        fs::write(pools.join("www.conf"), "[www]\npm = static\n").unwrap();
+
+        let files = discover(Some(&dir.join("php-fpm.conf")));
+        assert!(files.iter().any(|p| p.ends_with("www.conf")));
+
+        std::env::remove_var("FPM_MONITOR_TEST_INCLUDE_DIR");
         fs::remove_dir_all(&dir).ok();
     }
 

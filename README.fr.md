@@ -67,6 +67,21 @@ et cette documentation est traduite en 22 langues.
   n'existe pas sous Windows ; la découverte des processus en direct renvoie donc une
   erreur explicite.
 
+## Compatibilité PHP-FPM
+
+`fpm-monitor` ne lie pas de bibliothèque PHP et n'a pas besoin de `pm.status_path`.
+Il lit la configuration des pools, les journaux locaux et la table des processus :
+il prend donc en charge les branches PHP-FPM encore supportées en amont, soit
+**8.2, 8.3, 8.4, 8.5 et 8.6** en 2026. Les branches plus anciennes et en fin de vie
+peuvent fonctionner, mais ne sont pas couvertes.
+
+Les valeurs de configuration utilisant `${NOM}` ou `${NOM:-valeur}` sont
+développées avec l'environnement du processus `fpm-monitor`, comme le fait PHP-FPM
+au démarrage. Si PHP-FPM a été lancé avec un autre environnement, transmettez les
+mêmes variables au moniteur afin que `user`, les chemins de socket et les chemins
+de journaux soient résolus à l'identique. L'onglet phpinfo cherche `php-cgi` puis
+les binaires versionnés de `php-cgi8.2` à `php-cgi8.6`.
+
 ## Installation
 
 ### Binaires précompilés

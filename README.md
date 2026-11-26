@@ -64,6 +64,20 @@ into 22 languages.
 - **Windows**: the CLI builds and runs (`--help`, `--mock`), but PHP-FPM is not
   available on Windows, so live process discovery returns an explicit error.
 
+## PHP-FPM compatibility
+
+`fpm-monitor` does not link against PHP and does not require `pm.status_path`.
+It reads the pool configuration, local logs and process tables, so it supports
+the PHP-FPM branches currently supported upstream: **8.2, 8.3, 8.4, 8.5 and
+8.6** in 2026. Older, EOL branches may work but are not covered.
+
+Configuration values using `${NAME}` or `${NAME:-default}` are expanded with
+the environment of the `fpm-monitor` process, like PHP-FPM does at startup.
+If PHP-FPM was started with a different environment, pass the same variables to
+the monitor so that `user`, socket paths and log paths resolve identically.
+The phpinfo tab looks for `php-cgi` and versioned binaries from `php-cgi8.2`
+through `php-cgi8.6`.
+
 ## Installation
 
 ### Prebuilt binaries
