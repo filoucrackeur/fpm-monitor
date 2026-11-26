@@ -1,3 +1,4 @@
+mod access;
 mod config;
 mod data;
 mod i18n;
@@ -110,7 +111,7 @@ fn main() {
     if mock {
         let cfg = data::mock_config();
         if watch {
-            if let Err(e) = web::run(cfg, interval, port, true) {
+            if let Err(e) = web::run(cfg, None, interval, port, true) {
                 eprintln!("{}", i18n::l().web_error.replace("{}", &e.to_string()));
                 exit(1);
             }
@@ -137,10 +138,13 @@ fn main() {
     }
 
     let files = config::discover(cli_config.as_deref());
-    let cfg = config::load(&files);
+    let full_cfg = config::load(&files);
+    let identity = access::Identity::current();
+    let allowed = access::allowed_names(&identity, &full_cfg);
+    let cfg = access::filter_config(full_cfg, &allowed);
 
     if watch {
-        if let Err(e) = web::run(cfg, interval, port, false) {
+        if let Err(e) = web::run(cfg, allowed, interval, port, false) {
             eprintln!("{}", i18n::l().web_error.replace("{}", &e.to_string()));
             exit(1);
         }
@@ -158,6 +162,7 @@ fn main() {
                         exit(1);
                     }
                 };
+                let scan = access::filter_scan(scan, &allowed);
                 let masters = scan.masters.clone();
                 let rows = data::build_rows(scan, &cfg2);
                 let names: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
@@ -177,6 +182,7 @@ fn main() {
             exit(1);
         }
     };
+    let scan = access::filter_scan(scan, &allowed);
     let masters = scan.masters.clone();
     let rows = data::build_rows(scan, &cfg);
     render::render(&rows, &masters, verbose, &style);

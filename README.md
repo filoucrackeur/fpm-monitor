@@ -43,6 +43,9 @@ into 22 languages.
   (default: the browser/OS language, falling back to English), the choice is
   remembered locally, and a light/dark theme follows the system preference.
 - Automatic configuration discovery (usual locations + `include` directive).
+- **Per-pool isolation**: when launched by a non-root user, only the pools whose
+  `user` directive matches that account are shown. Root sees every pool.
+  See [SECURITY.md](SECURITY.md).
 - No network calls: everything is read directly from `/proc` (processes, RSS,
   state, TCP socket accept queue). On macOS and BSD, the same data is read from
   `ps` and `netstat`; no FPM status configuration (`pm.status_path`) is needed.

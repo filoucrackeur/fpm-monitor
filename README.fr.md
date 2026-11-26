@@ -44,6 +44,9 @@ et cette documentation est traduite en 22 langues.
   du système, avec l'anglais en repli), le choix est mémorisé localement, et un
   thème clair/sombre suit la préférence du système.
 - Découverte automatique de la configuration (emplacements habituels + directive `include`).
+- **Isolation par pool** : lorsqu'il est lancé par un utilisateur non-root, seuls les
+  pools dont la directive `user` correspond à ce compte sont affichés. Root voit
+  tous les pools. Voir [SECURITY.md](SECURITY.md).
 - Aucun appel réseau : tout est lu directement depuis `/proc` (processus, RSS, état,
   file d'attente d'acceptation des sockets TCP). Sous macOS et BSD, les mêmes données
   sont lues via `ps` et `netstat` ; aucune configuration de statut FPM (`pm.status_path`)

@@ -100,14 +100,16 @@ pub fn mock_scan() -> ScanResult {
 pub fn mock_config() -> Config {
     use std::collections::HashMap;
 
-    let pool = |_name: &str, pm: &str, max_children: u32, max_requests: u32, listen: &str| {
+    let pool = |user: &str, pm: &str, max_children: u32, max_requests: u32, listen: &str| {
         let raw = vec![
+            ("user".to_string(), user.to_string()),
             ("pm".to_string(), pm.to_string()),
             ("listen".to_string(), listen.to_string()),
             ("pm.max_children".to_string(), max_children.to_string()),
             ("pm.max_requests".to_string(), max_requests.to_string()),
         ];
         PoolConfig {
+            user: Some(user.to_string()),
             pm: Some(pm.to_string()),
             listen: Some(listen.to_string()),
             listen_backlog: Some(128),
@@ -119,7 +121,10 @@ pub fn mock_config() -> Config {
     };
 
     let mut pools = HashMap::new();
-    pools.insert("www".to_string(), pool("www", "static", 8, 500, "9000"));
+    pools.insert(
+        "www".to_string(),
+        pool("www-data", "static", 8, 500, "9000"),
+    );
     let mut api = pool("api", "dynamic", 10, 10, "9001");
     api.min_spare_servers = Some(2);
     api.max_spare_servers = Some(8);

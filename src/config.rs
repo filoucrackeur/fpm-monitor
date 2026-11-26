@@ -13,6 +13,7 @@ pub const DEFAULT_POOL_DIRS: &[&str] =
 
 #[derive(Debug, Clone, Default)]
 pub struct PoolConfig {
+    pub user: Option<String>,
     pub pm: Option<String>,
     pub listen: Option<String>,
     pub listen_backlog: Option<u32>,
@@ -204,6 +205,11 @@ fn parse_file(path: &Path, config: &mut Config) {
                 .push((key.to_string(), unquote(val).to_string())),
         }
         match key {
+            "user" => {
+                if let Some(p) = current_pool(config, &section) {
+                    p.user = Some(unquote(val).to_string());
+                }
+            }
             "pm" => {
                 if let Some(p) = current_pool(config, &section) {
                     p.pm = Some(unquote(val).to_string());
@@ -364,6 +370,7 @@ mod tests {
 
         let config = load(&[file]);
         let p = config.pools.get("www").unwrap();
+        assert_eq!(p.user.as_deref(), Some("www-data"));
         assert_eq!(p.pm.as_deref(), Some("dynamic"));
         assert_eq!(p.max_children, Some(12));
         assert_eq!(p.start_servers, Some(4));

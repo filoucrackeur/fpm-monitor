@@ -79,6 +79,16 @@ Out of scope:
   untrusted input.
 - fpm-monitor runs with the privileges of the user who starts it. It does not
   need root, and running it as root is not recommended.
+- When started by a non-root user, fpm-monitor restricts itself to the pools
+  whose `user` directive matches that account (a numeric UID is also accepted).
+  A pool without a `user` directive is treated as belonging to the launcher.
+  Root sees every pool. Master PIDs are hidden for non-root users because they
+  cannot be safely mapped to a single pool.
+- External commands (`id`, `php-cgi`, `ps`, `netstat`) inherit the launcher's
+  identity. To run them as a pool user, start fpm-monitor as that user. Root is
+  intentionally unrestricted.
+- This filtering only controls what fpm-monitor displays. It does not replace
+  Unix file permissions, `hidepid` on `/proc`, or service-level sandboxing.
 
 ## Safe harbor
 

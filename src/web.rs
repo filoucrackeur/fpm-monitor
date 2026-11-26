@@ -4,7 +4,7 @@
 //! Everything is standard library only. The server binds to loopback, serves
 //! three routes and never makes an outgoing request.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::net::{TcpListener, TcpStream};
@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::access;
 use crate::config::Config;
 use crate::data::{self, Row};
 use crate::{i18n, logs, phpinfo, proc};
@@ -323,16 +324,22 @@ pub fn parse_port(value: &str) -> Option<u16> {
 }
 
 /// Starts the web UI and blocks forever (Ctrl-C terminates the process).
-pub fn run(cfg: Config, interval: Duration, port: u16, mock: bool) -> std::io::Result<()> {
+pub fn run(
+    cfg: Config,
+    allowed: Option<HashSet<String>>,
+    interval: Duration,
+    port: u16,
+    mock: bool,
+) -> std::io::Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     let secs = interval.as_secs().max(1);
     println!("{}", i18n::l().web_serving.replace("{}", &port.to_string()));
     let mut tracker = AccessTracker::default();
-    let initial = collect_with(&cfg, mock, &mut tracker);
+    let initial = collect_with(&cfg, &allowed, mock, &mut tracker);
     let snapshot = State::new(initial, secs, mock);
     *snapshot.phpinfo.lock().unwrap_or_else(|e| e.into_inner()) = phpinfo::collect(mock);
     let state = Arc::new(Mutex::new(snapshot));
-    spawn_sampler(cfg, interval, mock, Arc::clone(&state), tracker);
+    spawn_sampler(cfg, allowed, interval, mock, Arc::clone(&state), tracker);
     for stream in listener.incoming().flatten() {
         let state = Arc::clone(&state);
         thread::spawn(move || handle_conn(stream, state));
@@ -342,6 +349,7 @@ pub fn run(cfg: Config, interval: Duration, port: u16, mock: bool) -> std::io::R
 
 fn spawn_sampler(
     cfg: Config,
+    allowed: Option<HashSet<String>>,
     interval: Duration,
     mock: bool,
     state: Arc<Mutex<State>>,
@@ -349,7 +357,7 @@ fn spawn_sampler(
 ) {
     thread::spawn(move || loop {
         thread::sleep(interval);
-        let collected = collect_with(&cfg, mock, &mut tracker);
+        let collected = collect_with(&cfg, &allowed, mock, &mut tracker);
         let mut guard = state.lock().unwrap_or_else(|e| e.into_inner());
         guard.apply(collected);
     });
@@ -433,12 +441,17 @@ struct Collected {
 #[cfg(test)]
 fn collect(cfg: &Config, mock: bool) -> Collected {
     let mut tracker = AccessTracker::default();
-    collect_with(cfg, mock, &mut tracker)
+    collect_with(cfg, &None, mock, &mut tracker)
 }
 
 /// Counts requests via lines added to the access logs since the
 /// previous sample. In demo mode, simulated traffic is generated.
-fn collect_with(cfg: &Config, mock: bool, tracker: &mut AccessTracker) -> Collected {
+fn collect_with(
+    cfg: &Config,
+    allowed: &Option<HashSet<String>>,
+    mock: bool,
+    tracker: &mut AccessTracker,
+) -> Collected {
     if mock {
         let rows = data::mock_rows(cfg);
         let mut names: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
@@ -480,6 +493,7 @@ fn collect_with(cfg: &Config, mock: bool, tracker: &mut AccessTracker) -> Collec
             }
         }
     };
+    let scan = access::filter_scan(scan, allowed);
     let masters = scan.masters.clone();
     let rows = data::build_rows(scan, cfg);
     let names: Vec<String> = rows.iter().map(|r| r.name.clone()).collect();
