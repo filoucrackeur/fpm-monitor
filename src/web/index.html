@@ -546,7 +546,7 @@
   }
   .footer-tools .theme-track { background: var(--border); }
   .footer-tools .theme-knob { background: var(--panel); }
-  #poolRows tr { animation: row-in .28s ease-out; }
+  #poolRows tr.row-enter { animation: row-in .28s ease-out; }
   @keyframes row-in { from { opacity: .35; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
   .hide { display: none !important; }
 
@@ -939,6 +939,11 @@
     return node;
   }
 
+  function setText(node, value) {
+    const text = value === null || value === undefined ? "" : String(value);
+    if (node.textContent !== text) node.textContent = text;
+  }
+
   function fmtMem(kb) {
     if (kb === null || kb === undefined || kb < 0) return "-";
     if (kb >= 1048576) return (kb / 1048576).toFixed(1) + " GB";
@@ -1044,44 +1049,47 @@
     return fmtRate((pool.requests || 0) / seconds);
   }
 
+  // Reuse the existing cards instead of emptying the container on every poll:
+  // replacing the nodes is what makes the dashboard flash once per second.
+  function syncCards(box, items) {
+    while (box.children.length > items.length) box.lastElementChild.remove();
+    items.forEach(([label, value, hint], index) => {
+      let card = box.children[index];
+      if (!card || card.children.length !== 3) {
+        card = el("div", "card");
+        card.appendChild(el("div", "k"));
+        card.appendChild(el("div", "v"));
+        card.appendChild(el("div", "s"));
+        if (box.children[index]) box.insertBefore(card, box.children[index]);
+        else box.appendChild(card);
+      }
+      setText(card.children[0], label);
+      setText(card.children[1], value);
+      setText(card.children[2], hint);
+    });
+  }
+
   function renderCards(pools) {
     const data = ui.data;
     const total = (key) => pools.reduce((acc, pool) => acc + (pool[key] || 0), 0);
     const memory = pools.reduce((acc, pool) => acc + (pool.memory_kb || 0), 0);
     const backlog = pools.reduce((acc, pool) => acc + (pool.backlog || 0), 0);
-    const items = [
-      ["requests", requestRate(data), t("total_requests") + " " + (data.total_requests || 0)],
-      ["pools", pools.length, "configured_detected"],
-      ["workers", total("workers"), "total_processes"],
-      ["running", total("running"), "state_r"],
-      ["idle", total("idle"), "state_s"],
-      ["backlog", backlog, "pending_connections"],
-      ["mem", fmtMem(memory), "sum_rss"]
-    ];
-    const box = $("cards");
-    box.textContent = "";
-    items.forEach(([key, value, hint]) => {
-      const card = el("div", "card");
-      card.appendChild(el("div", "k", t(key)));
-      card.appendChild(el("div", "v", value));
-      card.appendChild(el("div", "s", t(hint)));
-      box.appendChild(card);
-    });
+    syncCards($("cards"), [
+      [t("requests"), requestRate(data), t("total_requests") + " " + (data.total_requests || 0)],
+      [t("pools"), pools.length, t("configured_detected")],
+      [t("workers"), total("workers"), t("total_processes")],
+      [t("running"), total("running"), t("state_r")],
+      [t("idle"), total("idle"), t("state_s")],
+      [t("backlog"), backlog, t("pending_connections")],
+      [t("mem"), fmtMem(memory), t("sum_rss")]
+    ]);
   }
 
   function renderGraphSummary() {
     const data = ui.data;
-    const box = $("graphCards");
-    box.textContent = "";
-    [
+    syncCards($("graphCards"), [
       [t("requests"), requestRate(data), t("total_requests") + " " + (data.total_requests || 0)]
-    ].forEach(([label, value, hint]) => {
-      const card = el("div", "card");
-      card.appendChild(el("div", "k", label));
-      card.appendChild(el("div", "v", value));
-      card.appendChild(el("div", "s", hint));
-      box.appendChild(card);
-    });
+    ]);
   }
 
   // Small listen-type icons: plug (Unix socket) or globe (TCP).
@@ -1108,68 +1116,126 @@
     return icon;
   }
 
+  function findRow(body, key, name) {
+    return Array.from(body.children).find((row) => row.dataset[key] === name);
+  }
+
+  function updatePoolNameCell(td, pool) {
+    const kind = listenKind(pool.listen);
+    const signature = [ui.lang, kind, pool.name, pool.listen].join("\u0000");
+    if (td.dataset.signature === signature) return;
+    td.dataset.signature = signature;
+    td.className = "pool";
+    td.textContent = "";
+    const icon = listenIcon(pool);
+    if (icon) td.appendChild(icon);
+    td.appendChild(document.createTextNode(pool.name));
+  }
+
+  function updateWorkers(body, pool) {
+    const workers = pool.worker_list || [];
+    const detail = findRow(body, "poolWorkers", pool.name);
+    if (!workers.length) {
+      if (detail) detail.remove();
+      return;
+    }
+
+    let row = detail;
+    if (!row) {
+      row = document.createElement("tr");
+      row.dataset.poolWorkers = pool.name;
+      const cell = document.createElement("td");
+      cell.colSpan = 10;
+      const box = el("details", "workers");
+      box.dataset.pool = pool.name;
+      box.open = ui.openPools.has(pool.name);
+      box.addEventListener("toggle", () => rememberOpenPool(pool.name, box.open));
+      cell.appendChild(box);
+      row.appendChild(cell);
+      const main = findRow(body, "pool", pool.name);
+      body.insertBefore(row, main ? main.nextSibling : null);
+    }
+
+    const box = row.querySelector("details.workers");
+    const summary = box.querySelector("summary") || box.appendChild(el("summary"));
+    setText(summary, workers.length + " " + t("workers"));
+    const label = pool.name + ": " + workers.length + " " + t("workers");
+    if (summary.getAttribute("aria-label") !== label) summary.setAttribute("aria-label", label);
+
+    const signature = workers.map((w) => [w.pid, w.state, w.rss_kb].join(":")).join(",");
+    let grid = box.querySelector(".workers-grid");
+    if (grid && grid.dataset.signature === signature) return;
+    if (!grid) grid = box.appendChild(el("div", "workers-grid"));
+    grid.dataset.signature = signature;
+    grid.textContent = "";
+    workers.forEach((worker) => {
+      const item = el("span", "worker");
+      item.appendChild(el("b", "", worker.pid));
+      item.appendChild(document.createTextNode(" " + worker.state + " · " + fmtMem(worker.rss_kb)));
+      grid.appendChild(item);
+    });
+  }
+
+  // Keep the existing rows and cells: rebuilding them on every poll replayed
+  // the row-in animation and made the monitoring table flash once per second.
   function renderPools() {
     const pools = (ui.data && ui.data.pools) || [];
     const body = $("poolRows");
-
-    // Remember which worker lists are open before rebuilding the table,
-    // so the periodic refresh does not collapse them under the user.
-    body.querySelectorAll("details.workers").forEach((node) => {
-      const name = node.dataset.pool;
-      if (!name) return;
-      rememberOpenPool(name, node.open);
-    });
-
-    body.textContent = "";
     $("noPools").classList.toggle("hide", pools.length > 0);
 
+    const seen = new Set();
     pools.forEach((pool) => {
-      const tr = document.createElement("tr");
-      const nameCell = el("td", "pool");
-      const icon = listenIcon(pool);
-      if (icon) nameCell.appendChild(icon);
-      nameCell.appendChild(document.createTextNode(pool.name));
-      tr.appendChild(nameCell);
-
-      const type = el("td");
-      const badge = el("span", "type " + (pool.pm || "unknown"), pool.pm || "?");
-      type.appendChild(badge);
-      tr.appendChild(type);
-
-      tr.appendChild(el("td", "", pool.workers));
-      tr.appendChild(el("td", ratioClass(pool.running, pool.max_children), pool.running));
-      tr.appendChild(el("td", "", pool.idle));
-      tr.appendChild(el("td", pool.backlog ? "warn" : "", pool.backlog === null ? opt(pool.backlog_max) : pool.backlog + " / " + opt(pool.backlog_max)));
-      tr.appendChild(el("td", "", poolRequestRate(pool)));
-      tr.appendChild(el("td", "", opt(pool.max_children)));
-      tr.appendChild(el("td", "", opt(pool.max_requests)));
-      tr.appendChild(el("td", "", fmtMem(pool.memory_kb)));
-
-      body.appendChild(tr);
-
-      if (pool.worker_list && pool.worker_list.length) {
-        const detail = document.createElement("tr");
-        const cell = document.createElement("td");
-        cell.colSpan = 10;
-        const box = el("details", "workers");
-        box.dataset.pool = pool.name;
-        box.open = ui.openPools.has(pool.name);
-        box.addEventListener("toggle", () => rememberOpenPool(pool.name, box.open));
-        const summary = el("summary", "", pool.worker_list.length + " " + t("workers"));
-        summary.setAttribute("aria-label", pool.name + ": " + pool.worker_list.length + " " + t("workers"));
-        box.appendChild(summary);
-        const grid = el("div", "workers-grid");
-        pool.worker_list.forEach((worker) => {
-          const item = el("span", "worker");
-          item.appendChild(el("b", "", worker.pid));
-          item.appendChild(document.createTextNode(" " + worker.state + " · " + fmtMem(worker.rss_kb)));
-          grid.appendChild(item);
-        });
-        box.appendChild(grid);
-        cell.appendChild(box);
-        detail.appendChild(cell);
-        body.appendChild(detail);
+      seen.add(pool.name);
+      let row = findRow(body, "pool", pool.name);
+      if (!row) {
+        row = document.createElement("tr");
+        row.dataset.pool = pool.name;
+        row.className = "row-enter";
+        body.appendChild(row);
       }
+
+      const cells = [
+        [null, pool.name],
+        ["type " + (pool.pm || "unknown"), pool.pm || "?"],
+        ["", pool.workers],
+        [ratioClass(pool.running, pool.max_children), pool.running],
+        ["", pool.idle],
+        [pool.backlog ? "warn" : "", pool.backlog === null ? opt(pool.backlog_max) : pool.backlog + " / " + opt(pool.backlog_max)],
+        ["", poolRequestRate(pool)],
+        ["", opt(pool.max_children)],
+        ["", opt(pool.max_requests)],
+        ["", fmtMem(pool.memory_kb)]
+      ];
+      while (row.children.length < cells.length) row.appendChild(el("td"));
+      while (row.children.length > cells.length) row.lastElementChild.remove();
+      cells.forEach(([cls, value], index) => {
+        const td = row.children[index];
+        if (index === 0) {
+          updatePoolNameCell(td, pool);
+          return;
+        }
+        setText(td, value);
+        const wanted = cls || "";
+        if (td.className !== wanted) td.className = wanted;
+      });
+
+      updateWorkers(body, pool);
+    });
+
+    Array.from(body.children).forEach((row) => {
+      const name = row.dataset.pool || row.dataset.poolWorkers;
+      if (name && !seen.has(name)) row.remove();
+    });
+
+    // Preserve the data order without moving rows that are already in place.
+    let cursor = body.firstChild;
+    pools.forEach((pool) => {
+      [findRow(body, "pool", pool.name), findRow(body, "poolWorkers", pool.name)]
+        .filter(Boolean)
+        .forEach((row) => {
+          if (row === cursor) cursor = cursor.nextSibling;
+          else body.insertBefore(row, cursor);
+        });
     });
   }
 
@@ -1782,14 +1848,14 @@
     const data = ui.data;
     if (!data) return;
     const focus = focusSnapshot();
-    $("updated").textContent = fmtTime(data.updated);
+    setText($("updated"), fmtTime(data.updated));
     const banner = $("error");
     if (data.error) {
-      banner.textContent = t("collection_error") + " " + data.error;
+      setText(banner, t("collection_error") + " " + data.error);
       banner.classList.add("show");
     } else {
       banner.classList.remove("show");
-      banner.textContent = "";
+      setText(banner, "");
     }
 
     const pools = data.pools || [];
@@ -1801,8 +1867,8 @@
     renderConfigs();
 
     const masters = (data.masters || []).join(", ") || "-";
-    $("footerMeta").textContent =
-      t("refresh") + " " + (data.interval || 1) + "s · " + t("master_pid") + " " + masters;
+    setText($("footerMeta"),
+      t("refresh") + " " + (data.interval || 1) + "s · " + t("master_pid") + " " + masters);
     restoreFocus(focus);
   }
 
