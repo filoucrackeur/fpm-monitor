@@ -43,7 +43,7 @@ pub enum Lang {
     Vi,
 }
 
-/// Définit la langue depuis la valeur de `--lang`.
+/// Sets the language from the `--lang` value.
 pub fn set(name: &str) -> Result<Lang, String> {
     let lang = match name.trim().to_ascii_lowercase().as_str() {
         "en" | "us" | "english" | "anglais" => Lang::En,
@@ -1043,7 +1043,7 @@ const DE: &Labels = &Labels {
     refresh: "Aktualisierung",
 };
 
-/// Aide `--help` localisée.
+/// Localised `--help` text.
 pub fn usage() -> &'static str {
     match lang() {
         Lang::En => {

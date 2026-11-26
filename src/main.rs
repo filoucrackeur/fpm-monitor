@@ -28,8 +28,8 @@ fn main() {
 
     let args: Vec<String> = std::env::args().collect();
 
-    // Pré-scan de `--lang` : la langue doit être connue avant `--help` et avant
-    // l'affichage des erreurs d'option.
+    // Pre-scan of `--lang`: the language must be known before `--help` and before
+    // option errors are displayed.
     let mut lang: Option<String> = None;
     let mut i = 1;
     while i < args.len() {

@@ -13,10 +13,10 @@ pub struct Row {
     pub scan: Option<PoolScan>,
 }
 
-/// Construit les lignes (pools) à partir du scan /proc + de la config.
-/// Aucun appel réseau : workers/états lus dans /proc, backlog lu dans les
-/// tables socket (/proc/net/tcp{,6}) pour les listens TCP, et pour les
-/// sockets unix on ne garde que le maximum fourni par listen.backlog.
+/// Builds the rows (pools) from the /proc scan + configuration.
+/// No network calls: workers/states read from /proc, backlog read from the
+/// socket tables (/proc/net/tcp{,6}) for TCP listens, and for
+/// Unix sockets, only the maximum supplied by listen.backlog is kept.
 pub fn build_rows(scan: ScanResult, cfg: &Config) -> Vec<Row> {
     let mut names: Vec<String> = scan
         .pools

@@ -221,7 +221,7 @@ fn print_workers(row: &Row, verbose: bool, style: &Style) {
                 "├─"
             };
             let rss = if w.rss_kb >= 0 {
-                format!("{} Ko", w.rss_kb)
+                format!("{} KB", w.rss_kb)
             } else {
                 "-".to_string()
             };

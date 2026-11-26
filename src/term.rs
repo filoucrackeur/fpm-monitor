@@ -45,8 +45,8 @@ const fn code(c: Color) -> &'static str {
     }
 }
 
-/// Remplit une cellule en tenant compte de la largeur du texte brut
-/// (les codes ANSI ne doivent pas compter dans la largeur).
+/// Fills a cell taking the raw text width into account
+/// (ANSI codes must not count toward the width).
 pub fn pad(s: &str, plain: &str, width: usize) -> String {
     let extra = width.saturating_sub(plain.chars().count());
     format!("{}{}", s, " ".repeat(extra))

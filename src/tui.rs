@@ -8,7 +8,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-// Palette Ember (#FF6B35 = cadre/accents)
+// Ember palette (#FF6B35 = border/accents)
 const EMBER: &str = "\x1b[38;2;255;107;53m";
 const SUBTLE: &str = "\x1b[38;2;160;137;110m";
 const AMBER: &str = "\x1b[38;2;255;170;0m";
@@ -33,9 +33,9 @@ struct Sample {
 struct TuiState {
     tab: usize,
     history: Vec<Sample>,
-    sub: usize,    // sous-onglet courant (pool ou section config)
-    scroll: usize, // défilement de l'onglet monitoring
-    esc: u8,       // état du parser de séquences d'échappement (flèches)
+    sub: usize,    // current sub-tab (pool or config section)
+    scroll: usize, // scroll position of the monitoring tab
+    esc: u8,       // escape-sequence parser state (arrow keys)
 }
 
 pub fn run<F>(mut refresh: F, cfg: &Config, interval: Duration)
@@ -45,12 +45,12 @@ where
     let raw_ok = raw_mode(true);
     let _guard = RawGuard(raw_ok);
 
-    // Thread de rafraîchissement : FastCGI + /proc peuvent prendre du temps
-    // (timeouts), il ne faut donc jamais bloquer le rendu dessus.
+    // Refresh thread: FastCGI + /proc can take a while
+    // (timeouts), so never block rendering on it.
     let (dtx, drx) = mpsc::channel::<(Vec<Row>, Vec<i32>, Vec<PoolLogs>)>();
     thread::spawn(move || loop {
-        // Cadence fixe : on ne cumule pas la durée du refresh avec l'intervalle,
-        // sinon une lecture FastCGI lente espacerait trop les mesures.
+        // Fixed cadence: do not add the refresh duration to the interval,
+        // otherwise a slow FastCGI read would space the measurements too far apart.
         let start = std::time::Instant::now();
         let data = refresh();
         if dtx.send(data).is_err() {
@@ -80,7 +80,7 @@ where
     let mut out = stdout.lock();
     let mut state = TuiState::default();
 
-    // Première fournée de données (bloque jusqu'à la première mesure).
+    // First batch of data (blocks until the first measurement).
     let (mut rows, mut masters, mut logs) = drx.recv().unwrap_or_default();
     push_history(&mut state, &rows);
 
@@ -202,8 +202,8 @@ impl Drop for RawGuard {
 }
 
 fn term_size() -> (usize, usize) {
-    // `output()` ferme stdin par défaut : il faut l'hériter pour que
-    // `stty size` lise la taille du terminal depuis le tty.
+    // `output()` closes stdin by default: inherit it so that
+    // `stty size` can read the terminal size from the tty.
     let out = Command::new("stty")
         .arg("size")
         .stdin(Stdio::inherit())
@@ -357,7 +357,7 @@ fn line(s: &mut String, w: usize, content: &str) {
     s.push_str("\r\n");
 }
 
-/// Longueur visible d'une chaîne (codes ANSI ignorés).
+/// Visible length of a string (ANSI codes ignored).
 fn plain_len(s: &str) -> usize {
     let mut n = 0;
     let mut it = s.chars().peekable();
@@ -380,7 +380,7 @@ fn plain_len(s: &str) -> usize {
     n
 }
 
-/// Tronque une chaîne colorée à `max` caractères visibles sans casser les codes ANSI.
+/// Truncates a coloured string to `max` visible characters without breaking ANSI codes.
 fn fit(s: &str, max: usize) -> String {
     if plain_len(s) <= max {
         return s.to_string();
@@ -414,7 +414,7 @@ fn fit(s: &str, max: usize) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Onglet 1 : Monitoring
+// Tab 1: Monitoring
 // ---------------------------------------------------------------------------
 
 fn monitoring(rows: &[Row], masters: &[i32], w: usize) -> Vec<String> {
@@ -472,8 +472,8 @@ fn monitoring(rows: &[Row], masters: &[i32], w: usize) -> Vec<String> {
         l.backlog.to_uppercase(),
         l.mem.to_uppercase(),
     ];
-    // Largeur des colonnes : en-tête ou contenu, selon le plus large (la
-    // colonne pool reste à 16 pour l'alignement des sous-lignes worker).
+    // Column widths: header or content, whichever is wider (the
+    // pool column stays at 16 to align the worker sub-lines).
     let mut widths = [16usize, 9, 7, 8, 5, 8, 9];
     for (i, h) in head.iter().enumerate() {
         widths[i] = widths[i].max(h.chars().count());
@@ -630,7 +630,7 @@ fn sub(text: &str) -> String {
     paint(text, SUBTLE)
 }
 
-/// RSS total du pool (somme des workers), en Ko.
+/// Total pool RSS (sum of workers), in KB.
 fn pool_mem_kb(row: &Row) -> Option<i64> {
     let sc = row.scan.as_ref()?;
     if sc.workers.is_empty() {
@@ -639,7 +639,7 @@ fn pool_mem_kb(row: &Row) -> Option<i64> {
     Some(sc.workers.iter().map(|w| w.rss_kb.max(0)).sum())
 }
 
-/// Formate une quantité en Ko en valeur lisible (K / M / G).
+/// Formats a quantity in KB as a readable value (K / M / G).
 fn fmt_mem(kb: i64) -> String {
     if kb < 0 {
         return "-".to_string();
@@ -654,7 +654,7 @@ fn fmt_mem(kb: i64) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Onglet 2 : Graphiques (un grand graphique par pool, style Ember)
+// Tab 2: Graphs (one large graph per pool, Ember style)
 // ---------------------------------------------------------------------------
 
 fn graphs(rows: &[Row], history: &[Sample], w: usize, content_h: usize, sel: usize) -> Vec<String> {
@@ -692,8 +692,8 @@ fn graphs(rows: &[Row], history: &[Sample], w: usize, content_h: usize, sel: usi
     lines.push(String::new());
 
     let bl = row.backlog.unwrap_or(0);
-    // backlog toujours affiché (même vide) : 3 panneaux empilés, plus
-    // l'en-tête (titre + sous-onglets + infos + ligne vide) et une ligne vide.
+    // backlog always displayed (even when empty): 3 stacked panels, plus
+    // the header (title + sub-tabs + info + blank line) and one blank line.
     let panel_h = (content_h.saturating_sub(11) / 3).max(3);
 
     let run_title = format!(
@@ -763,7 +763,7 @@ fn graphs(rows: &[Row], history: &[Sample], w: usize, content_h: usize, sel: usi
     lines
 }
 
-/// Bande de sous-onglets (un par pool), l'actif étant surligné.
+/// Sub-tab bar (one per pool), with the active one highlighted.
 fn pool_subtabs(rows: &[Row], active: usize) -> String {
     let mut s = format!("{SUBTLE}← →{RESET}");
     for (i, row) in rows.iter().enumerate() {
@@ -777,11 +777,11 @@ fn pool_subtabs(rows: &[Row], active: usize) -> String {
     s
 }
 
-/// Panneau type Ember : grand graphique encadré avec axes Y/X (asciigraph-like).
-/// `series` est une liste de (valeurs, couleur) superposées dans le même panneau.
-/// `refs` est une liste de (seuil, couleur, étend_l_échelle) dessinés en pointillés
-/// (`┄`) ; si `étend_l_échelle` est vrai, l'axe Y est élargi pour que la ligne soit
-/// toujours visible (comportement « seuil de référence »).
+/// Ember-style panel: large framed graph with Y/X axes (asciigraph-like).
+/// `series` is a list of (values, colour) overlaid in the same panel.
+/// `refs` is a list of (threshold, colour, widen_scale) drawn as dotted lines
+/// (`┄`); if `widen_scale` is true, the Y axis is widened so the line is
+/// always visible ("reference threshold" behaviour).
 fn ascii_panel(
     title: &str,
     series: &[(&[u32], &'static str)],
@@ -806,7 +806,7 @@ fn ascii_panel(
     }
     let (grid, colors) = fill_grid_multi(series, plot_w, h, lo, hi);
 
-    // Lignes de référence (seuils de config) en pointillés, une couleur par seuil.
+    // Reference lines (config thresholds) as dotted lines, one colour per threshold.
     let mut ref_lines: Vec<Vec<Option<&'static str>>> = vec![vec![None; plot_w]; h];
     if lo < hi {
         let span = (hi - lo) as f64;
@@ -814,7 +814,7 @@ fn ascii_panel(
         for (m, color, _) in refs {
             if *m >= lo && *m <= hi {
                 let s = (*m as f64 - lo as f64) / span * (sub_total - 1.0);
-                // Inversion : la sub-ligne 0 est en haut (label hi).
+                // Inverted: sub-line 0 is at the top (hi label).
                 let sr = ((sub_total - 1.0) - s).round() as i32;
                 let sr = (sr).clamp(0, (h * 2) as i32 - 1) as usize / 2;
                 for c in (0..plot_w).step_by(2) {
@@ -860,7 +860,7 @@ fn ascii_panel(
     lines
 }
 
-/// Bornes (min, max) de la fenêtre de données des séries.
+/// Bounds (min, max) of the series data window.
 fn series_range(series: &[(&[u32], &'static str)], plot_w: usize) -> (u32, u32) {
     let take = plot_w.min(series.iter().map(|(v, _)| v.len()).max().unwrap_or(0));
     let mut lo = u32::MAX;
@@ -885,9 +885,9 @@ fn series_range(series: &[(&[u32], &'static str)], plot_w: usize) -> (u32, u32) 
     (lo, hi)
 }
 
-/// Grille de pixels (2 sous-lignes par rangée) pour les séries données.
-/// La série est alignée à droite (valeurs les plus récentes à droite).
-/// L'échelle verticale (`lo`..`hi`) est imposée par l'appelant.
+/// Pixel grid (2 sub-lines per row) for the given series.
+/// The series is right-aligned (most recent values on the right).
+/// The vertical scale (`lo`..`hi`) is imposed by the caller.
 fn fill_grid_multi(
     series: &[(&[u32], &'static str)],
     plot_w: usize,
@@ -899,8 +899,8 @@ fn fill_grid_multi(
     let start_col = plot_w - take;
     let sub_total = plot_h * 2;
     let span = (hi - lo) as f64;
-    // Sub-ligne 0 = haut du panneau, sub_total-1 = bas. Les valeurs hautes
-    // doivent donc être en haut (labels hi en ligne 0).
+    // Sub-line 0 = top of panel, sub_total-1 = bottom. High values
+    // must therefore be at the top (hi labels on line 0).
     let to_sub = |x: u32| -> i32 {
         let s = (x as f64 - lo as f64) / span * (sub_total as f64 - 1.0);
         ((sub_total as f64 - 1.0) - s).round() as i32
@@ -953,7 +953,7 @@ fn panel_bottom(times: &[u64], w: usize) -> String {
     format!("{pre}{}{suf}", "─".repeat(inner))
 }
 
-/// Assemble deux panneaux côte à côte (style Ember : 2 par ligne).
+/// Joins two panels side by side (Ember style: 2 per line).
 fn join_panels(left: Vec<String>, right: Vec<String>) -> Vec<String> {
     left.into_iter()
         .zip(right)
@@ -999,8 +999,8 @@ fn load_bar(used: usize, max: Option<u32>) -> String {
     s
 }
 
-/// Infos affichées à droite de l'en-tête : max_requests (rouge), min/max spare.
-/// Les couleurs correspondent aux lignes en pointillés des panneaux.
+/// Info shown on the right of the header: max_requests (red), min/max spare.
+/// Colours match the dotted lines in the panels.
 fn right_info(row: &Row) -> String {
     let mut parts = Vec::new();
     if let Some(mr) = row
@@ -1020,8 +1020,8 @@ fn right_info(row: &Row) -> String {
     parts.join("  ")
 }
 
-/// Assemble une ligne avec une partie gauche et une partie droite alignée à droite.
-/// Si ça ne tient pas, c'est la partie gauche qui est tronquée (la droite est prioritaire).
+/// Joins a line with a left part and a right-aligned right part.
+/// If it does not fit, the left part is truncated (the right part takes priority).
 fn join_left_right(left: &str, right: &str, width: usize) -> String {
     let l = plain_len(left);
     let r = plain_len(right);
@@ -1039,7 +1039,7 @@ fn join_left_right(left: &str, right: &str, width: usize) -> String {
     s
 }
 
-/// Timestamps (epoch s) des mesures du pool, alignés avec `series`.
+/// Timestamps (epoch seconds) of the pool measurements, aligned with `series`.
 fn times_for(history: &[Sample], name: &str) -> Vec<u64> {
     history
         .iter()
@@ -1056,7 +1056,7 @@ fn fmt_time(secs: u64) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Onglet 3 : Logs (logs PHP + requêtes lentes, par pool)
+// Tab 3: Logs (PHP logs + slow requests, per pool)
 // ---------------------------------------------------------------------------
 
 fn logs_tab(
@@ -1100,7 +1100,7 @@ fn logs_tab(
         None => &empty,
     };
 
-    // Trois sections verticales : logs PHP, requêtes lentes, accès.
+    // Three vertical sections: PHP logs, slow requests, access.
     let remaining = content_h.saturating_sub(3);
     let mut per = (remaining.saturating_sub(9) / 3).max(1);
 
@@ -1131,7 +1131,7 @@ fn logs_tab(
     lines
 }
 
-/// Titre de section style config (`── titre ──`) + les N dernières lignes.
+/// Config-style section title (`── title ──`) + the last N lines.
 fn push_section(
     out: &mut Vec<String>,
     title: &str,
@@ -1162,7 +1162,7 @@ fn push_section(
     out.push(String::new());
 }
 
-/// Colore le niveau de sévérité d'une ligne de log PHP.
+/// Colours the severity level of a PHP log line.
 fn log_line(line: &str) -> String {
     const SEV: [(&str, &str); 5] = [
         ("EMERGENCY", RED),
@@ -1181,7 +1181,7 @@ fn log_line(line: &str) -> String {
     line.to_string()
 }
 
-/// Colore le code de statut HTTP d'une ligne d'access log FPM.
+/// Colours the HTTP status code of an FPM access-log line.
 fn access_line(line: &str) -> String {
     let code = line
         .split_whitespace()
@@ -1206,7 +1206,7 @@ fn access_line(line: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Onglet 4 : Configurations
+// Tab 4: Configurations
 // ---------------------------------------------------------------------------
 
 fn config_subs(cfg: &Config) -> Vec<String> {

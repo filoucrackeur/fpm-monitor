@@ -13,8 +13,8 @@ pub struct PoolLogs {
     pub access: Vec<String>,
 }
 
-/// Collecte les logs PHP et les requêtes lentes de chaque pool.
-/// `max_lines` est le nombre de lignes de queue lues par fichier.
+/// Collects PHP logs and slow requests for each pool.
+/// `max_lines` is the number of tail lines read per file.
 pub fn collect(cfg: &Config, names: &[String], max_lines: usize) -> Vec<PoolLogs> {
     let error_log = cfg
         .globals
@@ -26,7 +26,7 @@ pub fn collect(cfg: &Config, names: &[String], max_lines: usize) -> Vec<PoolLogs
         .iter()
         .map(|name| {
             let pool = cfg.pools.get(name);
-            // Un pool peut surcharger le error_log global.
+            // A pool can override the global error_log.
             let pool_error = pool.and_then(|p| raw_get(p, "php_admin_value[error_log]"));
             let php = pool_error.or_else(|| error_log.clone());
             let slow = pool.and_then(|p| p.slowlog.clone());
@@ -53,7 +53,7 @@ pub fn collect(cfg: &Config, names: &[String], max_lines: usize) -> Vec<PoolLogs
         .collect()
 }
 
-/// Logs de démonstration pour le mode `--mock`.
+/// Demo logs for `--mock` mode.
 pub fn mock(names: &[String]) -> Vec<PoolLogs> {
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -105,8 +105,8 @@ pub fn mock(names: &[String]) -> Vec<PoolLogs> {
         .collect()
 }
 
-/// Lit les `max_lines` dernières lignes d'un fichier (tail efficace :
-/// on lit par blocs depuis la fin jusqu'à avoir assez de lignes).
+/// Reads the last `max_lines` lines of a file (efficient tail:
+/// read in blocks from the end until enough lines have been collected).
 pub fn read_tail(path: &str, max_lines: usize) -> Vec<String> {
     let mut f = match fs::File::open(path) {
         Ok(f) => f,
@@ -164,11 +164,11 @@ mod tests {
         let path = dir.join(format!("fpm-logs-test-{}", std::process::id()));
         let mut f = fs::File::create(&path).unwrap();
         for i in 1..=5 {
-            writeln!(f, "ligne {i}").unwrap();
+            writeln!(f, "line {i}").unwrap();
         }
         f.sync_all().unwrap();
         let t = read_tail(path.to_str().unwrap(), 3);
-        assert_eq!(t, vec!["ligne 3", "ligne 4", "ligne 5"]);
+        assert_eq!(t, vec!["line 3", "line 4", "line 5"]);
         fs::remove_file(&path).ok();
     }
 
@@ -183,18 +183,18 @@ mod tests {
         let path = dir.join(format!("fpm-logs-test-big-{}", std::process::id()));
         let mut f = fs::File::create(&path).unwrap();
         for i in 0..20_000 {
-            writeln!(f, "ligne de log numéro {i} avec un peu de contenu").unwrap();
+            writeln!(f, "log line number {i} with some content").unwrap();
         }
         f.sync_all().unwrap();
         let t = read_tail(path.to_str().unwrap(), 50);
         assert_eq!(t.len(), 50);
-        assert!(t[0].starts_with("ligne de log numéro 19950"));
-        assert!(t[49].starts_with("ligne de log numéro 19999"));
+        assert!(t[0].starts_with("log line number 19950"));
+        assert!(t[49].starts_with("log line number 19999"));
         fs::remove_file(&path).ok();
     }
 
     #[test]
-    fn error_log_derniere_directive_gagne() {
+    fn error_log_last_directive_wins() {
         let mut dir = std::env::temp_dir();
         dir.push(format!("fpm-monitor-logs-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();

@@ -33,9 +33,9 @@ pub struct Config {
     pub globals: Vec<(String, String)>,
 }
 
-/// Découvre les fichiers de config des pools :
-/// - chemin passé en argument (fichier php-fpm.conf ou dossier de pools)
-/// - sinon recherche dans les emplacements usuels + includes
+/// Discovers the pool configuration files:
+/// - path passed as an argument (php-fpm.conf file or pool directory)
+/// - otherwise searches the usual locations + includes
 pub fn discover(cli_path: Option<&Path>) -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
     let mut visited: HashSet<PathBuf> = HashSet::new();
@@ -294,7 +294,7 @@ fn unquote(s: &str) -> &str {
     }
 }
 
-/// Matcher de glob minimal (supporte `*` et `?`)
+/// Minimal glob matcher (supports `*` and `?`)
 fn glob_match(pattern: &str, name: &str) -> bool {
     let p: Vec<char> = pattern.chars().collect();
     let n: Vec<char> = name.chars().collect();

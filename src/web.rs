@@ -59,7 +59,7 @@ fn font_bytes(path: &str) -> Option<&'static [u8]> {
 }
 /// Official PHP favicon served at /favicon.ico.
 const FAVICON: &[u8] = include_bytes!("web/favicon.ico");
-/// Logo PHP tel qu'inclus dans la sortie de `phpinfo()` (image data URI).
+/// PHP logo as included in the `phpinfo()` output (image data URI).
 const PHP_LOGO: &[u8] = include_bytes!("web/php-logo.png");
 
 #[derive(Clone)]
@@ -73,7 +73,7 @@ pub struct WorkerView {
 pub struct PoolView {
     pub name: String,
     pub pm: Option<String>,
-    /// Valeur de la directive `listen` (socket Unix ou adresse TCP).
+    /// Value of the `listen` directive (Unix socket or TCP address).
     pub listen: Option<String>,
     pub workers: usize,
     pub running: usize,
@@ -86,7 +86,7 @@ pub struct PoolView {
     pub max_spare: Option<u32>,
     pub memory_kb: i64,
     pub worker_list: Vec<WorkerView>,
-    /// Requêtes terminées depuis le précédent échantillon (accès log).
+    /// Requests completed since the previous sample (access log).
     pub requests: u32,
 }
 
@@ -141,7 +141,7 @@ pub struct State {
     pub logs: Vec<LogView>,
     pub config: ConfigView,
     pub history: Vec<Sample>,
-    /// `php -i` n'est collecté qu'au démarrage et sur demande (bouton refresh).
+    /// `php -i` is collected only at startup and on demand (refresh button).
     pub phpinfo: Mutex<phpinfo::Info>,
 }
 
@@ -355,11 +355,11 @@ fn spawn_sampler(
     });
 }
 
-/// Suit la taille des access logs pour compter les requêtes terminées
-/// entre deux échantillons, sans lire tout le fichier à chaque tour.
+/// Tracks access-log sizes to count completed requests
+/// between two samples, without reading the whole file each pass.
 #[derive(Default)]
 struct AccessTracker {
-    /// pool -> (chemin du log, taille lue au tour précédent)
+    /// pool -> (log path, size read on the previous pass)
     files: HashMap<String, (String, u64)>,
 }
 
@@ -387,8 +387,8 @@ impl AccessTracker {
         self.files
             .insert(name.to_string(), (path.to_string(), size));
         match previous {
-            // Rotation, troncature ou changement de log : on ne compte rien
-            // pour éviter d'inventer du trafic.
+            // Rotation, truncation or log change: count nothing
+            // to avoid inventing traffic.
             Some(old) if old <= size => count_newlines(path, old, size),
             _ => 0,
         }
@@ -436,8 +436,8 @@ fn collect(cfg: &Config, mock: bool) -> Collected {
     collect_with(cfg, mock, &mut tracker)
 }
 
-/// Compte les requêtes via les lignes ajoutées aux access logs depuis le
-/// précédent échantillon. En mode démo, un trafic simulé est généré.
+/// Counts requests via lines added to the access logs since the
+/// previous sample. In demo mode, simulated traffic is generated.
 fn collect_with(cfg: &Config, mock: bool, tracker: &mut AccessTracker) -> Collected {
     if mock {
         let rows = data::mock_rows(cfg);

@@ -21,8 +21,8 @@ pub struct ScanResult {
     pub masters: Vec<i32>,
 }
 
-/// Scanne /proc à la recherche des processus PHP-FPM.
-/// Le master est écarté du comptage des workers mais enregistré.
+/// Scans /proc for PHP-FPM processes.
+/// The master is excluded from the worker count but recorded.
 #[cfg(target_os = "linux")]
 pub fn scan() -> io::Result<ScanResult> {
     let mut pools: Vec<PoolScan> = Vec::new();
@@ -66,10 +66,10 @@ pub fn scan() -> io::Result<ScanResult> {
     Ok(ScanResult { pools, masters })
 }
 
-/// Profondeur de la file d'attente d'acceptation (backlog) d'un pool en TCP,
-/// lue directement dans /proc/net/tcp et /proc/net/tcp6 : pour un socket en
-/// état LISTEN, rx_queue contient le nombre de connexions en attente.
-/// Retourne None pour un socket unix (non lisible) ou un port introuvable.
+/// Depth of a pool's TCP accept queue (backlog),
+/// read directly from /proc/net/tcp and /proc/net/tcp6: for a socket in
+/// LISTEN state, rx_queue contains the number of pending connections.
+/// Returns None for a Unix socket (unreadable) or a port that cannot be found.
 #[cfg(target_os = "linux")]
 pub fn accept_backlog(listen: &str) -> Option<u32> {
     if listen.starts_with('/') {
@@ -112,8 +112,8 @@ pub fn accept_backlog(listen: &str) -> Option<u32> {
     None
 }
 
-/// Sépare "ip:port" ou "port" → (hôte, port).
-/// Sans hôte, php-fpm écoute sur 0.0.0.0 (INADDR_ANY) : on renvoie "".
+/// Splits "ip:port" or "port" into (host, port).
+/// Without a host, php-fpm listens on 0.0.0.0 (INADDR_ANY): return "".
 #[cfg(any(
     target_os = "linux",
     target_os = "macos",
@@ -134,20 +134,20 @@ fn split_listen(listen: &str) -> (String, u16) {
     }
 }
 
-/// Adresse IPv4 vers la notation hexadécimale petit-boutiste de /proc/net/tcp.
+/// IPv4 address to the little-endian hexadecimal notation of /proc/net/tcp.
 /// "127.0.0.1" → "0100007F".
 #[cfg(target_os = "linux")]
 fn ip_to_hex_le(host: &str) -> String {
     let mut out = String::new();
-    for octet in host.split('.') {
-        let n: u8 = octet.parse().unwrap_or(0);
+    for part in host.split('.') {
+        let n: u8 = part.parse().unwrap_or(0);
         out.insert_str(0, &format!("{n:02X}"));
     }
     out
 }
 
-/// Lit le premier argument de /proc/[pid]/cmdline.
-/// PHP-FPM met tout dans argv[0] : "php-fpm: pool www".
+/// Reads the first argument of /proc/[pid]/cmdline.
+/// PHP-FPM puts everything in argv[0]: "php-fpm: pool www".
 #[cfg(target_os = "linux")]
 fn read_first_arg(pid: i32) -> Option<String> {
     let bytes = fs::read(format!("/proc/{}/cmdline", pid)).ok()?;
@@ -181,7 +181,7 @@ pub fn pool_name(cmd: &str) -> Option<String> {
     }
 }
 
-/// État du process depuis /proc/[pid]/stat (3e champ après le nom).
+/// Process state from /proc/[pid]/stat (3rd field after the name).
 #[cfg(target_os = "linux")]
 fn get_state(pid: i32) -> char {
     let Ok(s) = fs::read_to_string(format!("/proc/{}/stat", pid)) else {
@@ -190,10 +190,10 @@ fn get_state(pid: i32) -> char {
     parse_state(&s)
 }
 
-/// Extrait l'état d'une ligne `/proc/[pid]/stat`.
+/// Extracts the state from a `/proc/[pid]/stat` line.
 ///
-/// Le nom du process peut contenir des espaces et des parenthèses : on repère
-/// donc la dernière `)` (fin du champ `comm`) avant de lire le champ `state`.
+/// The process name may contain spaces and parentheses: find
+/// the last `)` (end of the `comm` field) before reading the `state` field.
 #[cfg(any(target_os = "linux", test))]
 fn parse_state(stat: &str) -> char {
     let Some(idx) = stat.rfind(')') else {
@@ -204,7 +204,7 @@ fn parse_state(stat: &str) -> char {
         .unwrap_or('?')
 }
 
-/// VmRSS depuis /proc/[pid]/status, en Ko. -1 si indisponible.
+/// VmRSS from /proc/[pid]/status, in KB. -1 if unavailable.
 #[cfg(target_os = "linux")]
 fn get_rss_kb(pid: i32) -> i64 {
     let Ok(s) = fs::read_to_string(format!("/proc/{}/status", pid)) else {
@@ -213,7 +213,7 @@ fn get_rss_kb(pid: i32) -> i64 {
     parse_rss_kb(&s)
 }
 
-/// Extrait `VmRSS` d'un fichier `/proc/[pid]/status`, en Ko.
+/// Extracts `VmRSS` from a `/proc/[pid]/status` file, in KB.
 #[cfg(any(target_os = "linux", test))]
 fn parse_rss_kb(status: &str) -> i64 {
     for line in status.lines() {
@@ -229,8 +229,8 @@ fn parse_rss_kb(status: &str) -> i64 {
     -1
 }
 
-/// Backend BSD/macOS : pas de /proc, les données viennent de `ps` et `netstat`.
-/// PHP-FPM y renseigne aussi son titre de process, exploité tel quel.
+/// BSD/macOS backend: no /proc, data comes from `ps` and `netstat`.
+/// PHP-FPM also sets its process title there, used as-is.
 #[cfg(any(
     target_os = "macos",
     target_os = "freebsd",
@@ -242,8 +242,8 @@ mod bsd {
     use super::*;
     use std::process::Command;
 
-    /// Scanne les processus via `ps` : pid, état, RSS et ligne de commande.
-    /// Le master ("php-fpm: master process (...)") est écarté des workers.
+    /// Scans processes via `ps`: pid, state, RSS and command line.
+    /// The master ("php-fpm: master process (...)") is excluded from the workers.
     pub fn scan() -> io::Result<ScanResult> {
         let out = Command::new("ps")
             .args(["-axo", "pid=,state=,rss=,command="])
@@ -284,9 +284,9 @@ mod bsd {
         Ok(ScanResult { pools, masters })
     }
 
-    /// Parse une ligne `ps -o pid=,state=,rss=,command=`, ex. "1234 S  8192
-    /// php-fpm: pool www". L'état peut être multi-caractères ("Ss") : on garde
-    /// le premier (R = running, S = sleeping, comme /proc/[pid]/stat).
+    /// Parses a `ps -o pid=,state=,rss=,command=` line, e.g. "1234 S  8192
+    /// php-fpm: pool www". The state may be multi-character ("Ss"): keep
+    /// the first one (R = running, S = sleeping, as in /proc/[pid]/stat).
     fn parse_ps_line(line: &str) -> Option<(i32, char, i64, String)> {
         let mut f = line.split_whitespace();
         let pid = f.next()?.parse().ok()?;
@@ -299,10 +299,10 @@ mod bsd {
         Some((pid, state, rss, cmd.join(" ")))
     }
 
-    /// File d'attente d'acceptation (backlog) d'un pool en TCP, lue dans
-    /// `netstat -an`: pour un socket LISTEN, la colonne Recv-Q vaut le nombre
-    /// de connexions en attente d'acceptation (comme rx_queue dans
-    /// /proc/net/tcp). Retourne None pour un socket unix ou un port inconnu.
+    /// TCP accept queue (backlog) of a pool, read from
+    /// `netstat -an`: for a LISTEN socket, the Recv-Q column is the number
+    /// of connections awaiting acceptance (like rx_queue in
+    /// /proc/net/tcp). Returns None for a Unix socket or an unknown port.
     pub fn accept_backlog(listen: &str) -> Option<u32> {
         if listen.starts_with('/') {
             return None;
@@ -339,8 +339,8 @@ mod bsd {
         None
     }
 
-    /// Parse une ligne LISTEN de `netstat -an -p tcp`, ex.
-    /// "tcp4 0 0 127.0.0.1.9000 *.* LISTEN" → (port, recv-q, hôte).
+    /// Parses a LISTEN line from `netstat -an -p tcp`, e.g.
+    /// "tcp4 0 0 127.0.0.1.9000 *.* LISTEN" → (port, recv-q, host).
     fn parse_netstat_line(line: &str) -> Option<(u16, u32, String)> {
         let f: Vec<&str> = line.split_whitespace().collect();
         if f.len() < 6 || !f[0].starts_with("tcp") {
@@ -429,8 +429,8 @@ mod bsd {
 ))]
 pub use bsd::{accept_backlog, scan};
 
-/// Backend de secours pour les plateformes sans `/proc` ni `ps` compatible
-/// (notamment Windows, où PHP-FPM n'est de toute façon pas supporté).
+/// Fallback backend for platforms without `/proc` or a compatible `ps`
+/// (notably Windows, where PHP-FPM is not supported anyway).
 #[cfg(not(any(
     target_os = "linux",
     target_os = "macos",

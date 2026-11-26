@@ -1,15 +1,15 @@
-//! Sortie HTML brute de `phpinfo()`, pour l'onglet « info » du dashboard.
+//! Raw HTML output of `phpinfo()`, for the dashboard's "info" tab.
 //!
-//! `php-cgi -i` produit exactement le document HTML de `phpinfo()` (SAPI CGI),
-//! contrairement à `php -i` / `php-fpm -i` qui produisent du texte brut. On
-//! retire uniquement les en-têtes HTTP émis par le binaire CGI.
+//! `php-cgi -i` produces exactly the `phpinfo()` HTML document (CGI SAPI),
+//! unlike `php -i` / `php-fpm -i`, which produce raw text. We
+//! only strip the HTTP headers emitted by the CGI binary.
 
 use std::io::{BufReader, Read};
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-/// Noms et emplacements usuels du binaire CGI ; `php-cgi` est essayé en premier.
+/// Usual names and locations of the CGI binary; `php-cgi` is tried first.
 const CANDIDATES: &[&str] = &[
     "php-cgi",
     "/opt/homebrew/bin/php-cgi",
@@ -27,12 +27,12 @@ const TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Default)]
 pub struct Info {
-    /// Document HTML tel que renvoyé par PHP (sans les en-têtes CGI).
+    /// HTML document as returned by PHP (without the CGI headers).
     pub html: String,
     pub error: Option<String>,
 }
 
-/// Collecte le HTML de `phpinfo()`. En mode démo, un document factice suffit.
+/// Collects the `phpinfo()` HTML. In demo mode, a dummy document is enough.
 pub fn collect(mock: bool) -> Info {
     if mock {
         return Info {
@@ -58,7 +58,7 @@ pub fn collect(mock: bool) -> Info {
     }
 }
 
-/// Supprime les en-têtes CGI (`Content-type`, `X-Powered-By`, …).
+/// Removes the CGI headers (`Content-type`, `X-Powered-By`, …).
 fn html_body(raw: &str) -> Option<String> {
     let body = if let Some(pos) = raw.find("\r\n\r\n") {
         &raw[pos + 4..]
@@ -88,8 +88,8 @@ fn run(binary: &str) -> Result<String, String> {
         .stdout
         .take()
         .ok_or_else(|| "stdout unavailable".to_string())?;
-    // Le document pèse ~100 Ko : on vide le pipe pendant que le processus
-    // tourne, sinon PHP se bloque sur l'écriture avant de pouvoir sortir.
+    // The document is ~100 KB: drain the pipe while the process
+    // is running, otherwise PHP blocks on writing before it can exit.
     let reader = thread::spawn(move || {
         let mut text = String::new();
         BufReader::new(stdout)

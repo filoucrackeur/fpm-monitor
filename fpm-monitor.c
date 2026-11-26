@@ -19,7 +19,7 @@ typedef struct {
 pool_info_t pools[MAX_POOLS];
 int pool_count = 0;
 
-// Lit /proc/[pid]/cmdline et retourne le nom du pool si c'est un worker/master FPM
+// Reads /proc/[pid]/cmdline and returns the pool name if it's an FPM worker/master
 int parse_fpm_cmdline(int pid, char *pool_name, int *is_master) {
     char path[64], buf[MAX_LINE];
     snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
@@ -31,7 +31,7 @@ int parse_fpm_cmdline(int pid, char *pool_name, int *is_master) {
     if (n == 0) return 0;
     buf[n] = '\0';
 
-    // cmdline: "php-fpm: pool nginx1" ou "php-fpm: master process (...)"
+    // cmdline: "php-fpm: pool nginx1" or "php-fpm: master process (...)"
     if (strstr(buf, "php-fpm:") == NULL) return 0;
 
     if (strstr(buf, "master process")) {
@@ -51,7 +51,7 @@ int parse_fpm_cmdline(int pid, char *pool_name, int *is_master) {
     return 0;
 }
 
-// Lit l'état du process (R=running, S=sleeping/idle, D=disk wait, Z=zombie)
+// Reads the process state (R=running, S=sleeping/idle, D=disk wait, Z=zombie)
 char get_proc_state(int pid) {
     char path[64], buf[256];
     snprintf(path, sizeof(path), "/proc/%d/stat", pid);
@@ -63,10 +63,10 @@ char get_proc_state(int pid) {
     // format: pid (comm) state ...
     char *paren = strrchr(buf, ')');
     if (!paren) return '?';
-    return paren[2]; // après ") "
+    return paren[2]; // after ") "
 }
 
-// Récupère la mémoire RSS en Ko
+// Gets the RSS memory in KB
 long get_proc_rss_kb(int pid) {
     char path[64], line[256];
     snprintf(path, sizeof(path), "/proc/%d/status", pid);
@@ -105,7 +105,7 @@ int main() {
         char pool_name[128];
         int is_master;
         if (!parse_fpm_cmdline(pid, pool_name, &is_master)) continue;
-        if (is_master) continue; // on ignore le master lui-même pour le comptage workers
+        if (is_master) continue; // skip the master itself when counting workers
 
         pool_info_t *pool = find_or_create_pool(pool_name);
         pool->worker_pids[pool->worker_count++] = pid;
@@ -116,7 +116,7 @@ int main() {
     }
     closedir(proc);
 
-    // Affichage générique, tous pools détectés automatiquement
+    // Generic display, all pools detected automatically
     printf("%-20s %-10s %-10s %-10s\n", "POOL", "WORKERS", "RUNNING", "IDLE");
     for (int i = 0; i < pool_count; i++) {
         pool_info_t *p = &pools[i];
@@ -127,7 +127,7 @@ int main() {
             int pid = p->worker_pids[j];
             long rss = get_proc_rss_kb(pid);
             char state = get_proc_state(pid);
-            printf("  └─ pid=%-8d state=%-3c rss=%ldKo\n", pid, state, rss);
+            printf("  └─ pid=%-8d state=%-3c rss=%ldKB\n", pid, state, rss);
         }
     }
 
