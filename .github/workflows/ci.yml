@@ -143,7 +143,7 @@ jobs:
           PY
           )
           color=$(python3 -c "p=float('$pct'); print('brightgreen' if p>=90 else 'green' if p>=80 else 'yellowgreen' if p>=70 else 'yellow' if p>=60 else 'orange' if p>=50 else 'red')")
-          version=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)
+          version="v$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
           downloads=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate --jq '[.[].assets[].download_count] | add // 0' | awk '{ total += $1 } END { print total + 0 }')
           issues=$(gh api "search/issues?q=repo%3A${GITHUB_REPOSITORY//\//%2F}+is%3Aissue+is%3Aopen" --jq .total_count)
           issue_color=$([ "$issues" = "0" ] && echo brightgreen || echo yellow)
