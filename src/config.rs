@@ -62,29 +62,61 @@ pub fn discover(cli_path: Option<&Path>) -> Vec<PathBuf> {
             collect_pool_files(p, &mut files, &mut visited);
         }
     }
-    for base in ["/usr/local/etc/php", "/opt/homebrew/etc/php"] {
-        if let Ok(entries) = fs::read_dir(base) {
-            for e in entries.flatten() {
-                let p = e.path();
-                if !p.is_dir() {
-                    continue;
-                }
-                let conf = p.join("php-fpm.conf");
-                if conf.is_file() {
-                    parse_includes(&conf, &mut files, &mut visited);
-                }
-                let pool_d = p.join("pool.d");
-                if pool_d.is_dir() {
-                    collect_pool_files(&pool_d, &mut files, &mut visited);
-                }
-                let fpm_d = p.join("php-fpm.d");
-                if fpm_d.is_dir() {
-                    collect_pool_files(&fpm_d, &mut files, &mut visited);
-                }
+    collect_php_versions(
+        Path::new("/usr/local/etc/php"),
+        false,
+        &mut files,
+        &mut visited,
+    );
+    #[cfg(target_os = "macos")]
+    collect_php_versions(
+        Path::new("/opt/homebrew/etc/php"),
+        false,
+        &mut files,
+        &mut visited,
+    );
+    // Debian and Ubuntu install each PHP version under /etc/php/<version>/fpm.
+    collect_php_versions(Path::new("/etc/php"), true, &mut files, &mut visited);
+    files
+}
+
+/// Collects versioned PHP installations under `base`.
+///
+/// Homebrew and source installs use `<base>/<version>/php-fpm.conf`, while
+/// Debian and Ubuntu use `<base>/<version>/fpm/php-fpm.conf`.
+fn collect_php_versions(
+    base: &Path,
+    debian_layout: bool,
+    files: &mut Vec<PathBuf>,
+    visited: &mut HashSet<PathBuf>,
+) {
+    let Ok(entries) = fs::read_dir(base) else {
+        return;
+    };
+    for e in entries.flatten() {
+        let version = e.path();
+        if !version.is_dir() {
+            continue;
+        }
+        let dir = if debian_layout {
+            version.join("fpm")
+        } else {
+            version
+        };
+        if !dir.is_dir() {
+            continue;
+        }
+        let conf = dir.join("php-fpm.conf");
+        if conf.is_file() {
+            parse_includes(&conf, files, visited);
+        }
+        for name in ["pool.d", "php-fpm.d"] {
+            let pool_dir = dir.join(name);
+            if pool_dir.is_dir() {
+                collect_pool_files(&pool_dir, files, visited);
             }
         }
     }
-    files
 }
 
 pub fn load(files: &[PathBuf]) -> Config {
@@ -598,6 +630,44 @@ mod tests {
         assert!(files.iter().any(|p| p.ends_with("www.conf")));
 
         std::env::remove_var("FPM_MONITOR_TEST_INCLUDE_DIR");
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn discovers_debian_and_homebrew_versioned_layouts() {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("fpm-monitor-test-versioned-{}", std::process::id()));
+        let debian = dir.join("debian/8.4/fpm");
+        let homebrew = dir.join("homebrew/8.4");
+        fs::create_dir_all(debian.join("pool.d")).unwrap();
+        fs::create_dir_all(homebrew.join("pool.d")).unwrap();
+        fs::write(debian.join("php-fpm.conf"), "[global]\n").unwrap();
+        fs::write(
+            debian.join("pool.d/www.conf"),
+            "[www]\npm = dynamic\npm.max_children = 5\n",
+        )
+        .unwrap();
+        fs::write(homebrew.join("php-fpm.conf"), "[global]\n").unwrap();
+        fs::write(homebrew.join("pool.d/app.conf"), "[app]\npm = static\n").unwrap();
+
+        let mut files = Vec::new();
+        let mut visited = HashSet::new();
+        collect_php_versions(&dir.join("debian"), true, &mut files, &mut visited);
+        collect_php_versions(&dir.join("homebrew"), false, &mut files, &mut visited);
+
+        assert!(files
+            .iter()
+            .any(|p| p.ends_with("debian/8.4/fpm/php-fpm.conf")));
+        assert!(files
+            .iter()
+            .any(|p| p.ends_with("debian/8.4/fpm/pool.d/www.conf")));
+        assert!(files
+            .iter()
+            .any(|p| p.ends_with("homebrew/8.4/php-fpm.conf")));
+        assert!(files
+            .iter()
+            .any(|p| p.ends_with("homebrew/8.4/pool.d/app.conf")));
+
         fs::remove_dir_all(&dir).ok();
     }
 

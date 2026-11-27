@@ -121,13 +121,16 @@ jobs:
           name: coverage-lcov
           path: lcov.info
           if-no-files-found: error
-      # Publish the line-coverage percentage to a `badges` branch, read by the
-      # shields.io endpoint badge in the READMEs. No third-party account or
-      # secret is required.
-      - name: Publish coverage badge
+      # Publish the dynamic badge values to a `badges` branch, read by the
+      # shields.io endpoint badges in the READMEs. This avoids depending on
+      # Shields' GitHub API backends, which can time out or be rate limited.
+      - name: Publish badges
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -o pipefail
           pct=$(python3 - <<'PY'
           import sys
           found = hit = 0
@@ -140,15 +143,37 @@ jobs:
           PY
           )
           color=$(python3 -c "p=float('$pct'); print('brightgreen' if p>=90 else 'green' if p>=80 else 'yellowgreen' if p>=70 else 'yellow' if p>=60 else 'orange' if p>=50 else 'red')")
+          version=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)
+          downloads=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate --jq '[.[].assets[].download_count] | add // 0' | awk '{ total += $1 } END { print total + 0 }')
+          issues=$(gh api "search/issues?q=repo%3A${GITHUB_REPOSITORY//\//%2F}+is%3Aissue+is%3Aopen" --jq .total_count)
+          issue_color=$([ "$issues" = "0" ] && echo brightgreen || echo yellow)
+          last_commit_date=$(git log -1 --format=%cI)
+          last_commit=$(python3 - "$last_commit_date" <<'PY'
+          from datetime import datetime, timedelta, timezone
+          import sys
+          day = datetime.fromisoformat(sys.argv[1]).astimezone(timezone.utc).date()
+          delta = (datetime.now(timezone.utc).date() - day).days
+          print("today" if delta <= 0 else "yesterday" if delta == 1 else day.isoformat())
+          PY
+          )
+          commit_color=$([ "$last_commit" = "today" ] || [ "$last_commit" = "yesterday" ] && echo brightgreen || echo yellow)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan badge-tmp
           git rm -rf . > /dev/null
+          printf '{"schemaVersion":1,"label":"release","message":"%s","color":"blue"}\n' "$version" > version.json
           printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$pct" "$color" > coverage.json
-          git add coverage.json
-          git commit -m "Update coverage badge: ${pct}%"
+          printf '{"schemaVersion":1,"label":"downloads","message":"%s","color":"blue"}\n' "$downloads" > downloads.json
+          printf '{"schemaVersion":1,"label":"issues","message":"%s open","color":"%s"}\n' "$issues" "$issue_color" > issues.json
+          printf '{"schemaVersion":1,"label":"last commit","message":"%s","color":"%s"}\n' "$last_commit" "$commit_color" > last-commit.json
+          git add version.json coverage.json downloads.json issues.json last-commit.json
+          git commit -m "Update badges: ${version}, coverage ${pct}%, ${downloads} downloads"
           git push --force origin HEAD:badges
+          echo "Release: ${version}"
           echo "Coverage: ${pct}% (${color})"
+          echo "Downloads: ${downloads}"
+          echo "Issues: ${issues} (${issue_color})"
+          echo "Last commit: ${last_commit} (${commit_color})"
 
   build:
     name: Build (${{ matrix.target }})

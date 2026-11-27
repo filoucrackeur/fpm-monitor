@@ -4,7 +4,7 @@
 //! unlike `php -i` / `php-fpm -i`, which produce raw text. We
 //! only strip the HTTP headers emitted by the CGI binary.
 
-use std::io::{BufReader, Read};
+use std::io::{BufReader, ErrorKind, Read};
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -12,7 +12,6 @@ use std::time::{Duration, Instant};
 /// Usual names and locations of the CGI binary; `php-cgi` is tried first.
 const CANDIDATES: &[&str] = &[
     "php-cgi",
-    "/opt/homebrew/bin/php-cgi",
     "/usr/local/bin/php-cgi",
     "/usr/bin/php-cgi",
     "/usr/bin/php-cgi8.6",
@@ -25,7 +24,45 @@ const CANDIDATES: &[&str] = &[
     "/usr/bin/php-cgi7.4",
 ];
 
+/// Homebrew only exists on macOS; trying its path on Linux pollutes the
+/// phpinfo error message with irrelevant locations.
+#[cfg(target_os = "macos")]
+const HOMEBREW_CANDIDATE: &[&str] = &["/opt/homebrew/bin/php-cgi"];
+#[cfg(not(target_os = "macos"))]
+const HOMEBREW_CANDIDATE: &[&str] = &[];
+
 const TIMEOUT: Duration = Duration::from_secs(5);
+
+fn candidates() -> impl Iterator<Item = &'static str> {
+    CANDIDATES
+        .iter()
+        .take(1)
+        .chain(HOMEBREW_CANDIDATE.iter())
+        .chain(CANDIDATES.iter().skip(1))
+        .copied()
+}
+
+fn missing_hint() -> &'static str {
+    #[cfg(target_os = "linux")]
+    {
+        "php-cgi was not found. Install the PHP CGI package (for example: \
+         sudo apt install php-cgi) to enable the phpinfo tab."
+    }
+    #[cfg(target_os = "macos")]
+    {
+        "php-cgi was not found. Install PHP with Homebrew (for example: \
+         brew install php) to enable the phpinfo tab."
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+    {
+        "php-cgi was not found. Install the PHP CGI binary to enable the phpinfo tab."
+    }
+}
+
+enum RunError {
+    NotFound,
+    Other(String),
+}
 
 #[derive(Clone, Default)]
 pub struct Info {
@@ -45,14 +82,18 @@ pub fn collect(mock: bool) -> Info {
         };
     }
     let mut errors = Vec::new();
-    for candidate in CANDIDATES {
+    for candidate in candidates() {
         match run(candidate) {
             Ok(raw) => match html_body(&raw) {
                 Some(html) => return Info { html, error: None },
                 None => errors.push(format!("{candidate}: no HTML in output")),
             },
-            Err(e) => errors.push(format!("{candidate}: {e}")),
+            Err(RunError::NotFound) => {}
+            Err(RunError::Other(e)) => errors.push(format!("{candidate}: {e}")),
         }
+    }
+    if errors.is_empty() {
+        errors.push(missing_hint().to_string());
     }
     Info {
         html: String::new(),
@@ -79,17 +120,20 @@ fn html_body(raw: &str) -> Option<String> {
     }
 }
 
-fn run(binary: &str) -> Result<String, String> {
+fn run(binary: &str) -> Result<String, RunError> {
     let mut child = Command::new(binary)
         .arg("-i")
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| match e.kind() {
+            ErrorKind::NotFound => RunError::NotFound,
+            _ => RunError::Other(e.to_string()),
+        })?;
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| "stdout unavailable".to_string())?;
+        .ok_or_else(|| RunError::Other("stdout unavailable".to_string()))?;
     // The document is ~100 KB: drain the pipe while the process
     // is running, otherwise PHP blocks on writing before it can exit.
     let reader = thread::spawn(move || {
@@ -106,22 +150,22 @@ fn run(binary: &str) -> Result<String, String> {
             Ok(None) => {}
             Err(e) => {
                 let _ = child.kill();
-                return Err(e.to_string());
+                return Err(RunError::Other(e.to_string()));
             }
         }
         if Instant::now() >= deadline {
             let _ = child.kill();
             let _ = child.wait();
-            return Err("timed out".to_string());
+            return Err(RunError::Other("timed out".to_string()));
         }
         thread::sleep(Duration::from_millis(20));
     };
     let text = reader
         .join()
-        .map_err(|_| "output reader failed".to_string())?
-        .map_err(|e| e.to_string())?;
+        .map_err(|_| RunError::Other("output reader failed".to_string()))?
+        .map_err(|e| RunError::Other(e.to_string()))?;
     if !status.success() {
-        return Err(format!("exit status {status}"));
+        return Err(RunError::Other(format!("exit status {status}")));
     }
     Ok(text)
 }
@@ -132,12 +176,26 @@ mod tests {
 
     #[test]
     fn candidate_list_covers_supported_php_branches() {
+        let found: Vec<&str> = candidates().collect();
         for version in ["8.2", "8.3", "8.4", "8.5", "8.6"] {
             assert!(
-                CANDIDATES.contains(&format!("/usr/bin/php-cgi{version}").as_str()),
+                found.contains(&format!("/usr/bin/php-cgi{version}").as_str()),
                 "missing php-cgi{version}"
             );
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_does_not_try_homebrew() {
+        assert!(!candidates().any(|candidate| candidate.contains("homebrew")));
+        assert!(missing_hint().contains("apt install php-cgi"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_tries_homebrew() {
+        assert!(candidates().any(|candidate| candidate == "/opt/homebrew/bin/php-cgi"));
     }
 
     #[test]
